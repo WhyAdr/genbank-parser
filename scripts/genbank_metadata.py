@@ -99,7 +99,12 @@ def extract_metadata(filepath):
 
     return records
 
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Extract LOCUS header metadata from a GenBank file.")
+    parser.add_argument('input', help="Input GenBank file")
+    args = parser.parse_args()
+    extract_metadata(args.input)
 
 if __name__ == '__main__':
-    filepath = sys.argv[1] if len(sys.argv) > 1 else input("File path: ")
-    extract_metadata(filepath)
+    main()

@@ -2,15 +2,13 @@
 """Extract nucleotide sequences from the ORIGIN block of a GenBank file.
 Outputs genome FASTA (.fna) and optionally CDS nucleotide slices (.ffn).
 Reports GC content and coding density."""
-import sys, re
+import sys, re, os
+from Bio.Seq import Seq
 from genbank_parser import parse_features, get_qual
 
 
-COMPLEMENT = str.maketrans('ATCGatcg', 'TAGCtagc')
-
-
-def reverse_complement(seq):
-    return seq.translate(COMPLEMENT)[::-1]
+def reverse_complement(seq_str):
+    return str(Seq(seq_str).reverse_complement())
 
 
 def parse_sequences(filepath):
@@ -64,14 +62,15 @@ def extract_sequences(filepath, out_fna=None, out_ffn=None):
         print("(This file may be a feature-table-only snippet.)")
         return
 
-    base = filepath.rsplit('.', 1)[0]
+    base = os.path.splitext(filepath)[0]
     if out_fna is None:
         out_fna = base + '.fna'
     if out_ffn is None:
         out_ffn = base + '.ffn'
 
-    total_bp = 0
+    total_acgt = 0
     total_gc = 0
+    total_bp = 0
     with open(out_fna, 'w') as fh:
         for contig, seq in sequences.items():
             fh.write(f">{contig} len={len(seq)}\n")
@@ -79,8 +78,9 @@ def extract_sequences(filepath, out_fna=None, out_ffn=None):
                 fh.write(seq[i:i+70] + '\n')
             total_bp += len(seq)
             total_gc += seq.count('G') + seq.count('C')
+            total_acgt += (seq.count('A') + seq.count('C') + seq.count('G') + seq.count('T'))
 
-    gc_pct = 100 * total_gc / total_bp if total_bp > 0 else 0
+    gc_pct = 100 * total_gc / total_acgt if total_acgt > 0 else 0
 
     features = parse_features(filepath)
     cdss = [f for f in features if f['type'] == 'CDS']
@@ -134,9 +134,14 @@ def extract_sequences(filepath, out_fna=None, out_ffn=None):
     print(f"  CDS nucleotide : {out_ffn}")
     print("=" * 70)
 
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Extract genome FASTA and per-CDS nucleotide sequences.")
+    parser.add_argument('input',       help="Input GenBank file with ORIGIN blocks")
+    parser.add_argument('--fna',       help="Genome FASTA output path (default: <input>.fna)")
+    parser.add_argument('--ffn',       help="CDS nucleotide FASTA output path (default: <input>.ffn)")
+    args = parser.parse_args()
+    extract_sequences(args.input, args.fna, args.ffn)
 
 if __name__ == '__main__':
-    filepath = sys.argv[1] if len(sys.argv) > 1 else input("File path: ")
-    out_fna = sys.argv[2] if len(sys.argv) > 2 else None
-    out_ffn = sys.argv[3] if len(sys.argv) > 3 else None
-    extract_sequences(filepath, out_fna, out_ffn)
+    main()

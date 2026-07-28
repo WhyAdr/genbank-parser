@@ -1,0 +1,21 @@
+# Large sample/test datasets
+*.gbff
+*.gbk
+*.gb
+
+# Python bytecode & cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Scratch & temporary test artifacts
+scratch/
+scratch_test.*
+
+# Output data artifacts from script runs
+*.fna
+*.ffn
+*.faa
+*.gff3
+*_summary.tsv
+gene_matrix.tsv

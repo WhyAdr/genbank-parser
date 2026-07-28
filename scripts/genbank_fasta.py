@@ -25,8 +25,15 @@ def export_fasta(filepath, outfasta):
                 count += 1
     print(f"Exported {count} protein sequences to {outfasta}")
 
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Export all CDS as protein FASTA.")
+    parser.add_argument('input',  help="Input GenBank file")
+    parser.add_argument('output', nargs='?', help="Output FASTA path (default: <input>_proteins.faa)")
+    args = parser.parse_args()
+    import os
+    outfile = args.output or os.path.splitext(args.input)[0] + '_proteins.faa'
+    export_fasta(args.input, outfile)
 
 if __name__ == '__main__':
-    infile = sys.argv[1]
-    outfile = sys.argv[2] if len(sys.argv) > 2 else infile.rsplit('.', 1)[0] + '_proteins.faa'
-    export_fasta(infile, outfile)
+    main()

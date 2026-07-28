@@ -6,11 +6,10 @@ from genbank_parser import parse_features, get_qual
 
 def extract_locus(filepath, target_tag):
     features = parse_features(filepath)
-    hits = [f for f in features if f['type'] == 'CDS'
-            and target_tag in f['qualifiers'].get('locus_tag', [])]
+    hits = [f for f in features if target_tag in f['qualifiers'].get('locus_tag', [])]
 
     if not hits:
-        print(f"Locus tag '{target_tag}' not found among CDS features.")
+        print(f"Locus tag '{target_tag}' not found among features.")
         sys.exit(1)
 
     for f in hits:
@@ -61,9 +60,13 @@ def extract_locus(filepath, target_tag):
                 for v in vals:
                     print(f"    /{k}=\"{v}\"")
 
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Deep-dive all qualifiers for a single locus tag.")
+    parser.add_argument('input',     help="Input GenBank file")
+    parser.add_argument('locus_tag', help="Target locus tag")
+    args = parser.parse_args()
+    extract_locus(args.input, args.locus_tag)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print("Usage: python genbank_locus.py <file> <locus_tag>")
-        sys.exit(1)
-    extract_locus(sys.argv[1], sys.argv[2])
+    main()

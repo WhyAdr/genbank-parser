@@ -89,17 +89,21 @@ def validate(filepath):
     issues = []
     for f in cdss:
         if not f['qualifiers'].get('product'):
-            issues.append(f"  Line {f['line']}: CDS at {f['start']}..{f['end']} missing /product")
+            issues.append(f"  CDS at {f['contig']}:{f['start']}..{f['end']} missing /product")
         if not f['qualifiers'].get('translation'):
-            issues.append(f"  Line {f['line']}: CDS at {f['start']}..{f['end']} missing /translation")
-        tlen = len(get_qual(f, 'translation'))
-        nlen = f['end'] - f['start'] + 1
-        expected_aa = (nlen // 3) - 1  # minus stop codon
-        if tlen > 0 and abs(tlen - expected_aa) > 2:
-            issues.append(
-                f"  Line {f['line']}: CDS {get_qual(f, 'locus_tag', '?')} -- "
-                f"nucleotide length {nlen} predicts ~{expected_aa} aa, got {tlen} aa"
-            )
+            issues.append(f"  CDS at {f['contig']}:{f['start']}..{f['end']} missing /translation")
+
+        # Skip expected AA length check for partial features at contig edges
+        is_partial = f.get('partial_start') or f.get('partial_end')
+        if not is_partial:
+            tlen = len(get_qual(f, 'translation'))
+            nlen = f['end'] - f['start'] + 1
+            expected_aa = (nlen // 3) - 1  # minus stop codon
+            if tlen > 0 and abs(tlen - expected_aa) > 2:
+                issues.append(
+                    f"  CDS {get_qual(f, 'locus_tag', '?')} ({f['contig']}:{f['start']}..{f['end']}) -- "
+                    f"nucleotide length {nlen} predicts ~{expected_aa} aa, got {tlen} aa"
+                )
     if issues:
         print(f"-- Validation issues ({len(issues)}) --")
         for iss in issues[:20]:
@@ -108,6 +112,12 @@ def validate(filepath):
         print("-- Validation: ALL CHECKS PASSED --")
     print("=" * 60)
 
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Structural validation of a GenBank feature table.")
+    parser.add_argument('input', help="Input GenBank file")
+    args = parser.parse_args()
+    validate(args.input)
 
 if __name__ == '__main__':
-    validate(sys.argv[1] if len(sys.argv) > 1 else input("File path: "))
+    main()
