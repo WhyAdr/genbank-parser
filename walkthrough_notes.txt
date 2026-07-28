@@ -1,0 +1,126 @@
+================================================================================
+ WALKTHROUGH NOTES — GENBANK_MEOR.PY IMPLEMENTATION & VERIFICATION
+================================================================================
+ Date: 2026-07-28
+ Tool Created: scripts/genbank_meor.py
+ Target Domain: Microbial Enhanced Oil Recovery (MEOR) & Biosurfactant Biosynthesis
+ Repository: genbank-feature-parser
+
+--------------------------------------------------------------------------------
+ 1. OVERVIEW & PURPOSE
+--------------------------------------------------------------------------------
+ `scripts/genbank_meor.py` is a specialized, domain-specific bioinformatic scanner 
+ and BGC/operon mining engine designed to evaluate isolate genomes (.gbff, .gbk) 
+ for MEOR capabilities, hydrocarbon catabolism (alkanes, aromatics, anaerobic 
+ activation), and biosurfactant/bio-emulsifier biosynthesis potential.
+
+ The tool operates computationally via Biopython (Bio.SeqIO) without loading full 
+ flat files into the AI context window, outputting structured diagnostic reports.
+
+--------------------------------------------------------------------------------
+ 2. DATABASE INTEGRATION (CANT-HYD + HMDB + HADEG)
+--------------------------------------------------------------------------------
+ Marker definitions, EC numbers, KEGG Orthology (KO) IDs, gene symbols, and product
+ regex patterns were synthesized from three curated bioinformatic databases:
+
+  1. CANT-HYD (Calgary approach to ANnoTating HYDrocarbon degradation genes):
+     - Aerobic & anaerobic aliphatic + aromatic degradation markers.
+     - Includes 37 marker HMM targets: alkB, almA, ladA, bmoA, CYP153, prmA,
+       ndoA, dmpN, tmoA, assA/masD (anaerobic alkane), bssA (anaerobic toluene), 
+       nmsA (anaerobic methylnaphthalene).
+
+  2. HMDB (Hydrocarbon Monooxygenase Gene Database):
+     - Hydrocarbon hydroxylation monooxygenases (38 genes across 11 enzyme classes).
+     - Markers included: pmoA/mmoX (methane), alkB (alkanes), amoA (alkene/ammonia), 
+       smoA (styrene).
+
+  3. HADEG (Hydrocarbon Aerobic Degradation Enzymes & Genes Database):
+     - Experimentally validated hydrocarbon, plastic, and biosurfactant markers.
+     - Rhamnolipids: rhlA (HAA synthase), rhlB (mono-rhamnolipid), rhlC (di-rhamnolipid),
+       rhlR/rhlI (quorum sensing).
+     - Lipopeptides (NRPS): srfA-A/B/C/D (surfactin), licA-D (lichenysin), 
+       fenA-E/ppsA-E (fengycin/plipastatin), ituA-C (iturin), vsnA-C (viscosin).
+     - Trehalolipids & Glycolipids: sdtA, tshA, otsA/otsB.
+     - Polymeric Bio-emulsifiers: wza/wzb/wzc (emulsan/alasan exopolysaccharides).
+
+--------------------------------------------------------------------------------
+ 3. EIGHT FUNCTIONAL MARKER CATEGORIES
+--------------------------------------------------------------------------------
+  Category 1: Short-Chain Alkanes & Gaseous Hydrocarbons (C1-C4)
+              [pmoABC, mmoXYZ, prmABCD / bmo]
+  Category 2: Medium-Chain n-Alkanes (C5-C16)
+              [alkB / alkB1 / alkB2, CYP153, rubA / rubB, alkJ, alkH, alkK]
+  Category 3: Long-Chain n-Alkanes & Heavy Paraffins (C18-C36+)
+              [ladA (Flavoprotein C15-C36), almA (Flavin-binding C20-C32)]
+  Category 4: Aromatic & Polycyclic Aromatic Hydrocarbons (BTEX & PAHs)
+              [tmoABCDEF, todC1C2BA, xylM/A, ndoABC, nahAc/Ab, phnAc, bphA1-A4, catA, xylE]
+  Category 5: Anaerobic Hydrocarbon Activation (Reservoir Anoxic Conditions)
+              [assA / masD (alkylsuccinate synthase), bssABC (benzylsuccinate), nmsA]
+  Category 6: Glycolipid Biosurfactants (Rhamnolipids & Trehalolipids)
+              [rhlA, rhlB, rhlC, rhlR/I, sdtA, otsA/B]
+  Category 7: Lipopeptide Biosurfactant NRPS BGCs (Surfactin & Lichenysin)
+              [srfA-A/B/C/D, licA-D, fenA-E / ppsA-E, ituA-C, vsnA-C]
+  Category 8: Polymeric Bio-emulsifiers & Organic Acid / Gas Drivers
+              [wza/wzb/wzc (EPS secretion), pflB (formate lyase), ackA, pta, ca (carbonic anhydrase)]
+
+--------------------------------------------------------------------------------
+ 4. ALGORITHMIC & SYSTEM DESIGN
+--------------------------------------------------------------------------------
+  - Feature Filtering: Scans CDS and misc_feature elements to avoid duplicate hits 
+    from bare gene feature records.
+  - Multi-Tier Weighted Scoring:
+      * Weight 3 (High Confidence): Exact KEGG KO, EC number, or gene symbol match.
+      * Weight 2 (Medium Confidence): Specific product keyword match.
+      * Weight 1 (Low Confidence): Broad product/note keyword match.
+  - Spatial Operon & BGC Cluster Discovery:
+      * Partitioned strictly by contig to prevent cross-contig clustering.
+      * Groups co-localized hits with intergenic distance <= 200 bp (configurable via --max-gap).
+  - Pathway Completeness Profile:
+      * Evaluates percentage of required enzymatic steps present in genome for 5 key MEOR pathways.
+  - Genomic Density Karyograms:
+      * ASCII visual density overview mapping MEOR hits per contig in 50 kb windows.
+  - Multi-Format CLI Output:
+      * Human-readable text console report (default).
+      * Programmatic JSON format (--format json).
+      * Tab-delimited TSV presence/absence matrix (--format tsv).
+
+--------------------------------------------------------------------------------
+ 5. VERIFICATION & TEST RESULTS
+--------------------------------------------------------------------------------
+  Executed full 17-script test sweep (scratch/run_test_sweeps.py) against 
+  PF_NNT_reoriented.gbff (11,677 total features):
+
+  Results: 17 PASSED, 0 FAILED out of 17 tests.
+    [PASS] genbank_parser (Biopython)
+    [PASS] genbank_validate.py
+    [PASS] genbank_metadata.py
+    [PASS] genbank_fasta.py
+    [PASS] genbank_extract.py
+    [PASS] genbank_locus.py
+    [PASS] genbank_neighborhood.py
+    [PASS] genbank_operons.py
+    [PASS] genbank_discover.py
+    [PASS] genbank_compare.py
+    [PASS] genbank_codon.py
+    [PASS] genbank_crispr.py
+    [PASS] genbank_functional.py
+    [PASS] genbank_gff.py
+    [PASS] genbank_phylo.py
+    [PASS] genbank_sequence.py
+    [PASS] genbank_meor.py (NEW)
+
+--------------------------------------------------------------------------------
+ 6. USAGE INSTRUCTIONS FOR FUTURE REVIEW
+--------------------------------------------------------------------------------
+  Run standard console text report:
+    python scripts/genbank_meor.py PF_NNT_reoriented.gbff
+
+  Run JSON export for downstream web/API integration:
+    python scripts/genbank_meor.py PF_NNT_reoriented.gbff --format json
+
+  Run TSV matrix export for multi-genome comparative analysis:
+    python scripts/genbank_meor.py PF_NNT_reoriented.gbff --format tsv
+
+  Filter high-confidence hits only with custom intergenic gap threshold:
+    python scripts/genbank_meor.py PF_NNT_reoriented.gbff --min-weight 2 --max-gap 300
+================================================================================

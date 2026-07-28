@@ -33,6 +33,7 @@ genbank-feature-parser/
 ├── pf_supplementary_analysis.md    # Example genomic analysis report
 └── scripts/
     ├── genbank_parser.py           # Core canonical parser library (Bio.SeqIO backend)
+    ├── genbank_meor.py             # MEOR & biosurfactant biosynthesis discovery engine
     ├── genbank_discover.py         # Genomic island & operon discovery engine
     ├── genbank_functional.py       # Functional annotation (COG/GO/KEGG/EC) tables
     ├── genbank_gff.py              # GenBank to GFF3 converter & validator
