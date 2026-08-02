@@ -23,7 +23,8 @@ from Bio.SeqFeature import BeforePosition, AfterPosition, CompoundLocation
 # ---------------------------------------------------------------------------
 _known_xref_prefixes = ('GO:', 'COG', 'PF', 'RFAM', 'EC:')
 _kegg_ko_re = re.compile(r'^(?:KEGG:)?(K\d{5})')
-_pfam_re = re.compile(r'^PF\d')
+_cog_re = re.compile(r'^(?:COG:)?(COG\d+)')
+_pfam_re = re.compile(r'^(?:Pfam:)?(PF\d+)')
 
 
 # ---------------------------------------------------------------------------
@@ -43,9 +44,11 @@ def parse_features(filepath):
     preventing cross-contig clustering in downstream analyses.
     """
     features = []
+    feat_counter = 0
     for record in SeqIO.parse(filepath, "genbank"):
         contig = record.id if (record.id and record.id != '.') else record.name
         for feat in record.features:
+            feat_counter += 1
             strand = '-' if feat.location.strand == -1 else '+'
 
             # Partiality detection
@@ -75,7 +78,7 @@ def parse_features(filepath):
                 'strand':        strand,
                 'contig':        contig,
                 'qualifiers':    quals,
-                'line':          0,
+                'line':          feat_counter,
                 'partial_start': partial_start,
                 'partial_end':   partial_end,
                 'join_segments': segments,
@@ -115,13 +118,21 @@ def extract_xrefs(feature):
     )
 
     go_terms = [x for x in all_xrefs if x.startswith('GO:')]
-    cog_ids  = [x for x in all_xrefs if x.startswith('COG')]
+    cog_ids  = []
+    for x in all_xrefs:
+        m = _cog_re.match(x)
+        if m:
+            cog_ids.append(m.group(1))
     kegg_kos = []
     for x in all_xrefs:
         m = _kegg_ko_re.match(x)
         if m:
             kegg_kos.append(m.group(1))
-    pfam     = [x for x in all_xrefs if _pfam_re.match(x)]
+    pfam     = []
+    for x in all_xrefs:
+        m = _pfam_re.match(x)
+        if m:
+            pfam.append(m.group(1))
     rfam     = [x for x in all_xrefs if x.startswith('RFAM')]
 
     # EC_number: /EC_number qualifier takes priority (INSDC submission style).
@@ -134,6 +145,8 @@ def extract_xrefs(feature):
         x for x in feature['qualifiers'].get('db_xref', [])
         if not any(x.startswith(p) for p in _known_xref_prefixes)
         and not _kegg_ko_re.match(x)
+        and not _cog_re.match(x)
+        and not _pfam_re.match(x)
     ]
 
     return {

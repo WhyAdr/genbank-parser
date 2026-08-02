@@ -44,7 +44,7 @@ def operon_candidates(filepath, max_gap=150):
         clusters = []
         current_cluster = [pairs[0][0], pairs[0][1]]
         for a, b, gap in pairs[1:]:
-            # Use 'line' as a stable feature identity proxy (unique per parsed feature)
+            # Unique feature index from parse_features() ensures exact identity match
             if current_cluster[-1]['line'] == a['line']:
                 current_cluster.append(b)
             else:

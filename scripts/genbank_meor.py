@@ -57,6 +57,30 @@ MEOR_CATEGORIES = {
                 "ecs": ["1.14.13.-"],
                 "kos": ["K22473", "K22474", "K22475"],
                 "products": [r"propane monooxygenase", r"butane monooxygenase"]
+            },
+            {
+                "id": "pbmoABC",
+                "name": "Membrane-bound Alkane/Butane Monooxygenase (pbmoA/B/C)",
+                "genes": [r"\bpbmo[A-C]\b"],
+                "ecs": ["1.14.13.-"],
+                "kos": ["K10968"],
+                "products": [r"membrane-bound alkane monooxygenase", r"membrane-bound butane monooxygenase"]
+            },
+            {
+                "id": "sbmoXYZ",
+                "name": "Soluble Alkane Monooxygenase Subunits (sbmoX/Y/Z)",
+                "genes": [r"\bsbmo[X-Z]\b"],
+                "ecs": ["1.14.13.-"],
+                "kos": [],
+                "products": [r"soluble alkane monooxygenase"]
+            },
+            {
+                "id": "ahyA",
+                "name": "Molybdopterin-family Alkane C2 Methylene Hydroxylase (ahyA)",
+                "genes": [r"\bahyA\b"],
+                "ecs": ["1.17.99.-"],
+                "kos": [],
+                "products": [r"molybdopterin.*alkane C2 methylene hydroxylase", r"alkane C2 methylene hydroxylase"]
             }
         ]
     },
@@ -111,6 +135,14 @@ MEOR_CATEGORIES = {
                 "ecs": ["6.2.1.3"],
                 "kos": ["K01897"],
                 "products": [r"acyl-CoA synthetase", r"medium-chain fatty-acid--CoA ligase"]
+            },
+            {
+                "id": "alkL",
+                "name": "Outer Membrane Alkane Import Protein (alkL)",
+                "genes": [r"\balkL\b"],
+                "ecs": [],
+                "kos": [],
+                "products": [r"outer membrane alkane import", r"alkane outer membrane protein alkL"]
             }
         ]
     },
@@ -120,16 +152,16 @@ MEOR_CATEGORIES = {
         "markers": [
             {
                 "id": "ladA",
-                "name": "Long-chain Alkane Monooxygenase LadA (Flavoprotein C15-C36)",
-                "genes": [r"\bladA\d?\b"],
+                "name": "Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)",
+                "genes": [r"\blad[AB]\d?\b", r"\bladB2\b"],
                 "ecs": ["1.14.14.28"],
                 "kos": ["K22476"],
                 "products": [r"long-chain alkane monooxygenase", r"flavoprotein monooxygenase ladA"]
             },
             {
                 "id": "almA",
-                "name": "Long-chain Alkane Hydroxylase AlmA (Flavin-binding C20-C32)",
-                "genes": [r"\balmA\b"],
+                "name": "Long-chain Alkane Hydroxylase AlmA/AlmA1/AlmA3 (Flavin-binding C20-C32)",
+                "genes": [r"\balmA\d?\b"],
                 "ecs": ["1.14.14.-"],
                 "kos": ["K22477"],
                 "products": [r"flavin-binding monooxygenase almA", r"long-chain alkane hydroxylase almA"]
@@ -163,6 +195,30 @@ MEOR_CATEGORIES = {
                 "ecs": ["1.13.11.1", "1.13.11.2"],
                 "kos": ["K03381", "K00446"],
                 "products": [r"catechol 1,2-dioxygenase", r"catechol 2,3-dioxygenase"]
+            },
+            {
+                "id": "mahAB",
+                "name": "Benzene / Toluene / Naphthalene Dioxygenase (mahA / mahB)",
+                "genes": [r"\bmah[AB]\b"],
+                "ecs": ["1.14.12.-"],
+                "kos": [],
+                "products": [r"benzene/toluene/naphthalene dioxygenase"]
+            },
+            {
+                "id": "dmpO_tomA",
+                "name": "Phenol / Toluene 2-Monooxygenase (dmpO / tomA1-A4)",
+                "genes": [r"\bdmpO\b", r"\btomA[1-4]\b"],
+                "ecs": ["1.14.13.7"],
+                "kos": ["K14582"],
+                "products": [r"phenol/toluene 2-monooxygenase", r"phenol monooxygenase"]
+            },
+            {
+                "id": "dszC",
+                "name": "Dibenzothiophene Monooxygenase (dszC / Biodesulfurization)",
+                "genes": [r"\bdszC\b"],
+                "ecs": ["1.14.14.24"],
+                "kos": [],
+                "products": [r"dibenzothiophene monooxygenase", r"dibenzothiophene.*desulfurization"]
             }
         ]
     },
@@ -176,7 +232,7 @@ MEOR_CATEGORIES = {
                 "genes": [r"\bassA\b", r"\bmasD\b"],
                 "ecs": ["4.1.99.16"],
                 "kos": ["K22204"],
-                "products": [r"alkylsuccinate synthase", r"1-nnet-succinate synthase"]
+                "products": [r"alkylsuccinate synthase", r"alkylsuccinate synthase subunit alpha"]
             },
             {
                 "id": "bssABC",
@@ -193,6 +249,30 @@ MEOR_CATEGORIES = {
                 "ecs": ["4.1.99.-"],
                 "kos": ["K22205"],
                 "products": [r"naphthylmethylsuccinate synthase"]
+            },
+            {
+                "id": "cmdA_ebdA",
+                "name": "Ethylbenzene Dehydrogenase Subunit Alpha (cmdA / ebdA)",
+                "genes": [r"\bcmdA\b", r"\bebdA\b"],
+                "ecs": ["1.17.99.2"],
+                "kos": ["K22206"],
+                "products": [r"ethylbenzene dehydrogenase"]
+            },
+            {
+                "id": "abcA",
+                "name": "Anaerobic Benzene Carboxylase Subunit A (abcA1 / abcA2)",
+                "genes": [r"\babcA[12]\b"],
+                "ecs": ["4.1.1.-"],
+                "kos": [],
+                "products": [r"benzene carboxylase subunit A"]
+            },
+            {
+                "id": "ncrA",
+                "name": "Naphthalene Carboxylase (ncrA)",
+                "genes": [r"\bncrA\b"],
+                "ecs": ["4.1.1.-"],
+                "kos": ["K27540"],
+                "products": [r"naphthalene carboxylase"]
             }
         ]
     },
@@ -235,10 +315,18 @@ MEOR_CATEGORIES = {
             {
                 "id": "trehalolipid",
                 "name": "Trehalolipid Biosynthesis (sdtA / otsA / otsB)",
-                "genes": [r"\bsdtA\b", r"\tshA\b", r"\botsA\b", r"\botsB\b"],
+                "genes": [r"\bsdtA\b", r"\btshA\b", r"\botsA\b", r"\botsB\b"],
                 "ecs": ["2.4.1.15", "3.1.3.12"],
                 "kos": ["K00697", "K01087"],
                 "products": [r"trehalose-6-phosphate synthase", r"trehalose-6-phosphatase", r"sulfetolipid"]
+            },
+            {
+                "id": "emt1",
+                "name": "Mannosylerythritol Lipid (MEL) Biosynthesis (emt1)",
+                "genes": [r"\bemt1\b"],
+                "ecs": ["2.4.1.-"],
+                "kos": [],
+                "products": [r"mannosylerythritol lipid", r"erythritol transferase emt1"]
             }
         ]
     },
@@ -269,6 +357,38 @@ MEOR_CATEGORIES = {
                 "ecs": ["2.7.7.-"],
                 "kos": ["K15669", "K15670"],
                 "products": [r"fengycin synthetase", r"iturin synthetase", r"plipastatin synthase", r"viscosin synthetase"]
+            },
+            {
+                "id": "mycA_C",
+                "name": "Mycosubtilin Lipopeptide Synthetase (mycA / mycB / mycC)",
+                "genes": [r"\bmyc[A-C]\b"],
+                "ecs": ["2.7.7.-"],
+                "kos": [],
+                "products": [r"mycosubtilin synthetase", r"mycosubtilin synthase"]
+            },
+            {
+                "id": "arfA_C",
+                "name": "Arthrofactin Lipopeptide Synthetase (arfA / arfB / arfC)",
+                "genes": [r"\barf[A-C]\b"],
+                "ecs": ["2.7.7.-"],
+                "kos": [],
+                "products": [r"arthrofactin synthetase", r"arthrofactin synthase"]
+            },
+            {
+                "id": "pswP",
+                "name": "Serrawettin Lipopeptide Synthetase (pswP)",
+                "genes": [r"\bpswP\b"],
+                "ecs": ["2.7.7.-"],
+                "kos": [],
+                "products": [r"serrawettin synthetase", r"serrawettin synthase"]
+            },
+            {
+                "id": "sfp",
+                "name": "4'-Phosphopantetheinyl Transferase (sfp / NRPS activator)",
+                "genes": [r"\bsfp\b"],
+                "ecs": ["2.7.8.7"],
+                "kos": ["K02518"],
+                "products": [r"4'-phosphopantetheinyl transferase", r"phosphopantetheinyl transferase sfp"]
             }
         ]
     },
@@ -279,7 +399,7 @@ MEOR_CATEGORIES = {
             {
                 "id": "wza_wzb_wzc",
                 "name": "Polymeric Bio-emulsifier Secretion (wza / wzb / wzc / EPS)",
-                "genes": [r"\bwz[abc]\b", r"\balmA\b"],
+                "genes": [r"\bwz[abc]\b"],
                 "ecs": ["3.1.3.-"],
                 "kos": ["K01990", "K01991"],
                 "products": [r"polysaccharide export protein Wza", r"tyrosine-protein phosphatase Wzb", r"emulsan", r"alasan"]
@@ -291,6 +411,44 @@ MEOR_CATEGORIES = {
                 "ecs": ["2.3.1.54", "2.7.2.1", "2.3.1.8", "4.2.1.1"],
                 "kos": ["K00656", "K00925", "K00625", "K01672", "K01673"],
                 "products": [r"pyruvate formate-lyase", r"acetate kinase", r"phosphate acetyltransferase", r"carbonic anhydrase"]
+            }
+        ]
+    },
+    "cat9_alkene": {
+        "title": "Gaseous & Aliphatic Alkenes (Ethene, Propene, Isoprene)",
+        "role": "Alkene monooxygenation, epoxide ring-opening & isoprene utilization",
+        "markers": [
+            {
+                "id": "isoA_I",
+                "name": "Isoprene Monooxygenase (isoA-I / Isoprene degradation)",
+                "genes": [r"\biso[A-I]\b"],
+                "ecs": ["1.14.13.-"],
+                "kos": [],
+                "products": [r"isoprene monooxygenase", r"isoprene degradation"]
+            },
+            {
+                "id": "xamo_xec",
+                "name": "Alkene / Ethene Monooxygenase (xamoA-F / xecA-E)",
+                "genes": [r"\bxamo[A-F]\b", r"\bxec[A-E]\d?\b"],
+                "ecs": ["1.14.13.-"],
+                "kos": [],
+                "products": [r"alkene monooxygenase", r"ethene monooxygenase", r"chloroethene monooxygenase"]
+            },
+            {
+                "id": "etnE",
+                "name": "Epoxyalkane:CoM Transferase (etnE / Ethene pathway)",
+                "genes": [r"\betnE\b"],
+                "ecs": ["2.5.1.56"],
+                "kos": [],
+                "products": [r"epoxyalkane:coenzyme M transferase", r"epoxyalkane.*coenzyme M"]
+            },
+            {
+                "id": "mpdBC",
+                "name": "2-Methylpropene Degradation (mpdB / mpdC)",
+                "genes": [r"\bmpd[BC]\b"],
+                "ecs": [],
+                "kos": [],
+                "products": [r"2-methylpropene degradation"]
             }
         ]
     }
@@ -305,7 +463,8 @@ MEOR_PATHWAYS = {
             {"step": "Electron Transfer (Rubredoxin System)", "ids": ["rubAB"]},
             {"step": "Alcohol Oxidation (Alcohol Dehydrogenase)", "ids": ["alkJ"]},
             {"step": "Aldehyde Oxidation (Aldehyde Dehydrogenase)", "ids": ["alkH"]},
-            {"step": "Acyl-CoA Activation (Acyl-CoA Synthetase)", "ids": ["alkK"]}
+            {"step": "Acyl-CoA Activation (Acyl-CoA Synthetase)", "ids": ["alkK"]},
+            {"step": "Outer Membrane Alkane Import", "ids": ["alkL"]}
         ]
     },
     "Long-Chain Paraffin Wax Degradation (C18+)": {
@@ -313,6 +472,13 @@ MEOR_PATHWAYS = {
         "steps": [
             {"step": "Long-Chain Monooxygenase (LadA)", "ids": ["ladA"]},
             {"step": "Long-Chain Hydroxylase (AlmA)", "ids": ["almA"]}
+        ]
+    },
+    "Aromatic & PAH Degradation (BTEX/Naphthalene)": {
+        "category": "cat4_aromatic_pah",
+        "steps": [
+            {"step": "Ring-activating Monooxygenase/Dioxygenase", "ids": ["tmo_tod", "ndo_nah", "mahAB", "dmpO_tomA"]},
+            {"step": "Central Ring-Cleavage Dioxygenase", "ids": ["catA_xylE"]}
         ]
     },
     "Rhamnolipid Biosurfactant Biosynthesis": {
@@ -326,13 +492,21 @@ MEOR_PATHWAYS = {
     "Lipopeptide Biosurfactant BGC (Surfactin/Lichenysin)": {
         "category": "cat7_lipopeptide_biosurfactant",
         "steps": [
-            {"step": "Surfactin / Lichenysin NRPS Modules", "ids": ["srfA", "licA_D"]}
+            {"step": "Surfactin / Lichenysin NRPS Modules", "ids": ["srfA", "licA_D"]},
+            {"step": "Phosphopantetheinyl Transferase (Sfp)", "ids": ["sfp"]}
         ]
     },
     "Anaerobic Alkane Activation (AssA)": {
         "category": "cat5_anaerobic_activation",
         "steps": [
             {"step": "Alkylsuccinate Synthase catalytic alpha subunit", "ids": ["assA_masD"]}
+        ]
+    },
+    "Gaseous & Aliphatic Alkene Degradation": {
+        "category": "cat9_alkene",
+        "steps": [
+            {"step": "Alkene / Isoprene Monooxygenation", "ids": ["isoA_I", "xamo_xec"]},
+            {"step": "Epoxide Coenzyme M Conjugation (EtnE)", "ids": ["etnE"]}
         ]
     }
 }
