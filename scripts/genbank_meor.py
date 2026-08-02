@@ -39,7 +39,7 @@ MEOR_CATEGORIES = {
                 "name": "Particulate Methane Monooxygenase (pmoABC)",
                 "genes": [r"\bpmo[ABC]\b"],
                 "ecs": ["1.14.18.3"],
-                "kos": ["K10968", "K10969", "K10970"],
+                "kos": ["K10944", "K10945", "K10946"],
                 "products": [r"particulate methane monooxygenase", r"methane monooxygenase subunit"]
             },
             {
@@ -63,7 +63,7 @@ MEOR_CATEGORIES = {
                 "name": "Membrane-bound Alkane/Butane Monooxygenase (pbmoA/B/C)",
                 "genes": [r"\bpbmo[A-C]\b"],
                 "ecs": ["1.14.13.-"],
-                "kos": ["K10968"],
+                "kos": ["K21320", "K21321"],
                 "products": [r"membrane-bound alkane monooxygenase", r"membrane-bound butane monooxygenase"]
             },
             {
@@ -153,9 +153,9 @@ MEOR_CATEGORIES = {
             {
                 "id": "ladA",
                 "name": "Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)",
-                "genes": [r"\blad[AB]\d?\b", r"\bladB2\b"],
+                "genes": [r"\blad[AB]\d?\b"],
                 "ecs": ["1.14.14.28"],
-                "kos": ["K22476"],
+                "kos": ["K20938"],
                 "products": [r"long-chain alkane monooxygenase", r"flavoprotein monooxygenase ladA"]
             },
             {
@@ -177,7 +177,7 @@ MEOR_CATEGORIES = {
                 "name": "Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)",
                 "genes": [r"\btmo[A-F]\b", r"\btod[A-D]\b", r"\bxyl[MA]\b"],
                 "ecs": ["1.14.13.-"],
-                "kos": ["K15760", "K15761", "K15762"],
+                "kos": ["K15760", "K15761", "K15762", "K03268", "K16268", "K18089", "K18090", "K16269", "K16270"],
                 "products": [r"toluene monooxygenase", r"xylene monooxygenase", r"toluene dioxygenase"]
             },
             {
@@ -217,8 +217,16 @@ MEOR_CATEGORIES = {
                 "name": "Dibenzothiophene Monooxygenase (dszC / Biodesulfurization)",
                 "genes": [r"\bdszC\b"],
                 "ecs": ["1.14.14.24"],
-                "kos": [],
+                "kos": ["K22219"],
                 "products": [r"dibenzothiophene monooxygenase", r"dibenzothiophene.*desulfurization"]
+            },
+            {
+                "id": "pcaGH",
+                "name": "Protocatechuate 3,4-Dioxygenase (pcaG / pcaH)",
+                "genes": [r"\bpca[GH]\b"],
+                "ecs": ["1.13.11.4"],
+                "kos": ["K00448", "K00449"],
+                "products": [r"protocatechuate 3,4-dioxygenase", r"protocatechuate dioxygenase"]
             }
         ]
     },
@@ -327,6 +335,14 @@ MEOR_CATEGORIES = {
                 "ecs": ["2.4.1.-"],
                 "kos": [],
                 "products": [r"mannosylerythritol lipid", r"erythritol transferase emt1"]
+            },
+            {
+                "id": "sble",
+                "name": "Sophorolipid Biosynthesis (sble / glucosyltransferase)",
+                "genes": [r"\bsble\b", r"\bat\b"],
+                "ecs": ["2.4.1.-", "2.3.1.-"],
+                "kos": [],
+                "products": [r"sophorolipid", r"lactonic sophorolipid"]
             }
         ]
     },
@@ -363,7 +379,7 @@ MEOR_CATEGORIES = {
                 "name": "Mycosubtilin Lipopeptide Synthetase (mycA / mycB / mycC)",
                 "genes": [r"\bmyc[A-C]\b"],
                 "ecs": ["2.7.7.-"],
-                "kos": [],
+                "kos": ["K15661"],
                 "products": [r"mycosubtilin synthetase", r"mycosubtilin synthase"]
             },
             {
@@ -371,7 +387,7 @@ MEOR_CATEGORIES = {
                 "name": "Arthrofactin Lipopeptide Synthetase (arfA / arfB / arfC)",
                 "genes": [r"\barf[A-C]\b"],
                 "ecs": ["2.7.7.-"],
-                "kos": [],
+                "kos": ["K15658"],
                 "products": [r"arthrofactin synthetase", r"arthrofactin synthase"]
             },
             {
@@ -439,7 +455,7 @@ MEOR_CATEGORIES = {
                 "name": "Epoxyalkane:CoM Transferase (etnE / Ethene pathway)",
                 "genes": [r"\betnE\b"],
                 "ecs": ["2.5.1.56"],
-                "kos": [],
+                "kos": ["K22363"],
                 "products": [r"epoxyalkane:coenzyme M transferase", r"epoxyalkane.*coenzyme M"]
             },
             {

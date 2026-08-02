@@ -21,10 +21,11 @@ from Bio.SeqFeature import BeforePosition, AfterPosition, CompoundLocation
 # ---------------------------------------------------------------------------
 # Compiled regexes for cross-reference extraction
 # ---------------------------------------------------------------------------
-_known_xref_prefixes = ('GO:', 'COG', 'PF', 'RFAM', 'EC:')
+_known_xref_prefixes = ('GO:', 'COG', 'PF', 'RFAM', 'Rfam:', 'EC:')
 _kegg_ko_re = re.compile(r'^(?:KEGG:)?(K\d{5})')
 _cog_re = re.compile(r'^(?:COG:)?(COG\d+)')
 _pfam_re = re.compile(r'^(?:Pfam:)?(PF\d+)')
+_rfam_re = re.compile(r'^(?:Rfam:)?(RF\d+)', re.IGNORECASE)
 
 
 # ---------------------------------------------------------------------------
@@ -108,7 +109,7 @@ def extract_xrefs(feature):
         cog_ids    : list[str]   COG1234
         kegg_kos   : list[str]   K01234
         pfam       : list[str]   PF01234
-        rfam       : list[str]   RFAM:RF01234
+        rfam       : list[str]   RF01234
         ec_numbers : list[str]   1.2.3.4  (from /EC_number or EC: in /note)
         db_xrefs   : list[str]   everything else in /db_xref
     """
@@ -133,7 +134,11 @@ def extract_xrefs(feature):
         m = _pfam_re.match(x)
         if m:
             pfam.append(m.group(1))
-    rfam     = [x for x in all_xrefs if x.startswith('RFAM')]
+    rfam     = []
+    for x in all_xrefs:
+        m = _rfam_re.match(x)
+        if m:
+            rfam.append(m.group(1))
 
     # EC_number: /EC_number qualifier takes priority (INSDC submission style).
     # Fall back to EC:-prefixed values in /note or /db_xref (Bakta style).
@@ -147,6 +152,7 @@ def extract_xrefs(feature):
         and not _kegg_ko_re.match(x)
         and not _cog_re.match(x)
         and not _pfam_re.match(x)
+        and not _rfam_re.match(x)
     ]
 
     return {
