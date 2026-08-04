@@ -44,24 +44,26 @@
      - Polymeric Bio-emulsifiers: wza/wzb/wzc (emulsan/alasan exopolysaccharides).
 
 --------------------------------------------------------------------------------
- 3. EIGHT FUNCTIONAL MARKER CATEGORIES
+ 3. NINE FUNCTIONAL MARKER CATEGORIES
 --------------------------------------------------------------------------------
   Category 1: Short-Chain Alkanes & Gaseous Hydrocarbons (C1-C4)
-              [pmoABC, mmoXYZ, prmABCD / bmo]
+              [pmoABC, mmoXYZ, prmABCD / bmo, pbmoABC, sbmoXYZ, ahyA]
   Category 2: Medium-Chain n-Alkanes (C5-C16)
-              [alkB / alkB1 / alkB2, CYP153, rubA / rubB, alkJ, alkH, alkK]
+              [alkB / alkB1 / alkB2, CYP153, rubA / rubB, alkJ, alkH, alkK, alkL]
   Category 3: Long-Chain n-Alkanes & Heavy Paraffins (C18-C36+)
               [ladA (Flavoprotein C15-C36), almA (Flavin-binding C20-C32)]
   Category 4: Aromatic & Polycyclic Aromatic Hydrocarbons (BTEX & PAHs)
-              [tmoABCDEF, todC1C2BA, xylM/A, ndoABC, nahAc/Ab, phnAc, bphA1-A4, catA, xylE]
+              [tmoABCDEF, todC1C2BA, xylM/A, ndoABC, nahAc/Ab, phnAc, bphA1-A4, catA, xylE, mahAB, dmpO_tomA, dszC, pcaGH]
   Category 5: Anaerobic Hydrocarbon Activation (Reservoir Anoxic Conditions)
-              [assA / masD (alkylsuccinate synthase), bssABC (benzylsuccinate), nmsA]
+              [assA / masD (alkylsuccinate synthase), bssABC, nmsA, cmdA_ebdA, abcA, ncrA]
   Category 6: Glycolipid Biosurfactants (Rhamnolipids & Trehalolipids)
-              [rhlA, rhlB, rhlC, rhlR/I, sdtA, otsA/B]
+              [rhlA, rhlB, rhlC, rhlR/I, sdtA, otsA/B, emt1, sble]
   Category 7: Lipopeptide Biosurfactant NRPS BGCs (Surfactin & Lichenysin)
-              [srfA-A/B/C/D, licA-D, fenA-E / ppsA-E, ituA-C, vsnA-C]
+              [srfA-A/B/C/D, licA-D, fenA-E / ppsA-E, ituA-C, vsnA-C, mycA-C, arfA-C, pswP, sfp]
   Category 8: Polymeric Bio-emulsifiers & Organic Acid / Gas Drivers
               [wza/wzb/wzc (EPS secretion), pflB (formate lyase), ackA, pta, ca (carbonic anhydrase)]
+  Category 9: Gaseous & Aliphatic Alkenes
+              [isoA-I, xamoA-F / xecA-E, etnE, mpdBC]
 
 --------------------------------------------------------------------------------
  4. ALGORITHMIC & SYSTEM DESIGN
@@ -71,12 +73,13 @@
   - Multi-Tier Weighted Scoring:
       * Weight 3 (High Confidence): Exact KEGG KO, EC number, or gene symbol match.
       * Weight 2 (Medium Confidence): Specific product keyword match.
-      * Weight 1 (Low Confidence): Broad product/note keyword match.
+      * Weight 1 (Low Confidence): Broad note keyword match.
   - Spatial Operon & BGC Cluster Discovery:
-      * Partitioned strictly by contig to prevent cross-contig clustering.
+      * Partitioned strictly by contig and strand to enforce co-directional clustering.
+      * Feature deduplication guarantees distinct physical gene counts (`gene_count`).
       * Groups co-localized hits with intergenic distance <= 200 bp (configurable via --max-gap).
   - Pathway Completeness Profile:
-      * Evaluates percentage of required enzymatic steps present in genome for 5 key MEOR pathways.
+      * Evaluates percentage of required enzymatic steps present in genome for 7 key MEOR pathways.
   - Genomic Density Karyograms:
       * ASCII visual density overview mapping MEOR hits per contig in 50 kb windows.
   - Multi-Format CLI Output:
