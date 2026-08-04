@@ -1,10 +1,10 @@
 ================================================================================
- WALKTHROUGH NOTES — GENBANK_MEOR.PY IMPLEMENTATION & VERIFICATION
+ WALKTHROUGH NOTES — GENBANK_MEOR.PY IMPLEMENTATION & STANDALONE SKILL EXTRACTION
 ================================================================================
- Date: 2026-07-28
- Tool Created: scripts/genbank_meor.py
+ Date: 2026-07-28 (Extracted to standalone skill: 2026-08-03)
+ Tool Location: D:\W\Skills Claude\genbank-meor\genbank_meor.py
  Target Domain: Microbial Enhanced Oil Recovery (MEOR) & Biosurfactant Biosynthesis
- Repository: genbank-feature-parser
+ Skill Folder: genbank-meor
 
 --------------------------------------------------------------------------------
  1. OVERVIEW & PURPOSE

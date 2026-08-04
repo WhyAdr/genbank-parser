@@ -35,7 +35,6 @@ All scripts reside in the `scripts/` subdirectory. Invoke them in-place; Python 
 | `genbank_operons.py` | Operon candidates (same-strand, gap) | `python scripts/genbank_operons.py INPUT.gbff [max_gap]` |
 | `genbank_compare.py` | Multi-genome presence/absence matrix | `python scripts/genbank_compare.py ./genomes/ "ladA,ssuD" [matrix.tsv]` |
 | `genbank_discover.py` | Discovery mode — keyword + spatial scan | `python scripts/genbank_discover.py INPUT.gbff [--cluster-gap 5000] [--operon-gap 150] [--min-weight 1] [--format text\|json\|tsv]` |
-| `genbank_meor.py` | MEOR & biosurfactant discovery engine | `python scripts/genbank_meor.py INPUT.gbff [--min-weight 1] [--max-gap 200] [--format text|json|tsv]` |
 | `genbank_crispr.py` | CRISPR array + Cas gene detection | `python scripts/genbank_crispr.py INPUT.gbff [--window 15000]` |
 | `genbank_codon.py` | Codon usage + RSCU table | `python scripts/genbank_codon.py INPUT.gbff [--min-len 100] [--output codon.tsv]` |
 | `genbank_phylo.py` | Phylogenetic marker gene extraction | `python scripts/genbank_phylo.py INPUT.gbff [--markers all] [--output-dir ./markers/]` |

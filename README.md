@@ -7,7 +7,7 @@ A Biopython-powered Python toolset and AI agent skill for parsing, validating, a
 - **Standard-Compliant Parsing**: Built on **Biopython (`Bio.SeqIO`)** for robust flat-file parsing, multi-line qualifier continuation, quote stripping, and partial coordinate handling (`BeforePosition`/`AfterPosition`).
 - **Contig-Boundary Aware**: All spatial operations (operon prediction, neighborhood windowing, mobilome island discovery) strictly partition features by contig before coordinate sorting.
 - **Rich Semantic Cross-References**: Automatically extracts GO terms, COG IDs, KEGG KOs, Pfam, Rfam, and EC numbers from both INSDC `/EC_number` and Bakta/Prokka `/db_xref` and `/note` qualifiers.
-- **16 Tool Modules**: Comprehensive CLI coverage spanning sequence extraction, locus indexing, operon prediction, CRISPR array detection, GFF3 conversion, codon usage bias (RSCU), and phylogenomic marker extraction.
+- **15 Tool Modules**: Comprehensive CLI coverage spanning sequence extraction, locus indexing, operon prediction, CRISPR array detection, GFF3 conversion, codon usage bias (RSCU), and phylogenomic marker extraction. (Note: MEOR & biosurfactant discovery is provided by the separate `genbank-meor` skill).
 
 ---
 
@@ -33,7 +33,6 @@ genbank-feature-parser/
 ├── pf_supplementary_analysis.md    # Example genomic analysis report
 └── scripts/
     ├── genbank_parser.py           # Core canonical parser library (Bio.SeqIO backend)
-    ├── genbank_meor.py             # MEOR & biosurfactant biosynthesis discovery engine
     ├── genbank_discover.py         # Genomic island & operon discovery engine
     ├── genbank_functional.py       # Functional annotation (COG/GO/KEGG/EC) tables
     ├── genbank_gff.py              # GenBank to GFF3 converter & validator
