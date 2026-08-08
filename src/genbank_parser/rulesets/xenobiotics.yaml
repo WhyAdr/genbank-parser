@@ -1,0 +1,21 @@
+- id: alkane_monooxygenase
+  category: "Alkane Degradation"
+  weight: 3
+  terms:
+    - alkB
+    - ladA
+    - alkane monooxygenase
+    - rubredoxin
+    - rubredoxin reductase
+
+- id: aromatic_dioxygenase
+  category: "Aromatic Ring Cleavage"
+  weight: 3
+  terms:
+    - catechol 1,2-dioxygenase
+    - catechol 2,3-dioxygenase
+    - protocatechuate 3,4-dioxygenase
+    - protocatechuate 4,5-dioxygenase
+    - pcaG
+    - pcaH
+    - catA

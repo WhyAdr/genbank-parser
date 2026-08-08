@@ -1,0 +1,39 @@
+LOCUS       CONTIG_1                 100 bp    DNA     linear   BCT 08-AUG-2026
+DEFINITION  Synthetic test record with simple forward and reverse CDS features.
+ACCESSION   CONTIG_1
+VERSION     CONTIG_1
+SOURCE      Synthetic test organism
+  ORGANISM  Synthetic bacterium
+FEATURES             Location/Qualifiers
+     source          1..100
+                     /organism="Synthetic bacterium"
+                     /strain="TEST-1"
+                     /mol_type="genomic DNA"
+     gene            1..30
+                     /locus_tag="TEST_001"
+                     /gene="testA"
+     CDS             1..30
+                     /locus_tag="TEST_001"
+                     /gene="testA"
+                     /product="test protein A"
+                     /protein_id="WP_000000001.1"
+                     /EC_number="1.1.1.1"
+                     /db_xref="COG:COG0596"
+                     /db_xref="KEGG:K00844"
+                     /db_xref="Pfam:PF00067"
+                     /db_xref="GO:0008152"
+                     /translation="MKVLWAGLIT"
+     gene            51..80
+                     /locus_tag="TEST_002"
+                     /gene="testB"
+     CDS             complement(51..80)
+                     /locus_tag="TEST_002"
+                     /gene="testB"
+                     /product="test protein B"
+                     /protein_id="WP_000000002.1"
+                     /db_xref="note:COG:COG0123"
+                     /translation="MKVLWAGLIT"
+ORIGIN
+        1 atgaaagtat tatgggcagg cctgattact aaaaaaaaaa aaaaaaaaaa
+       51 agtaatcagg cctgcccata atactttcat aaaaaaaaaa aaaaaaaaaa
+//

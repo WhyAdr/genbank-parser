@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "genbank-parser"
-version = "0.2.0"
+version = "0.2.1"
 description = "Canonical GenBank flatfile parser, biological validation, and genomic evidence engine"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
     { name = "WhyAdr" }
@@ -28,7 +28,9 @@ gbparse = "genbank_parser.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+genbank_parser = ["rulesets/*.yaml"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "--basetemp=.pytest_tmp"

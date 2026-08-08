@@ -1,0 +1,19 @@
+LOCUS       CONTIG_DUP               100 bp    DNA     linear   BCT 08-AUG-2026
+DEFINITION  Synthetic record with duplicate locus tags across distinct CDSs.
+ACCESSION   DUP001
+VERSION     DUP001.1
+FEATURES             Location/Qualifiers
+     source          1..100
+                     /organism="Synthetic bacterium"
+     CDS             1..30
+                     /locus_tag="DUP_TAG_001"
+                     /product="first duplicate protein"
+                     /translation="MKVLWAGLIT"
+     CDS             41..70
+                     /locus_tag="DUP_TAG_001"
+                     /product="second duplicate protein"
+                     /translation="MKVLWAGLIT"
+ORIGIN
+        1 atgaaagtat tatgggcagg cctgattact aaaaaaaaaa atgaaagtat tatgggcagg
+       61 cctgattact aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//

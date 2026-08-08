@@ -1,0 +1,61 @@
+- id: integrase
+  category: "Mobilome: Integrase"
+  weight: 3
+  terms:
+    - integrase
+    - site-specific integrase
+    - tyrosine recombinase
+    - xerC
+    - xerD
+
+- id: transposase
+  category: "Mobilome: Transposon"
+  weight: 3
+  terms:
+    - transposase
+    - insertion element
+    - IS element
+    - IS3
+    - IS4
+    - IS5
+    - IS6
+    - IS21
+    - IS256
+    - IS110
+
+- id: resolvase
+  category: "Mobilome: Recombinase"
+  weight: 2
+  terms:
+    - resolvase
+    - recombinase
+    - site-specific recombinase
+
+- id: phage
+  category: "Mobilome: Phage"
+  weight: 2
+  terms:
+    - phage
+    - prophage
+    - tail protein
+    - capsid
+    - portal protein
+    - terminase
+    - holin
+
+- id: conjugation
+  category: "Mobilome: Conjugation"
+  weight: 3
+  terms:
+    - traA
+    - traB
+    - traC
+    - traD
+    - traE
+    - traG
+    - traI
+    - traK
+    - mobA
+    - mobB
+    - relaxase
+    - type IV secretion

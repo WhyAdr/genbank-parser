@@ -1,53 +1,54 @@
 """Phylogenomic marker gene extractor."""
+
 from __future__ import annotations
 
 import argparse
-import os
-from pathlib import Path
 import re
-import sys
-from typing import Any
+from pathlib import Path
 
-from .io import get_qual, read_genbank
+from .io import read_genbank
 from .model import GenBankFeature
 
 RIBOSOMAL = {
-    'rpsB': '30S ribosomal protein S2',
-    'rpsC': '30S ribosomal protein S3',
-    'rpsD': '30S ribosomal protein S4',
-    'rpsE': '30S ribosomal protein S5',
-    'rpsG': '30S ribosomal protein S7',
-    'rpsH': '30S ribosomal protein S8',
-    'rpsI': '30S ribosomal protein S9',
-    'rpsJ': '30S ribosomal protein S10',
-    'rpsK': '30S ribosomal protein S11',
-    'rpsL': '30S ribosomal protein S12',
-    'rpsM': '30S ribosomal protein S13',
-    'rplA': '50S ribosomal protein L1',
-    'rplB': '50S ribosomal protein L2',
-    'rplC': '50S ribosomal protein L3',
-    'rplD': '50S ribosomal protein L4',
-    'rplE': '50S ribosomal protein L5',
-    'rplF': '50S ribosomal protein L6',
-    'rplK': '50S ribosomal protein L11',
-    'rplL': '50S ribosomal protein L12',
-    'rplN': '50S ribosomal protein L14',
-    'rplP': '50S ribosomal protein L16',
-    'rplR': '50S ribosomal protein L18',
-    'rplV': '50S ribosomal protein L22',
-    'rplW': '50S ribosomal protein L23',
+    "rpsB": "30S ribosomal protein S2",
+    "rpsC": "30S ribosomal protein S3",
+    "rpsD": "30S ribosomal protein S4",
+    "rpsE": "30S ribosomal protein S5",
+    "rpsG": "30S ribosomal protein S7",
+    "rpsH": "30S ribosomal protein S8",
+    "rpsI": "30S ribosomal protein S9",
+    "rpsJ": "30S ribosomal protein S10",
+    "rpsK": "30S ribosomal protein S11",
+    "rpsL": "30S ribosomal protein S12",
+    "rpsM": "30S ribosomal protein S13",
+    "rplA": "50S ribosomal protein L1",
+    "rplB": "50S ribosomal protein L2",
+    "rplC": "50S ribosomal protein L3",
+    "rplD": "50S ribosomal protein L4",
+    "rplE": "50S ribosomal protein L5",
+    "rplF": "50S ribosomal protein L6",
+    "rplK": "50S ribosomal protein L11",
+    "rplL": "50S ribosomal protein L12",
+    "rplN": "50S ribosomal protein L14",
+    "rplP": "50S ribosomal protein L16",
+    "rplR": "50S ribosomal protein L18",
+    "rplV": "50S ribosomal protein L22",
+    "rplW": "50S ribosomal protein L23",
 }
 
 HOUSEKEEPING = {
-    'recA': 'DNA recombinase A',
-    'gyrB': 'DNA gyrase subunit B',
-    'rpoB': 'RNA polymerase subunit beta',
-    'dnaK': 'DnaK chaperone',
-    'groEL': 'GroEL chaperonin (Hsp60)',
-    'tsf': 'elongation factor Ts',
-    'tuf': 'elongation factor Tu',
-    'fusA': 'elongation factor G',
+    "recA": "DNA recombinase A",
+    "gyrB": "DNA gyrase subunit B",
+    "rpoB": "RNA polymerase subunit beta",
+    "dnaK": "DnaK chaperone",
+    "groEL": "GroEL chaperonin (Hsp60)",
+    "tsf": "elongation factor Ts",
+    "tuf": "elongation factor Tu",
+    "fusA": "elongation factor G",
 }
+
+
+MIN_TRANSLATION_AA = 50
 
 
 def _match_marker(f: GenBankFeature, marker_name: str, desc: str) -> bool:
@@ -64,7 +65,10 @@ def _match_marker(f: GenBankFeature, marker_name: str, desc: str) -> bool:
 
     # Priority 3: Regex match ONLY if /gene is empty
     if not gene and prod:
-        pattern = re.compile(re.escape(desc) + r'(?![\w\-])', re.IGNORECASE)
+        pattern = re.compile(
+            rf"(?:{re.escape(desc)}|\b{re.escape(marker_name)}\b)(?![\w\-])",
+            re.IGNORECASE,
+        )
         if pattern.search(prod):
             return True
 
@@ -73,68 +77,112 @@ def _match_marker(f: GenBankFeature, marker_name: str, desc: str) -> bool:
 
 def extract_phylogenomic_markers(
     filepath: str | Path,
-    marker_set: str = 'all',
+    marker_set: str = "all",
     output_dir: str | Path | None = None,
-) -> dict[str, GenBankFeature]:
+    min_length: int = MIN_TRANSLATION_AA,
+) -> dict[str, list[GenBankFeature]]:
     doc = read_genbank(filepath)
-    cdss = [f for f in doc.all_features if f.type == 'CDS']
+    cdss = [f for f in doc.all_features if f.type == "CDS"]
 
     targets: dict[str, str] = {}
-    if marker_set in ('core', 'all'):
+    if marker_set in ("core", "all"):
         targets.update(RIBOSOMAL)
-    if marker_set in ('housekeeping', 'all'):
+    if marker_set in ("housekeeping", "all"):
         targets.update(HOUSEKEEPING)
 
-    found_markers: dict[str, GenBankFeature] = {}
+    found_markers: dict[str, list[GenBankFeature]] = {}
 
     for marker_name, desc in targets.items():
-        for f in cdss:
-            if _match_marker(f, marker_name, desc):
-                found_markers[marker_name] = f
-                break
+        found_markers[marker_name] = [
+            feature
+            for feature in cdss
+            if feature.translation
+            and len(feature.translation) >= min_length
+            and _match_marker(feature, marker_name, desc)
+        ]
 
     print("=" * 70)
-    print("  PHYLOGENOMIC MARKER EXTRACTION")
+    print("  ANNOTATION-BASED PHYLOGENETIC MARKER CANDIDATES")
     print("=" * 70)
     print(f"  File             : {filepath}")
     print(f"  Marker panel     : {marker_set} ({len(targets)} candidate genes)")
-    print(f"  Markers found    : {len(found_markers)} / {len(targets)} ({100.0 * len(found_markers) / len(targets):.1f}%)")
+    recovered = sum(1 for hits in found_markers.values() if hits)
+    multi_copy = sum(1 for hits in found_markers.values() if len(hits) > 1)
+    print(f"  Markers recovered : {recovered} / {len(targets)}")
+    print(f"  Multi-copy review : {multi_copy}")
+    print(f"  Minimum length   : {min_length} aa")
     print()
 
-    print(f"{'Marker':10s}  {'Status':8s}  {'Locus Tag':18s}  {'Length':>8s}  {'Product'}")
+    print(
+        f"{'Marker':10s}  {'Status':8s}  {'Locus Tag':18s}  {'Length':>8s}  {'Product'}"
+    )
     print("-" * 70)
     for m, desc in sorted(targets.items()):
-        if m in found_markers:
-            f = found_markers[m]
-            tlen = f"{len(f.translation)} aa" if f.translation else f"{f.length} bp"
-            tag = f.locus_tag or '-'
-            prod = (f.product or desc)[:30]
-            print(f"  {m:10s}  FOUND     {tag:18s}  {tlen:>8s}  {prod}")
+        hits = found_markers[m]
+        if hits:
+            status = "MULTI_COPY" if len(hits) > 1 else "SINGLE_COPY"
+            for f in hits:
+                tlen = f"{len(f.translation)} aa"
+                tag = f.locus_tag or "-"
+                prod = (f.product or desc)[:30]
+                print(f"  {m:10s}  {status:10s}  {tag:18s}  {tlen:>8s}  {prod}")
+                if (
+                    f.gene.casefold() == m.casefold()
+                    and f.product
+                    and f.product.casefold() != desc.casefold()
+                ):
+                    print(f"    [WARN] gene/product mismatch for {tag or m}")
         else:
-            print(f"  {m:10s}  MISSING   {'-':18s}  {'-':>8s}  {desc[:30]}")
+            print(f"  {m:10s}  ABSENT     {'-':18s}  {'-':>8s}  {desc[:30]}")
     print("=" * 70)
 
     if output_dir and found_markers:
         out_d = Path(output_dir)
         out_d.mkdir(parents=True, exist_ok=True)
-        for m, f in found_markers.items():
-            if f.translation:
+        for m, hits in found_markers.items():
+            if hits:
                 fa_path = out_d / f"{m}.faa"
-                fa_path.write_text(f">{m} {f.locus_tag} {f.product}\n{f.translation}\n", encoding='utf-8')
+                fa_path.write_text(
+                    "".join(
+                        f">{m} {feature.locus_tag} {feature.record_id}\n{feature.translation}\n"
+                        for feature in hits
+                    ),
+                    encoding="utf-8",
+                )
         print(f"\nWrote individual marker FASTA files to {output_dir}")
 
     return found_markers
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Extract phylogenomic core & housekeeping marker genes.")
-    parser.add_argument('input', help="Input GenBank file")
-    parser.add_argument('--markers', choices=['core', 'housekeeping', 'all'], default='all', help="Marker panel to query")
-    parser.add_argument('--output-dir', help="Directory to write individual marker protein FASTA files")
+    parser = argparse.ArgumentParser(
+        description="Extract annotation-based candidate phylogenetic markers."
+    )
+    parser.add_argument("input", help="Input GenBank file")
+    parser.add_argument(
+        "--markers",
+        choices=["core", "housekeeping", "all"],
+        default="all",
+        help="Marker panel to query",
+    )
+    parser.add_argument(
+        "--min-length",
+        type=int,
+        default=MIN_TRANSLATION_AA,
+        help="Minimum translation length in amino acids",
+    )
+    parser.add_argument(
+        "--output-dir", help="Directory to write individual marker protein FASTA files"
+    )
     args = parser.parse_args()
 
-    extract_phylogenomic_markers(args.input, marker_set=args.markers, output_dir=args.output_dir)
+    extract_phylogenomic_markers(
+        args.input,
+        marker_set=args.markers,
+        output_dir=args.output_dir,
+        min_length=args.min_length,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
