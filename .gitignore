@@ -7,6 +7,10 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+.pytest_tmp/
+*.egg-info/
+build/
+dist/
 
 # Scratch & temporary test artifacts
 scratch/
