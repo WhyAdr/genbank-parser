@@ -29,8 +29,6 @@ genbank-feature-parser/
 ├── README.md                       # Documentation & usage guide
 ├── requirements.txt                # Python dependencies (biopython)
 ├── .gitignore                      # Git exclusion rules
-├── pf_isolate_discovery_analysis.md # Example isolate discovery report
-├── pf_supplementary_analysis.md    # Example genomic analysis report
 └── scripts/
     ├── genbank_parser.py           # Core canonical parser library (Bio.SeqIO backend)
     ├── genbank_discover.py         # Genomic island & operon discovery engine
