@@ -1,0 +1,36 @@
+LOCUS       CONTIG_SPECIAL           150 bp    DNA     linear   BCT 08-AUG-2026
+DEFINITION  Synthetic test record with codon_start, transl_table, pseudogene, and partial features.
+ACCESSION   CONTIG_SPECIAL
+VERSION     CONTIG_SPECIAL
+SOURCE      Synthetic test organism
+  ORGANISM  Synthetic bacterium
+FEATURES             Location/Qualifiers
+     source          1..150
+                     /organism="Synthetic bacterium"
+                     /mol_type="genomic DNA"
+     CDS             1..31
+                     /locus_tag="CODON_START_001"
+                     /codon_start=2
+                     /gene="startOffset"
+                     /product="codon start 2 protein"
+                     /translation="MKVLWAGLIT"
+     CDS             41..70
+                     /locus_tag="PSEUDO_001"
+                     /pseudo
+                     /gene="pseudoA"
+                     /product="disrupted pseudogene"
+     CDS             <81..>110
+                     /locus_tag="PARTIAL_001"
+                     /gene="partA"
+                     /product="partial edge protein"
+     CDS             121..150
+                     /locus_tag="TABLE4_001"
+                     /transl_table=4
+                     /gene="table4"
+                     /product="mycoplasma table4 protein"
+                     /translation="MKVLWAGLIT"
+ORIGIN
+        1 tatgaaagta ttatgggcag gcctgattac taaaaaaaaa atgaaagtat tatgggcagg
+       61 cctgattact aaaaaaaaaa atgaaagtat tatgggcagg cctgattact aaaaaaaaaa
+      121 atgaaagtat tatgggcagg cctgattact
+//

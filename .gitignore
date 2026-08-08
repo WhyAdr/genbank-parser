@@ -3,6 +3,12 @@
 *.gbk
 *.gb
 
+# Synthetic regression fixtures are part of the test suite.
+!tests/fixtures/
+!tests/fixtures/*.gb
+!tests/fixtures/*.gbk
+!tests/fixtures/*.gbff
+
 # Python bytecode & cache
 __pycache__/
 *.pyc

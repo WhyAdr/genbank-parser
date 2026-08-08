@@ -4,7 +4,7 @@ A Biopython-powered genome-annotation query engine, validation suite, and CLI to
 
 [![CI](https://github.com/WhyAdr/genbank-parser/actions/workflows/ci.yml/badge.svg)](https://github.com/WhyAdr/genbank-parser/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
 ---
 
@@ -14,13 +14,13 @@ A Biopython-powered genome-annotation query engine, validation suite, and CLI to
 - **Faithful Biological Locations**: Preserves `FeatureLocation` and `CompoundLocation` (`join`/`order`), calculating biological feature length (`len(location)`) and extracting biological coding sequences via `SeqFeature.extract()`.
 - **GFF3 Export**: Correctly computes CDS translation phase ($0, 1, 2$) across multi-exon/joined segments in 5' $\rightarrow$ 3' transcription order, emits complete `##sequence-region` extents, and handles ordinary features without artificial parent splits.
 - **QC & Semantic Validation**: Verifies translation integrity against genetic codes (`transl_table`) and `codon_start` offsets, with structured severity findings (`ERROR`, `WARNING`, `INFO`) and pseudogene tolerance.
-- **18 Analysis Tools & Unified CLI**: Provides `gbparse` with subcommands covering feature search, sub-region extraction with coordinate rebasing (for clinker/antiSMASH), annotation diffing, codon bias (RSCU), phylogenomic markers, and mobilome discovery.
+- **Unified CLI**: Provides `gbparse` subcommands for feature search, valid local sub-region extraction, annotation diffing, genetic-code-aware codon usage, annotation-based candidate phylogenetic markers, CRISPR/Cas annotation scanning, and declarative discovery.
 
 ---
 
 ## Installation & Setup
 
-Requires Python 3.8+ and `biopython>=1.80`.
+Requires Python 3.10+ and `biopython>=1.80`.
 
 ```bash
 # Clone the repository
@@ -57,8 +57,8 @@ gbparse locus input.gbff LOCUS_TAG
 # 6. View genomic neighborhood window (+/- N genes, circular-aware)
 gbparse neighborhood input.gbff LOCUS_TAG 5
 
-# 7. Extract genomic sub-region with coordinate rebasing
-gbparse region input.gbff --locus LOCUS_TAG --flank-genes 5 --rebase --output region.gbk
+# 7. Extract genomic sub-region with valid local coordinates
+gbparse region input.gbff --locus LOCUS_TAG --flank-genes 5 --output region.gbk
 
 # 8. Export protein FASTA from translations
 gbparse fasta input.gbff proteins.faa
@@ -72,8 +72,8 @@ gbparse codon input.gbff --output codon_usage.tsv
 # 11. Functional profiling (COG distribution & pathway completeness)
 gbparse functional input.gbff --format tsv
 
-# 12. Mine mobilome islands, operons, and dark-matter clusters
-gbparse discover input.gbff --cluster-gap 5000 --format text
+# 12. Scan annotation-supported mobilome islands
+gbparse discover input.gbff --ruleset mobilome --cluster-gap 5000 --format text
 
 # 13. Multi-genome comparative presence/absence matrix
 gbparse compare ./genomes/ --targets "ladA,ssuD,K20938" --output matrix.tsv
@@ -81,10 +81,10 @@ gbparse compare ./genomes/ --targets "ladA,ssuD,K20938" --output matrix.tsv
 # 14. Compare two annotation versions of the same genome
 gbparse diff old.gbff new.gbff --format text
 
-# 15. Extract phylogenomic core/housekeeping marker genes
-gbparse phylo input.gbff --markers all --output-dir ./markers/
+# 15. Extract annotation-based candidate phylogenetic markers
+gbparse phylo input.gbff --markers all --min-length 50 --output-dir ./markers/
 
-# 16. Detect CRISPR repeat arrays and Cas gene clusters
+# 16. Scan CRISPR/Cas annotations and spatial proximity
 gbparse crispr input.gbff --window 15000
 
 # 17. Convert GenBank to standard GFF3

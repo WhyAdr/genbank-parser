@@ -1,0 +1,31 @@
+LOCUS       CHR_CIRCULAR             100 bp    DNA     circular BCT 08-AUG-2026
+DEFINITION  Synthetic circular chromosome.
+ACCESSION   CHR_CIRCULAR
+VERSION     CHR_CIRCULAR
+FEATURES             Location/Qualifiers
+     source          1..100
+                     /organism="Synthetic circular bacterium"
+     CDS             1..30
+                     /locus_tag="CIRC_001"
+                     /gene="circA"
+                     /product="circular protein A"
+                     /translation="MKVLWAGLIT"
+ORIGIN
+        1 atgaaagtat tatgggcagg cctgattact aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       PLASMID_1                 50 bp    DNA     circular BCT 08-AUG-2026
+DEFINITION  Synthetic plasmid record.
+ACCESSION   PLASMID_1
+VERSION     PLASMID_1
+FEATURES             Location/Qualifiers
+     source          1..50
+                     /organism="Synthetic circular bacterium"
+     CDS             1..30
+                     /locus_tag="PLAS_001"
+                     /gene="plasA"
+                     /product="plasmid protein A"
+                     /translation="MKVLWAGLIT"
+ORIGIN
+        1 atgaaagtat tatgggcagg cctgattact aaaaaaaaaa aaaaaaaaaa
+//

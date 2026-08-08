@@ -1,0 +1,28 @@
+LOCUS       CONTIG_JOIN              120 bp    DNA     linear   BCT 08-AUG-2026
+DEFINITION  Synthetic test record with compound join() CDS features.
+ACCESSION   CONTIG_JOIN
+VERSION     CONTIG_JOIN
+SOURCE      Synthetic test organism
+  ORGANISM  Synthetic bacterium
+FEATURES             Location/Qualifiers
+     source          1..120
+                     /organism="Synthetic bacterium"
+                     /mol_type="genomic DNA"
+     CDS             1..9
+                     /locus_tag="ORDINARY_001"
+                     /product="ordinary simple peptide"
+                     /translation="MKV"
+     CDS             join(10..24,34..48)
+                     /locus_tag="JOIN_FWD_001"
+                     /gene="joinFwd"
+                     /product="joined forward protein"
+                     /translation="MKVLWAGLIT"
+     CDS             complement(join(60..74,84..98))
+                     /locus_tag="JOIN_REV_001"
+                     /gene="joinRev"
+                     /product="joined reverse protein"
+                     /translation="MKVLWAGLIT"
+ORIGIN
+        1 atgaaagtaa tgaaagtatt atggcccccc cccgcaggcc tgattactaa aaaaaaaaag
+       61 taatcaggcc tgcggggggg ggccataata ctttcataaa aaaaaaaaaa aaaaaaaaaa
+//

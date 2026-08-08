@@ -4,6 +4,21 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.2.1] - 2026-08-08
+
+### Correctness and contract hardening
+- Committed synthetic GenBank regression fixtures and raised the supported Python version to 3.10+.
+- Locus lookup now prefers CDS features when paired `gene` and CDS records share a locus tag; neighborhood resolution no longer falls back to the first CDS.
+- Region extraction always emits coordinates local to the returned sequence, preserves compound/reverse locations, records parent coordinates, and supports circular-origin windows.
+- GFF3 export now respects `codon_start`, avoids duplicate hierarchy IDs, and marks origin-spanning compound parents.
+- Compatibility strand access preserves `?` and `.`; coding density uses nonredundant CDS coverage.
+- Validator reports total multi-record length, recognizes exceptional translation qualifiers, and reports unknown translation tables.
+- Codon usage is translation-table aware and reports sense, stop, ambiguous, and excluded CDS counts.
+- Discovery rules are package resources with functional text/JSON/TSV output and an observable `--operon-gap`; comparison, phylogenetic candidate, CRISPR/Cas, and diff contracts are safer and more explicit.
+
+### Scope clarification
+- Comparative matching remains annotation/xref based; phylogenetic output is candidate annotation matching; CRISPR output is an annotation scanner. Sequence similarity, HMM validation, and advanced evidence scoring remain deferred.
+
 ## [0.2.0] - 2026-08-08
 
 ### Major Architecture & Core Typed Data Model
@@ -21,7 +36,7 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
   - Added `py.typed` PEP 561 marker.
   - Created entry point `gbparse = genbank_parser.cli:main`.
 - **Legacy Script Compatibility**:
-  - Updated all 17 scripts in `scripts/` as lightweight CLI wrappers that import directly from `genbank_parser`, maintaining 100% backward compatibility for existing pipelines.
+  - Updated all 17 scripts in `scripts/` as lightweight CLI wrappers that import directly from `genbank_parser`. Legacy paths remain available, but some 0.2.0 CLI argument contracts changed; prefer `gbparse` for new workflows.
 
 ---
 
@@ -45,9 +60,9 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 - **Feature Query (`gbparse search` / `src/genbank_parser/query.py`)**:
   - Search annotations across genes, products, KOs, EC numbers, Pfam IDs, or regex patterns with text, TSV, CSV, or JSON output.
 - **Region Extraction with Rebasing (`gbparse region` / `src/genbank_parser/region.py`)**:
-  - Extract genomic sub-regions around locus tags with `--flank-genes` and `--rebase` coordinate rewriting (for clinker, antiSMASH, and comparative loci).
+  - Extract genomic sub-regions around locus tags with `--flank-genes`; Patch 2 makes returned feature coordinates local and retains `--rebase` as a compatibility flag.
 - **Annotation Diff (`gbparse diff` / `src/genbank_parser/diff.py`)**:
-  - Compare two annotation versions of the same genome (Bakta vs Prokka vs RefSeq), identifying added/removed CDSs, coordinate shifts, product/gene renames, and KO/EC differences.
+  - Compare two annotation versions of the same genome (Bakta vs Prokka vs RefSeq), identifying identity-aware additions/removals, boundary shifts, product/gene renames, and KO/EC differences.
 - **Declarative Rulesets (`rulesets/*.yaml`)**:
   - Externalized mobilome and xenobiotic degradation discovery rules into YAML format.
 

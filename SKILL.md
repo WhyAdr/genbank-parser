@@ -1,6 +1,6 @@
 ---
 name: genbank-feature-parser
-description: Parse GenBank flatfiles computationally. Validates structure, extracts biological sequences, searches annotations, and runs diagnostic bioinformatic analyses without loading entire files into the AI context window. Use this skill whenever the user asks to parse, validate, summarize, compare, diff, or analyze .gbff, .gbk, .gb, or .txt GenBank files; when they want gene neighborhoods, operon candidates, sub-regions with coordinate rebasing, COG/GO/KEGG/EC tables, codon usage (RSCU), phylogenomic markers, CRISPR detection, or GFF3 export; or when they mention tools like Bakta, Prokka, tbl2asn, or NCBI GenBank.
+description: Parse GenBank flatfiles computationally. Validates structure, extracts biological sequences, searches annotations, and runs diagnostic bioinformatic analyses without loading entire files into the AI context window. Use this skill whenever the user asks to parse, validate, summarize, compare, diff, or analyze .gbff, .gbk, .gb, or .txt GenBank files; when they want gene neighborhoods, operon candidates, local-coordinate sub-regions, COG/GO/KEGG/EC tables, codon usage (RSCU), candidate phylogenetic markers, CRISPR/Cas annotation scanning, or GFF3 export; or when they mention tools like Bakta, Prokka, tbl2asn, or NCBI GenBank.
 ---
 
 # GenBank Feature Parser & Annotation Engine
@@ -29,16 +29,16 @@ You can invoke commands either via the unified `gbparse` CLI or through the lega
 | `gbparse search` | (new) | Search features by gene, product, KO, EC, Pfam | `gbparse search INPUT.gbff --gene ladA --format tsv` |
 | `gbparse locus` | `genbank_locus.py` | Single-locus qualifier deep-dive | `gbparse locus INPUT.gbff LOCUS_TAG` |
 | `gbparse neighborhood` | `genbank_neighborhood.py` | Circular-aware flanking gene viewer (+/- N) | `gbparse neighborhood INPUT.gbff LOCUS_TAG [window]` |
-| `gbparse region` | (new) | Sub-region extraction with coordinate rebasing | `gbparse region INPUT.gbff --locus TAG --flank-genes 5 --rebase --output region.gbk` |
+| `gbparse region` | (new) | Sub-region extraction with valid local coordinates | `gbparse region INPUT.gbff --locus TAG --flank-genes 5 --output region.gbk` |
 | `gbparse fasta` | `genbank_fasta.py` | Export all CDS translations as protein FASTA | `gbparse fasta INPUT.gbff [proteins.faa]` |
 | `gbparse sequence` | `genbank_sequence.py` | Extract genome FASTA (.fna) & CDS (.ffn) | `gbparse sequence INPUT.gbff [--fna out.fna] [--ffn out.ffn]` |
 | `gbparse codon` | `genbank_codon.py` | Codon usage bias, RSCU & positional GC | `gbparse codon INPUT.gbff [--min-len 100]` |
 | `gbparse functional` | `genbank_functional.py` | COG distribution + metabolic completeness | `gbparse functional INPUT.gbff [--format json]` |
-| `gbparse discover` | `genbank_discover.py` | Mine mobilome islands & dark-matter clusters | `gbparse discover INPUT.gbff [--cluster-gap 5000] [--rules rules.yaml]` |
+| `gbparse discover` | `genbank_discover.py` | Scan annotation-supported mobilome/xenobiotic islands | `gbparse discover INPUT.gbff [--ruleset mobilome] [--format tsv]` |
 | `gbparse compare` | `genbank_compare.py` | Multi-genome marker presence/absence matrix | `gbparse compare genomes/ --targets "ladA,ssuD,K20938"` |
 | `gbparse diff` | (new) | Compare two annotation versions of a genome | `gbparse diff old.gbff new.gbff [--format json]` |
-| `gbparse phylo` | `genbank_phylo.py` | Phylogenomic marker extraction (core/housekeeping) | `gbparse phylo INPUT.gbff [--markers all] [--output-dir ./markers/]` |
-| `gbparse crispr` | `genbank_crispr.py` | CRISPR array + Cas gene spatial locator | `gbparse crispr INPUT.gbff [--window 15000]` |
+| `gbparse phylo` | `genbank_phylo.py` | Annotation-based candidate phylogenetic markers | `gbparse phylo INPUT.gbff [--markers all] [--min-length 50]` |
+| `gbparse crispr` | `genbank_crispr.py` | CRISPR/Cas annotation scanner | `gbparse crispr INPUT.gbff [--window 15000]` |
 | `gbparse gff` | `genbank_gff.py` | Standard GFF3 export (with CDS phase & regions) | `gbparse gff INPUT.gbff [output.gff3] [--include-fasta]` |
 | `gbparse batch-summary` | `parse_bakta_summaries.py`| Bakta multi-isolate comparison tables | `gbparse batch-summary ./isolates/ --csv summary.csv` |
 

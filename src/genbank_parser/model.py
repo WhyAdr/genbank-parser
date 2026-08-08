@@ -1,13 +1,20 @@
 """Typed data models representing GenBank documents, records, and features."""
+
 from __future__ import annotations
 
 import collections
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterator, Sequence
+from typing import Any
 
 from Bio.Seq import Seq
-from Bio.SeqFeature import AfterPosition, BeforePosition, CompoundLocation, FeatureLocation
+from Bio.SeqFeature import (
+    AfterPosition,
+    BeforePosition,
+    CompoundLocation,
+    FeatureLocation,
+)
 
 
 @dataclass
@@ -29,7 +36,7 @@ class GenBankFeature:
         """1-based inclusive start coordinate."""
         try:
             return int(self.location.start) + 1
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             return 1
 
     @property
@@ -37,7 +44,7 @@ class GenBankFeature:
         """1-based inclusive end coordinate."""
         try:
             return int(self.location.end)
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             return 0
 
     @property
@@ -53,19 +60,19 @@ class GenBankFeature:
         """Strand symbol: '+' (+1), '-' (-1), '?' (0), '.' (None)."""
         s = self.strand
         if s == 1:
-            return '+'
+            return "+"
         if s == -1:
-            return '-'
+            return "-"
         if s == 0:
-            return '?'
-        return '.'
+            return "?"
+        return "."
 
     @property
     def length(self) -> int:
         """Biological sequence length (excludes introns/gaps in compound features)."""
         try:
             return len(self.location)
-        except Exception:
+        except (AttributeError, TypeError, ValueError):
             return max(0, self.end - self.start + 1)
 
     @property
@@ -83,8 +90,8 @@ class GenBankFeature:
         """True if feature start coordinate is partial (<start)."""
         try:
             sp = self.location.start
-            return isinstance(sp, BeforePosition) or '<' in str(sp)
-        except Exception:
+            return isinstance(sp, BeforePosition) or "<" in str(sp)
+        except (AttributeError, TypeError, ValueError):
             return False
 
     @property
@@ -92,8 +99,8 @@ class GenBankFeature:
         """True if feature end coordinate is partial (>end)."""
         try:
             ep = self.location.end
-            return isinstance(ep, AfterPosition) or '>' in str(ep)
-        except Exception:
+            return isinstance(ep, AfterPosition) or ">" in str(ep)
+        except (AttributeError, TypeError, ValueError):
             return False
 
     @property
@@ -112,27 +119,27 @@ class GenBankFeature:
 
     @property
     def locus_tag(self) -> str:
-        return self.get_qual('locus_tag')
+        return self.get_qual("locus_tag")
 
     @property
     def gene(self) -> str:
-        return self.get_qual('gene')
+        return self.get_qual("gene")
 
     @property
     def product(self) -> str:
-        return self.get_qual('product')
+        return self.get_qual("product")
 
     @property
     def protein_id(self) -> str:
-        return self.get_qual('protein_id')
+        return self.get_qual("protein_id")
 
     @property
     def translation(self) -> str:
-        return self.get_qual('translation')
+        return self.get_qual("translation")
 
     @property
     def codon_start(self) -> int:
-        val = self.get_qual('codon_start', '1')
+        val = self.get_qual("codon_start", "1")
         try:
             iv = int(val)
             return iv if iv in (1, 2, 3) else 1
@@ -141,7 +148,7 @@ class GenBankFeature:
 
     @property
     def transl_table(self) -> int:
-        val = self.get_qual('transl_table', '11')
+        val = self.get_qual("transl_table", "11")
         try:
             return int(val)
         except ValueError:
@@ -149,9 +156,9 @@ class GenBankFeature:
 
     @property
     def is_pseudo(self) -> bool:
-        if self.type.lower() == 'pseudogene':
+        if self.type.lower() == "pseudogene":
             return True
-        return bool(self.qualifiers.get('pseudo') or self.qualifiers.get('pseudogene'))
+        return bool(self.qualifiers.get("pseudo") or self.qualifiers.get("pseudogene"))
 
     def get_qual(self, key: str, default: str = "") -> str:
         """Return first qualifier value for key, or default."""
@@ -166,44 +173,35 @@ class GenBankFeature:
         """Extract the biological sequence for this feature from parent record sequence."""
         if isinstance(record_seq, str):
             record_seq = Seq(record_seq)
-        try:
-            return self.location.extract(record_seq)
-        except Exception:
-            # Fallback for manual slicing if location.extract fails
-            st = max(0, self.start - 1)
-            en = min(len(record_seq), self.end)
-            sub = record_seq[st:en]
-            if self.strand == -1:
-                sub = sub.reverse_complement()
-            return sub
+        return self.location.extract(record_seq)
 
     def __getitem__(self, key: str) -> Any:
         """Dictionary-like access for backwards compatibility."""
-        if key == 'type':
+        if key == "type":
             return self.type
-        if key == 'start':
+        if key == "start":
             return self.start
-        if key == 'end':
+        if key == "end":
             return self.end
-        if key == 'strand':
-            return '-' if self.strand == -1 else '+'
-        if key == 'contig':
+        if key == "strand":
+            return self.strand_symbol
+        if key == "contig":
             return self.record_id
-        if key == 'qualifiers':
+        if key == "qualifiers":
             return self.qualifiers
-        if key in ('line', 'feature_index'):
+        if key in ("line", "feature_index"):
             return self.feature_index
-        if key == 'partial_start':
+        if key == "partial_start":
             return self.is_partial_start
-        if key == 'partial_end':
+        if key == "partial_end":
             return self.is_partial_end
-        if key == 'join_segments':
+        if key == "join_segments":
             return self.join_segments
-        if key == 'location':
+        if key == "location":
             return self.location
-        if key == 'record_length':
+        if key == "record_length":
             return self.record_length
-        if key == 'topology':
+        if key == "topology":
             return self.topology
         if key in self.qualifiers:
             return self.qualifiers[key]
@@ -211,9 +209,20 @@ class GenBankFeature:
 
     def __contains__(self, key: str) -> bool:
         known_keys = {
-            'type', 'start', 'end', 'strand', 'contig', 'qualifiers',
-            'line', 'feature_index', 'partial_start', 'partial_end',
-            'join_segments', 'location', 'record_length', 'topology'
+            "type",
+            "start",
+            "end",
+            "strand",
+            "contig",
+            "qualifiers",
+            "line",
+            "feature_index",
+            "partial_start",
+            "partial_end",
+            "join_segments",
+            "location",
+            "record_length",
+            "topology",
         }
         return key in known_keys or key in self.qualifiers
 
@@ -226,20 +235,20 @@ class GenBankFeature:
     def to_dict(self) -> dict[str, Any]:
         """Convert to legacy feature dictionary format."""
         return {
-            'type': self.type,
-            'start': self.start,
-            'end': self.end,
-            'strand': '-' if self.strand == -1 else '+',
-            'contig': self.record_id,
-            'qualifiers': collections.defaultdict(list, self.qualifiers),
-            'line': self.feature_index,
-            'feature_index': self.feature_index,
-            'partial_start': self.is_partial_start,
-            'partial_end': self.is_partial_end,
-            'join_segments': self.join_segments,
-            'location': self.location,
-            'record_length': self.record_length,
-            'topology': self.topology,
+            "type": self.type,
+            "start": self.start,
+            "end": self.end,
+            "strand": self.strand_symbol,
+            "contig": self.record_id,
+            "qualifiers": collections.defaultdict(list, self.qualifiers),
+            "line": self.feature_index,
+            "feature_index": self.feature_index,
+            "partial_start": self.is_partial_start,
+            "partial_end": self.is_partial_end,
+            "join_segments": self.join_segments,
+            "location": self.location,
+            "record_length": self.record_length,
+            "topology": self.topology,
         }
 
 
@@ -261,7 +270,7 @@ class GenBankRecord:
 
     @property
     def cds_features(self) -> list[GenBankFeature]:
-        return [f for f in self.features if f.type == 'CDS']
+        return [f for f in self.features if f.type == "CDS"]
 
     @property
     def gc_content(self) -> float:
@@ -269,24 +278,68 @@ class GenBankRecord:
         if not self.seq:
             return 0.0
         s_upper = str(self.seq).upper()
-        gc = s_upper.count('G') + s_upper.count('C')
-        total_acgt = gc + s_upper.count('A') + s_upper.count('T')
+        gc = s_upper.count("G") + s_upper.count("C")
+        total_acgt = gc + s_upper.count("A") + s_upper.count("T")
         return (100.0 * gc / total_acgt) if total_acgt > 0 else 0.0
 
     @property
     def coding_density(self) -> float:
-        """Percentage of nucleotides annotated within CDS features."""
+        """Percentage of record nucleotides covered by the CDS union."""
         if self.length == 0:
             return 0.0
-        total_coding_bp = sum(f.length for f in self.cds_features)
-        return (100.0 * total_coding_bp / self.length) if self.length > 0 else 0.0
+        return 100.0 * self.nonredundant_coding_bp / self.length
 
-    def find_locus(self, locus_tag: str) -> GenBankFeature | None:
-        """Find feature with matching locus_tag."""
-        for feat in self.features:
-            if feat.locus_tag == locus_tag:
-                return feat
-        return None
+    @property
+    def cds_feature_bp_sum(self) -> int:
+        """Sum of biological CDS lengths, including overlaps."""
+        return sum(f.length for f in self.cds_features)
+
+    @property
+    def nonredundant_coding_bp(self) -> int:
+        """Number of record bases covered by the union of CDS locations."""
+        intervals: list[tuple[int, int]] = []
+        for feature in self.cds_features:
+            location = feature.location
+            parts = getattr(location, "parts", (location,))
+            for part in parts:
+                start = max(0, int(part.start))
+                end = min(self.length, int(part.end)) if self.length else int(part.end)
+                if end > start:
+                    intervals.append((start, end))
+
+        if not intervals:
+            return 0
+
+        intervals.sort()
+        covered = 0
+        current_start, current_end = intervals[0]
+        for start, end in intervals[1:]:
+            if start <= current_end:
+                current_end = max(current_end, end)
+            else:
+                covered += current_end - current_start
+                current_start, current_end = start, end
+        return covered + current_end - current_start
+
+    def find_locus_features(self, locus_tag: str) -> list[GenBankFeature]:
+        """Return every feature carrying ``locus_tag`` in source order."""
+        return [f for f in self.features if f.locus_tag == locus_tag]
+
+    def find_locus(
+        self,
+        locus_tag: str,
+        prefer_type: str | None = "CDS",
+    ) -> GenBankFeature | None:
+        """Find a locus, preferring the requested feature type when present."""
+        matches = self.find_locus_features(locus_tag)
+        if not matches:
+            return None
+        if prefer_type is not None:
+            preferred = prefer_type.casefold()
+            for feat in matches:
+                if feat.type.casefold() == preferred:
+                    return feat
+        return matches[0]
 
     def search_gene(self, gene_name: str) -> list[GenBankFeature]:
         """Find features with matching /gene qualifier."""
@@ -335,10 +388,18 @@ class GenBankDocument:
                 return rec
         return None
 
-    def find_locus(self, locus_tag: str) -> tuple[GenBankRecord, GenBankFeature] | None:
-        """Search across all records for a feature with locus_tag."""
+    def find_locus(
+        self,
+        locus_tag: str,
+        prefer_type: str | None = "CDS",
+    ) -> tuple[GenBankRecord, GenBankFeature] | None:
+        """Search records, preferring a matching feature type (normally CDS)."""
         for rec in self.records:
-            feat = rec.find_locus(locus_tag)
+            feat = rec.find_locus(locus_tag, prefer_type=prefer_type)
             if feat is not None:
                 return (rec, feat)
         return None
+
+    def find_cds(self, locus_tag: str) -> tuple[GenBankRecord, GenBankFeature] | None:
+        """Find a CDS by locus tag across all records."""
+        return self.find_locus(locus_tag, prefer_type="CDS")

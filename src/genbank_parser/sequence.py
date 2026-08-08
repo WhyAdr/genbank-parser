@@ -1,17 +1,16 @@
 """Extract nucleotide sequences from GenBank records.
 Outputs genome FASTA (.fna) and CDS nucleotide sequences (.ffn) via biological extraction.
 Reports GC content and coding density."""
+
 from __future__ import annotations
 
 import argparse
 import os
 from pathlib import Path
-import sys
 
 from Bio.Seq import Seq
 
 from .io import read_genbank
-from .model import GenBankDocument
 
 
 def reverse_complement(seq_str: str) -> str:
@@ -40,30 +39,36 @@ def extract_sequences(
 
     base = os.path.splitext(str(filepath))[0]
     if out_fna is None:
-        out_fna = base + '.fna'
+        out_fna = base + ".fna"
     if out_ffn is None:
-        out_ffn = base + '.ffn'
+        out_ffn = base + ".ffn"
 
     total_acgt = 0
     total_gc = 0
     total_bp = 0
 
-    with open(out_fna, 'w', encoding='utf-8') as fh:
+    with open(out_fna, "w", encoding="utf-8") as fh:
         for rec in doc.records:
             seq_str = str(rec.seq).upper()
             fh.write(f">{rec.id} len={len(seq_str)}\n")
-            for i in range(0, len(seq_str), 70):
-                fh.write(seq_str[i:i + 70] + '\n')
+            fh.writelines(
+                seq_str[i : i + 70] + "\n" for i in range(0, len(seq_str), 70)
+            )
             total_bp += len(seq_str)
-            total_gc += seq_str.count('G') + seq_str.count('C')
-            total_acgt += (seq_str.count('A') + seq_str.count('C') + seq_str.count('G') + seq_str.count('T'))
+            total_gc += seq_str.count("G") + seq_str.count("C")
+            total_acgt += (
+                seq_str.count("A")
+                + seq_str.count("C")
+                + seq_str.count("G")
+                + seq_str.count("T")
+            )
 
     gc_pct = (100.0 * total_gc / total_acgt) if total_acgt > 0 else 0.0
 
     cds_written = 0
     cds_total_bp = 0
 
-    with open(out_ffn, 'w', encoding='utf-8') as fh:
+    with open(out_ffn, "w", encoding="utf-8") as fh:
         for rec in doc.records:
             rec_seq = rec.seq
             for f in rec.cds_features:
@@ -72,7 +77,7 @@ def extract_sequences(
                 if not nt_seq:
                     continue
 
-                tag = f.locus_tag or 'unknown'
+                tag = f.locus_tag or "unknown"
                 gene = f.gene
                 product = f.product
                 header = f">{tag}"
@@ -80,13 +85,20 @@ def extract_sequences(
                     header += f" gene={gene}"
                 header += f" product={product} [{rec.id}:{f.start}..{f.end}({f.strand_symbol})]"
 
-                fh.write(header + '\n')
-                for i in range(0, len(nt_seq), 70):
-                    fh.write(nt_seq[i:i + 70] + '\n')
+                fh.write(header + "\n")
+                fh.writelines(
+                    nt_seq[i : i + 70] + "\n" for i in range(0, len(nt_seq), 70)
+                )
                 cds_written += 1
                 cds_total_bp += len(nt_seq)
 
-    coding_density = (100.0 * cds_total_bp / total_bp) if total_bp > 0 else 0.0
+    cds_feature_bp_sum = sum(record.cds_feature_bp_sum for record in doc.records)
+    nonredundant_coding_bp = sum(
+        record.nonredundant_coding_bp for record in doc.records
+    )
+    coding_density = (
+        (100.0 * nonredundant_coding_bp / total_bp) if total_bp > 0 else 0.0
+    )
 
     print("=" * 70)
     print("  SEQUENCE EXTRACTION REPORT")
@@ -97,7 +109,8 @@ def extract_sequences(
     print(f"  GC content     : {gc_pct:.1f}%")
     print()
     print(f"  CDS extracted  : {cds_written}")
-    print(f"  Coding bp      : {cds_total_bp:,}")
+    print(f"  CDS bp sum     : {cds_feature_bp_sum:,}")
+    print(f"  Nonredundant bp: {nonredundant_coding_bp:,}")
     print(f"  Coding density : {coding_density:.1f}%")
     print()
     print(f"  Genome FASTA   : {out_fna}")
@@ -106,13 +119,17 @@ def extract_sequences(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Extract genome FASTA and per-CDS nucleotide sequences.")
-    parser.add_argument('input', help="Input GenBank file with ORIGIN sequences")
-    parser.add_argument('--fna', help="Genome FASTA output path (default: <input>.fna)")
-    parser.add_argument('--ffn', help="CDS nucleotide FASTA output path (default: <input>.ffn)")
+    parser = argparse.ArgumentParser(
+        description="Extract genome FASTA and per-CDS nucleotide sequences."
+    )
+    parser.add_argument("input", help="Input GenBank file with ORIGIN sequences")
+    parser.add_argument("--fna", help="Genome FASTA output path (default: <input>.fna)")
+    parser.add_argument(
+        "--ffn", help="CDS nucleotide FASTA output path (default: <input>.ffn)"
+    )
     args = parser.parse_args()
     extract_sequences(args.input, args.fna, args.ffn)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
