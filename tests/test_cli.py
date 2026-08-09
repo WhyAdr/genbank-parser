@@ -1,7 +1,5 @@
-"""Test unified gbparse CLI and backwards-compatible scripts."""
+"""Test unified gbparse CLI subcommands."""
 from pathlib import Path
-import subprocess
-import sys
 
 from genbank_parser.cli import main
 
@@ -45,12 +43,3 @@ def test_cli_subcommands_dispatch(simple_cds_gbff: Path, tmp_path: Path) -> None
     gff_out = tmp_path / "out_cli.gff3"
     assert main(["gff", str(simple_cds_gbff), str(gff_out)]) == 0
     assert gff_out.exists()
-
-
-def test_legacy_scripts_execution(simple_cds_gbff: Path) -> None:
-    scripts_dir = Path(__file__).resolve().parent.parent / "scripts"
-    val_script = scripts_dir / "genbank_validate.py"
-
-    proc = subprocess.run([sys.executable, str(val_script), str(simple_cds_gbff)], capture_output=True, text=True)
-    assert proc.returncode == 0
-    assert "GENBANK FEATURE TABLE -- STRUCTURAL & BIOLOGICAL REPORT" in proc.stdout

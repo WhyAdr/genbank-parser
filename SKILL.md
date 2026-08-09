@@ -7,40 +7,38 @@ description: Parse GenBank flatfiles computationally. Validates structure, extra
 
 ## Purpose
 
-Parse, validate, and analyze GenBank flatfiles (`.gb`, `.gbk`, `.gbff`, `.txt`) **computationally** — never loading the full file content into the AI context window. Powered by Biopython `Bio.SeqIO` and structured into an installable Python package (`genbank_parser`) with a unified CLI (`gbparse`) and backwards-compatible scripts under `scripts/`.
+Parse, validate, and analyze GenBank flatfiles (`.gb`, `.gbk`, `.gbff`, `.txt`) **computationally** — never loading the full file content into the AI context window. Powered by Biopython `Bio.SeqIO` and structured into an installable Python package (`genbank_parser`) with a unified CLI (`gbparse`).
 
 ## Epistemic Discipline
 
-1. **Scripts parse; the AI reads summaries.** Never `view_file` on large GenBank files — invoke the CLI or script and read its compact summary.
-2. **One canonical parser, reused everywhere.** All commands and scripts import from `genbank_parser` (powered by `read_genbank` and `GenBankDocument`). Never reconstruct custom parsers.
+1. **The CLI parses; the AI reads summaries.** Never `view_file` on large GenBank files — invoke the `gbparse` CLI and read its compact summary.
+2. **One canonical parser, reused everywhere.** All commands import from `genbank_parser` (powered by `read_genbank` and `GenBankDocument`). Never reconstruct custom parsers.
 3. **Compact structured output only.** Tools emit diagnostic summaries, tabular TSVs, or schema-versioned JSON.
 
 ---
 
-## Unified CLI (`gbparse`) & Script Inventory
+## CLI Reference (`gbparse`)
 
-You can invoke commands either via the unified `gbparse` CLI or through the legacy scripts under `scripts/`:
-
-| `gbparse` Subcommand | Legacy Script | Purpose | Typical Invocation |
-|---|---|---|---|
-| `gbparse validate` | `genbank_validate.py` | Biological translation QC & structure report | `gbparse validate INPUT.gbff [--json]` |
-| `gbparse summary` | `genbank_metadata.py` | LOCUS metadata, contigs, topologies & length | `gbparse summary INPUT.gbff` |
-| `gbparse extract` | `genbank_extract.py` | Tab-delimited annotation TSV export | `gbparse extract INPUT.gbff [output.tsv]` |
-| `gbparse search` | (new) | Search features by gene, product, KO, EC, Pfam | `gbparse search INPUT.gbff --gene ladA --format tsv` |
-| `gbparse locus` | `genbank_locus.py` | Single-locus qualifier deep-dive | `gbparse locus INPUT.gbff LOCUS_TAG` |
-| `gbparse neighborhood` | `genbank_neighborhood.py` | Circular-aware flanking gene viewer (+/- N) | `gbparse neighborhood INPUT.gbff LOCUS_TAG [window]` |
-| `gbparse region` | (new) | Sub-region extraction with valid local coordinates | `gbparse region INPUT.gbff --locus TAG --flank-genes 5 --output region.gbk` |
-| `gbparse fasta` | `genbank_fasta.py` | Export all CDS translations as protein FASTA | `gbparse fasta INPUT.gbff [proteins.faa]` |
-| `gbparse sequence` | `genbank_sequence.py` | Extract genome FASTA (.fna) & CDS (.ffn) | `gbparse sequence INPUT.gbff [--fna out.fna] [--ffn out.ffn]` |
-| `gbparse codon` | `genbank_codon.py` | Codon usage bias, RSCU & positional GC | `gbparse codon INPUT.gbff [--min-len 100]` |
-| `gbparse functional` | `genbank_functional.py` | COG distribution + metabolic completeness | `gbparse functional INPUT.gbff [--format json]` |
-| `gbparse discover` | `genbank_discover.py` | Scan annotation-supported mobilome/xenobiotic islands | `gbparse discover INPUT.gbff [--ruleset mobilome] [--format tsv]` |
-| `gbparse compare` | `genbank_compare.py` | Multi-genome marker presence/absence matrix | `gbparse compare genomes/ --targets "ladA,ssuD,K20938"` |
-| `gbparse diff` | (new) | Compare two annotation versions of a genome | `gbparse diff old.gbff new.gbff [--format json]` |
-| `gbparse phylo` | `genbank_phylo.py` | Annotation-based candidate phylogenetic markers | `gbparse phylo INPUT.gbff [--markers all] [--min-length 50]` |
-| `gbparse crispr` | `genbank_crispr.py` | CRISPR/Cas annotation scanner | `gbparse crispr INPUT.gbff [--window 15000]` |
-| `gbparse gff` | `genbank_gff.py` | Standard GFF3 export (with CDS phase & regions) | `gbparse gff INPUT.gbff [output.gff3] [--include-fasta]` |
-| `gbparse batch-summary` | `parse_bakta_summaries.py`| Bakta multi-isolate comparison tables | `gbparse batch-summary ./isolates/ --csv summary.csv` |
+| Subcommand | Purpose | Typical Invocation |
+|---|---|---|
+| `validate` | Biological translation QC & structure report | `gbparse validate INPUT.gbff [--json]` |
+| `summary` | LOCUS metadata, contigs, topologies & length | `gbparse summary INPUT.gbff` |
+| `extract` | Tab-delimited annotation TSV export | `gbparse extract INPUT.gbff [output.tsv]` |
+| `search` | Search features by gene, product, KO, EC, Pfam | `gbparse search INPUT.gbff --gene ladA --format tsv` |
+| `locus` | Single-locus qualifier deep-dive | `gbparse locus INPUT.gbff LOCUS_TAG` |
+| `neighborhood` | Circular-aware flanking gene viewer (+/- N) | `gbparse neighborhood INPUT.gbff LOCUS_TAG [window]` |
+| `region` | Sub-region extraction with valid local coordinates | `gbparse region INPUT.gbff --locus TAG --flank-genes 5 --output region.gbk` |
+| `fasta` | Export all CDS translations as protein FASTA | `gbparse fasta INPUT.gbff [proteins.faa]` |
+| `sequence` | Extract genome FASTA (.fna) & CDS (.ffn) | `gbparse sequence INPUT.gbff [--fna out.fna] [--ffn out.ffn]` |
+| `codon` | Codon usage bias, RSCU & positional GC | `gbparse codon INPUT.gbff [--min-len 100]` |
+| `functional` | COG distribution + metabolic completeness | `gbparse functional INPUT.gbff [--format json]` |
+| `discover` | Scan annotation-supported mobilome/xenobiotic islands | `gbparse discover INPUT.gbff [--ruleset mobilome] [--format tsv]` |
+| `compare` | Multi-genome marker presence/absence matrix | `gbparse compare genomes/ --targets "ladA,ssuD,K20938"` |
+| `diff` | Compare two annotation versions of a genome | `gbparse diff old.gbff new.gbff [--format json]` |
+| `phylo` | Annotation-based candidate phylogenetic markers | `gbparse phylo INPUT.gbff [--markers all] [--min-length 50]` |
+| `crispr` | CRISPR/Cas annotation scanner | `gbparse crispr INPUT.gbff [--window 15000]` |
+| `gff` | Standard GFF3 export (with CDS phase & regions) | `gbparse gff INPUT.gbff [output.gff3] [--include-fasta]` |
+| `batch-summary` | Bakta multi-isolate comparison tables | `gbparse batch-summary ./isolates/ --csv summary.csv` |
 
 ---
 
@@ -55,7 +53,7 @@ doc = read_genbank("genome.gbff")
 # Iterate contigs/records
 for rec in doc.records:
     print(rec.id, rec.length, rec.topology, rec.gc_content)
-    
+
 # Find feature and extract biological sequence
 match = doc.find_locus("ABC_00123")
 if match:

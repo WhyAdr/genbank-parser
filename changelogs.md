@@ -4,6 +4,13 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.3.0] - 2026-08-09
+
+### Breaking changes
+- **Removed all legacy script wrappers** (`scripts/genbank_*.py`, `scripts/parse_bakta_summaries.py`, `scripts/genbank_parser.py`). The `gbparse` entry point is now the sole supported CLI. Use `pip install -e .` and invoke `gbparse <subcommand>` for all operations.
+- Removed `scripts/genbank_parser.py` module-shadowing workaround (`sys.path` manipulation).
+- Removed `test_legacy_scripts_execution` test.
+
 ## [0.2.1] - 2026-08-08
 
 ### Correctness and contract hardening
@@ -35,8 +42,8 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
   - Structured the codebase as a PEP 517/621 package under `src/genbank_parser/`.
   - Added `py.typed` PEP 561 marker.
   - Created entry point `gbparse = genbank_parser.cli:main`.
-- **Legacy Script Compatibility**:
-  - Updated all 17 scripts in `scripts/` as lightweight CLI wrappers that import directly from `genbank_parser`. Legacy paths remain available, but some 0.2.0 CLI argument contracts changed; prefer `gbparse` for new workflows.
+- **Legacy Script Compatibility** *(removed in 0.3.0)*:
+  - Updated all 17 scripts in `scripts/` as lightweight CLI wrappers that imported from `genbank_parser`. These were removed in v0.3.0; use `gbparse` for all workflows.
 
 ---
 
@@ -76,6 +83,6 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
   - `tests/test_validate.py`: Translation verification, pseudogene tolerance, severity codes.
   - `tests/test_sequence_codon.py`: Biological extraction and codon usage calculation.
   - `tests/test_query_region_diff.py`: Search filters, region rebasing, annotation diffing.
-  - `tests/test_cli.py`: Unified `gbparse` CLI subcommands and legacy script wrappers.
+  - `tests/test_cli.py`: Unified `gbparse` CLI subcommands.
 - Added synthetic fixtures in `tests/fixtures/` (`simple_cds.gb`, `compound_joined.gb`, `special_cds.gb`, `multi_record_circular.gb`, `duplicate_locus.gb`).
 - Added GitHub Actions CI workflow (`.github/workflows/ci.yml`) testing Python 3.10 through 3.13.
