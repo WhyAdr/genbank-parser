@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 
 from .bakta import batch_summary
 from .codon import analyze_codon_usage
@@ -18,12 +19,29 @@ from .functional import analyze_functional
 from .gff import convert_to_gff3
 from .locus import inspect_locus
 from .metadata import extract_metadata
+from .meor import analyze_meor
+from .meor.database import load_meor_database
+from .meor.report import serialize_report
 from .neighborhood import extract_neighborhood
 from .phylo import extract_phylogenomic_markers
 from .query import search_features
 from .region import extract_region
 from .sequence import extract_sequences
 from .validate import validate
+
+
+def _nonnegative_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must be non-negative")
+    return parsed
+
+
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be positive")
+    return parsed
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -232,6 +250,22 @@ def create_parser() -> argparse.ArgumentParser:
     p_bat.add_argument("--tsv", default="bakta_summary.tsv")
     p_bat.add_argument("--md", default="bakta_summary.md")
 
+    # 19. meor
+    p_meor = subparsers.add_parser(
+        "meor",
+        help="Scan MEOR, hydrocarbon-degradation, and biosurfactant potential",
+    )
+    p_meor.add_argument("input", help="Input GenBank file")
+    p_meor.add_argument(
+        "--format", choices=["text", "json", "tsv"], default="text"
+    )
+    p_meor.add_argument("--min-weight", type=int, choices=[1, 2, 3], default=1)
+    p_meor.add_argument("--max-gap", type=_nonnegative_int, default=200)
+    p_meor.add_argument("--window-size", type=_positive_int, default=50_000)
+    p_meor.add_argument("--output", help="Output path (default: stdout)")
+    p_meor.add_argument("--markers", help="Experimental custom marker YAML")
+    p_meor.add_argument("--pathways", help="Experimental custom pathway YAML")
+
     return parser
 
 
@@ -330,6 +364,24 @@ def main(argv: Sequence[str] | None = None) -> int:
             sys.stdout.write(out)
     elif cmd == "batch-summary":
         batch_summary(args.inputs, csv_out=args.csv, tsv_out=args.tsv, md_out=args.md)
+    elif cmd == "meor":
+        database = load_meor_database(args.markers, args.pathways)
+        report = analyze_meor(
+            args.input,
+            min_weight=args.min_weight,
+            max_gap=args.max_gap,
+            window_size=args.window_size,
+            marker_database=database,
+        )
+        rendered = serialize_report(report, args.format)
+        if args.output:
+            input_path = Path(args.input).resolve()
+            output_path = Path(args.output).resolve()
+            if input_path == output_path:
+                parser.error("--output must not overwrite the input GenBank file")
+            Path(args.output).write_text(rendered, encoding="utf-8", newline="")
+        else:
+            sys.stdout.write(rendered)
 
     return 0
 

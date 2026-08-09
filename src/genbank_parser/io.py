@@ -109,11 +109,17 @@ def get_notes(feature: Any, prefix: str) -> list[str]:
     return [n for n in notes if n.startswith(prefix)]
 
 
-def extract_xrefs(feature: Any) -> dict[str, list[str]]:
+def extract_xrefs(
+    feature: Any,
+    *,
+    include_notes: bool = True,
+) -> dict[str, list[str]]:
     """Extract semantically typed cross-references from a feature.
 
-    Searches both /db_xref and /note for prefixed identifiers, then adds
-    /EC_number with higher priority than EC: in /note (INSDC vs Bakta style).
+    Searches /db_xref and, by default, /note for prefixed identifiers, then
+    adds /EC_number with higher priority than EC-prefixed values. Set
+    ``include_notes=False`` when free-text note evidence must remain distinct
+    from structured qualifiers.
 
     Returns a dict:
         go_terms   : list[str]   GO:0001234
@@ -131,7 +137,9 @@ def extract_xrefs(feature: Any) -> dict[str, list[str]]:
     else:
         quals = {}
 
-    all_xrefs = quals.get('db_xref', []) + quals.get('note', [])
+    all_xrefs = list(quals.get('db_xref', []))
+    if include_notes:
+        all_xrefs.extend(quals.get('note', []))
 
     go_terms = [x for x in all_xrefs if x.startswith('GO:')]
 

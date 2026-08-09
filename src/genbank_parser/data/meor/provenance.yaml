@@ -1,0 +1,226 @@
+schema_version: 1
+sources:
+  CANT-HYD:
+    release: 1.0 (37 HMM profiles)
+    url: https://canthyd.ucalgary.ca/
+    accessed: '2026-08-04'
+  HMDB:
+    release: Hydrocarbon Monooxygenase Database
+    url: http://www.hydrocarbonmonooxygenase.com/
+    accessed: '2026-08-04'
+  HADEG:
+    release: Hydrocarbon Anaerobic and Degrading Database
+    url: https://hadeg.tu-braunschweig.de/
+    accessed: '2026-08-04'
+  Literature:
+    release: Curated literature synthesis
+    accessed: '2026-08-04'
+markers:
+  pmoABC:
+    sources:
+    - CANT-HYD
+    - HMDB
+    interpretation: Short-chain alkane C1 methane oxidation (pmoA/B/C)
+  mmoXYZ:
+    sources:
+    - CANT-HYD
+    - HMDB
+    interpretation: Soluble methane oxidation hydroxylase (mmoX/Y/Z/B/C/D)
+  prmABCD:
+    sources:
+    - CANT-HYD
+    - HMDB
+    interpretation: C3 propane monooxygenation (prmA/B/C/D / bmo)
+  pbmoABC:
+    sources:
+    - HMDB
+    interpretation: Membrane-bound butane & alkane monooxygenase
+  sbmoXYZ:
+    sources:
+    - HMDB
+    interpretation: Soluble alkane monooxygenase subunits
+  ahyA:
+    sources:
+    - CANT-HYD
+    interpretation: Anaerobic/aerobic C2 methylene hydroxylase
+  alkB:
+    sources:
+    - CANT-HYD
+    - HMDB
+    interpretation: C5-C16 medium alkane hydroxylation (alkB1/alkB2)
+  CYP153:
+    sources:
+    - CANT-HYD
+    - HMDB
+    interpretation: Medium alkane hydroxylation (CYP153A family)
+  rubAB:
+    sources:
+    - CANT-HYD
+    interpretation: Electron transfer system for AlkB hydroxylase
+  alkJ:
+    sources:
+    - CANT-HYD
+    interpretation: Fatty alcohol to fatty aldehyde oxidation
+  alkH:
+    sources:
+    - CANT-HYD
+    interpretation: Fatty aldehyde to fatty acid oxidation
+  alkK:
+    sources:
+    - CANT-HYD
+    interpretation: Fatty acid activation to acyl-CoA
+  alkL:
+    sources:
+    - CANT-HYD
+    interpretation: Hydrocarbon outer membrane import channel
+  ladA:
+    sources:
+    - CANT-HYD
+    - HMDB
+    interpretation: C15-C36 heavy paraffin wax oxidation (flavoprotein LadA/LadB)
+  almA:
+    sources:
+    - CANT-HYD
+    interpretation: C20-C32 paraffin wax degradation (flavin-binding AlmA)
+  tmo_tod:
+    sources:
+    - CANT-HYD
+    - HMDB
+    interpretation: BTEX aromatic ring activation (tmoABCDEF / todC1C2BA)
+  ndo_nah:
+    sources:
+    - CANT-HYD
+    interpretation: Polycyclic aromatic hydrocarbon initial ring dioxygenation
+  catA_xylE:
+    sources:
+    - CANT-HYD
+    interpretation: Catechol intradiol (catA) / extradiol (xylE) cleavage
+  mahAB:
+    sources:
+    - CANT-HYD
+    interpretation: Monocyclic aromatic ring dioxygenase (mahA/mahB)
+  dmpO_tomA:
+    sources:
+    - CANT-HYD
+    interpretation: Substituted phenol & toluene monooxygenation
+  dszC:
+    sources:
+    - HADEG
+    interpretation: Dibenzothiophene monooxygenase (4S biodesulfurization)
+  pcaGH:
+    sources:
+    - CANT-HYD
+    interpretation: Protocatechuate ortho-cleavage (pcaG/pcaH)
+  assA_masD:
+    sources:
+    - CANT-HYD
+    - HADEG
+    interpretation: Anaerobic alkane fumarate addition catalytic subunit
+  bssABC:
+    sources:
+    - CANT-HYD
+    - HADEG
+    interpretation: Anaerobic toluene fumarate addition (bssA/bssB/bssC)
+  nmsA:
+    sources:
+    - CANT-HYD
+    - HADEG
+    interpretation: Anaerobic 2-methylnaphthalene fumarate addition
+  cmdA_ebdA:
+    sources:
+    - CANT-HYD
+    - HADEG
+    interpretation: Anaerobic ethylbenzene alpha-subunit dehydrogenase
+  abcA:
+    sources:
+    - HADEG
+    interpretation: Anaerobic benzene carboxylase subunit A (abcA1/A2)
+  ncrA:
+    sources:
+    - HADEG
+    interpretation: Anaerobic naphthalene carboxylase (ncrA)
+  rhlA:
+    sources:
+    - HADEG
+    interpretation: Rhamnolipid precursor HAA (3-hydroxyacyl-ACP) dimer synthase
+  rhlB:
+    sources:
+    - HADEG
+    interpretation: Mono-rhamnolipid glucosyltransferase
+  rhlC:
+    sources:
+    - HADEG
+    interpretation: Di-rhamnolipid glucosyltransferase
+  rhlRI:
+    sources:
+    - HADEG
+    interpretation: Rhamnolipid quorum sensing regulatory system (rhlR/rhlI)
+  trehalolipid:
+    sources:
+    - HADEG
+    interpretation: Trehalose glycolipid biosynthesis (sdtA/tshA/otsA/otsB)
+  emt1:
+    sources:
+    - HADEG
+    interpretation: Mannosylerythritol lipid erythritol transferase
+  sble:
+    sources:
+    - HADEG
+    interpretation: Sophorolipid glucosyltransferase & esterase
+  srfA:
+    sources:
+    - HADEG
+    interpretation: Surfactin lipopeptide biosurfactant NRPS (srfA-A/B/C/D)
+  licA_D:
+    sources:
+    - HADEG
+    interpretation: Lichenysin lipopeptide biosurfactant NRPS (licA/B/C/D)
+  fengycin_iturin:
+    sources:
+    - HADEG
+    interpretation: Lipopeptide biosurfactant & antifungal NRPS modules
+  mycA_C:
+    sources:
+    - HADEG
+    interpretation: Mycosubtilin lipopeptide NRPS (mycA/B/C)
+  arfA_C:
+    sources:
+    - HADEG
+    interpretation: Arthrofactin lipopeptide NRPS (arfA/B/C)
+  pswP:
+    sources:
+    - HADEG
+    interpretation: Serrawettin lipopeptide synthetase
+  sfp:
+    sources:
+    - HADEG
+    interpretation: NRPS phosphopantetheinyl transferase activator
+  wza_wzb_wzc:
+    sources:
+    - HADEG
+    interpretation: Bio-emulsifier (emulsan/alasan) exopolysaccharide export
+  meor_acid_gas:
+    sources:
+    - HADEG
+    - Literature
+    interpretation: Formate lyase (pflB), acetate kinase (ackA), carbonic anhydrase
+  isoA_I:
+    sources:
+    - HMDB
+    interpretation: Gaseous isoprene alkene monooxygenase (isoA-I)
+  xamo_xec:
+    sources:
+    - HMDB
+    interpretation: Gaseous alkene & ethene monooxygenase (xamoA-F/xecA-E)
+  etnE:
+    sources:
+    - HMDB
+    interpretation: Epoxyalkane coenzyme M conjugation transferase
+  mpdBC:
+    sources:
+    - HMDB
+    interpretation: Branched alkene degradation enzymes (mpdB/mpdC)
+migration:
+  source_repository: https://github.com/WhyAdr/genbank-meor
+  source_commit: 42d09105ca63a47dac78e0990767124ccde2dab9
+  behavior_version: 1.1.0

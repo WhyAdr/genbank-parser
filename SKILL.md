@@ -1,6 +1,6 @@
 ---
 name: genbank-feature-parser
-description: Parse GenBank flatfiles computationally. Validates structure, extracts biological sequences, searches annotations, and runs diagnostic bioinformatic analyses without loading entire files into the AI context window. Use this skill whenever the user asks to parse, validate, summarize, compare, diff, or analyze .gbff, .gbk, .gb, or .txt GenBank files; when they want gene neighborhoods, operon candidates, local-coordinate sub-regions, COG/GO/KEGG/EC tables, codon usage (RSCU), candidate phylogenetic markers, CRISPR/Cas annotation scanning, or GFF3 export; or when they mention tools like Bakta, Prokka, tbl2asn, or NCBI GenBank.
+description: Parse GenBank flatfiles computationally. Validates structure, extracts biological sequences, searches annotations, and runs diagnostic bioinformatic analyses without loading entire files into the AI context window. Use this skill whenever the user asks to parse, validate, summarize, compare, diff, or analyze .gbff, .gbk, .gb, or .txt GenBank files; when they want gene neighborhoods, operon candidates, local-coordinate sub-regions, COG/GO/KEGG/EC tables, codon usage (RSCU), candidate phylogenetic markers, CRISPR/Cas annotation scanning, GFF3 export, MEOR or petroleum-microbiology potential, hydrocarbon degradation, biosurfactants or bio-emulsifiers, alkB/ladA/almA, rhamnolipids, BTEX/PAH degradation, or anaerobic fumarate-addition markers; or when they mention tools like Bakta, Prokka, tbl2asn, or NCBI GenBank.
 ---
 
 # GenBank Feature Parser & Annotation Engine
@@ -14,6 +14,7 @@ Parse, validate, and analyze GenBank flatfiles (`.gb`, `.gbk`, `.gbff`, `.txt`) 
 1. **The CLI parses; the AI reads summaries.** Never `view_file` on large GenBank files — invoke the `gbparse` CLI and read its compact summary.
 2. **One canonical parser, reused everywhere.** All commands import from `genbank_parser` (powered by `read_genbank` and `GenBankDocument`). Never reconstruct custom parsers.
 3. **Compact structured output only.** Tools emit diagnostic summaries, tabular TSVs, or schema-versioned JSON.
+4. **MEOR genomic potential is not phenotype.** `gbparse meor` detects annotation-supported candidates. Do not present hits as proof of expression, enzyme activity, hydrocarbon turnover, biosurfactant production, or field-scale oil recovery.
 
 ---
 
@@ -39,6 +40,7 @@ Parse, validate, and analyze GenBank flatfiles (`.gb`, `.gbk`, `.gbff`, `.txt`) 
 | `crispr` | CRISPR/Cas annotation scanner | `gbparse crispr INPUT.gbff [--window 15000]` |
 | `gff` | Standard GFF3 export (with CDS phase & regions) | `gbparse gff INPUT.gbff [output.gff3] [--include-fasta]` |
 | `batch-summary` | Bakta multi-isolate comparison tables | `gbparse batch-summary ./isolates/ --csv summary.csv` |
+| `meor` | MEOR, hydrocarbon-degradation, biosurfactant and bio-emulsifier genomic-potential analysis | `gbparse meor INPUT.gbff --min-weight 2 --format json` |
 
 ---
 
@@ -73,3 +75,5 @@ if match:
 - **Strand Semantics**: Preserves $+1$, $-1$, $0$, and `None` states (rendered as `+`, `-`, `?`, `.`).
 - **Circular Topology**: Handles circular contigs/plasmids and origin-spanning neighborhoods.
 - **Semantic Cross-References**: Maps INSDC and Bakta `/db_xref`, `/note`, and `/EC_number` to typed identifiers (`go_terms`, `cog_ids`, `kegg_kos`, `pfam`, `rfam`, `ec_numbers`).
+- **Source-Aware MEOR Evidence**: Structured KO/EC and gene evidence is Weight 3, product evidence Weight 2, and free-text `/note` evidence Weight 1; note-only identifiers are never promoted to structured evidence.
+- **MEOR Scope**: Pathway completeness is genome-level annotation completeness, while clusters require same-contig, same-strand adjacency within the selected gap. Neither is sequence-family confirmation or phenotype.

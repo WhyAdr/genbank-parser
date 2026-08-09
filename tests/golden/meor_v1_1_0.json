@@ -1,0 +1,602 @@
+{
+  "file": "meor_parity.gb",
+  "total_features": 13,
+  "total_hits": 11,
+  "total_clusters": 3,
+  "hits": [
+    {
+      "contig": "MEOR_CONTIG_1",
+      "locus_tag": "M_001",
+      "gene": "alkB",
+      "product": "alkane 1-monooxygenase",
+      "start": 1,
+      "end": 100,
+      "strand": "+",
+      "category_key": "cat2_medium_alkane",
+      "category_title": "Medium-Chain n-Alkanes (C5-C16)",
+      "marker_id": "alkB",
+      "marker_name": "Alkane 1-monooxygenase (alkB / alkB1 / alkB2)",
+      "weight": 3,
+      "reason": "KEGG:K00496"
+    },
+    {
+      "contig": "MEOR_CONTIG_1",
+      "locus_tag": "M_002",
+      "gene": "",
+      "product": "rubredoxin reductase",
+      "start": 151,
+      "end": 250,
+      "strand": "+",
+      "category_key": "cat2_medium_alkane",
+      "category_title": "Medium-Chain n-Alkanes (C5-C16)",
+      "marker_id": "rubAB",
+      "marker_name": "Rubredoxin & Rubredoxin Reductase (rubA/rubB)",
+      "weight": 3,
+      "reason": "EC:1.18.1.1"
+    },
+    {
+      "contig": "MEOR_CONTIG_1",
+      "locus_tag": "M_003",
+      "gene": "alkJ",
+      "product": "alcohol dehydrogenase",
+      "start": 301,
+      "end": 400,
+      "strand": "+",
+      "category_key": "cat2_medium_alkane",
+      "category_title": "Medium-Chain n-Alkanes (C5-C16)",
+      "marker_id": "alkJ",
+      "marker_name": "Alcohol Dehydrogenase (alkJ / Alkane pathway)",
+      "weight": 3,
+      "reason": "gene:alkJ"
+    },
+    {
+      "contig": "MEOR_CONTIG_1",
+      "locus_tag": "M_004",
+      "gene": "alkH",
+      "product": "fatty aldehyde dehydrogenase",
+      "start": 451,
+      "end": 550,
+      "strand": "-",
+      "category_key": "cat2_medium_alkane",
+      "category_title": "Medium-Chain n-Alkanes (C5-C16)",
+      "marker_id": "alkH",
+      "marker_name": "Aldehyde Dehydrogenase (alkH / Alkane pathway)",
+      "weight": 3,
+      "reason": "gene:alkH"
+    },
+    {
+      "contig": "MEOR_CONTIG_1",
+      "locus_tag": "M_005",
+      "gene": "",
+      "product": "",
+      "start": 601,
+      "end": 700,
+      "strand": "+",
+      "category_key": "cat3_long_alkane",
+      "category_title": "Long-Chain n-Alkanes & Heavy Paraffins (C18-C36+)",
+      "marker_id": "ladA",
+      "marker_name": "Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)",
+      "weight": 1,
+      "reason": "note:KEGG:K20938"
+    },
+    {
+      "contig": "MEOR_CONTIG_1",
+      "locus_tag": "M_006",
+      "gene": "",
+      "product": "",
+      "start": 751,
+      "end": 850,
+      "strand": "+",
+      "category_key": "cat3_long_alkane",
+      "category_title": "Long-Chain n-Alkanes & Heavy Paraffins (C18-C36+)",
+      "marker_id": "ladA",
+      "marker_name": "Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)",
+      "weight": 1,
+      "reason": "note:EC:1.14.14.28"
+    },
+    {
+      "contig": "MEOR_CONTIG_1",
+      "locus_tag": "M_007",
+      "gene": "",
+      "product": "long-chain alkane hydroxylase AlmA",
+      "start": 901,
+      "end": 1000,
+      "strand": "+",
+      "category_key": "cat2_medium_alkane",
+      "category_title": "Medium-Chain n-Alkanes (C5-C16)",
+      "marker_id": "alkB",
+      "marker_name": "Alkane 1-monooxygenase (alkB / alkB1 / alkB2)",
+      "weight": 2,
+      "reason": "product:alkane hydroxylase"
+    },
+    {
+      "contig": "MEOR_CONTIG_1",
+      "locus_tag": "M_007",
+      "gene": "",
+      "product": "long-chain alkane hydroxylase AlmA",
+      "start": 901,
+      "end": 1000,
+      "strand": "+",
+      "category_key": "cat3_long_alkane",
+      "category_title": "Long-Chain n-Alkanes & Heavy Paraffins (C18-C36+)",
+      "marker_id": "almA",
+      "marker_name": "Long-chain Alkane Hydroxylase AlmA/AlmA1/AlmA3 (Flavin-binding C20-C32)",
+      "weight": 2,
+      "reason": "product:long-chain alkane hydroxylase almA"
+    },
+    {
+      "contig": "MEOR_CONTIG_1",
+      "locus_tag": "M_008",
+      "gene": "rhlA",
+      "product": "HAA synthase",
+      "start": 1201,
+      "end": 1300,
+      "strand": "+",
+      "category_key": "cat6_glycolipid_biosurfactant",
+      "category_title": "Glycolipid Biosurfactants (Rhamnolipids & Trehalolipids)",
+      "marker_id": "rhlA",
+      "marker_name": "HAA Synthase (rhlA / Rhamnolipid precursor)",
+      "weight": 3,
+      "reason": "gene:rhlA"
+    },
+    {
+      "contig": "MEOR_CONTIG_1",
+      "locus_tag": "M_009",
+      "gene": "rhlB",
+      "product": "rhamnosyltransferase chain B",
+      "start": 1351,
+      "end": 1450,
+      "strand": "+",
+      "category_key": "cat6_glycolipid_biosurfactant",
+      "category_title": "Glycolipid Biosurfactants (Rhamnolipids & Trehalolipids)",
+      "marker_id": "rhlB",
+      "marker_name": "Rhamnosyltransferase I (rhlB / Mono-rhamnolipid)",
+      "weight": 3,
+      "reason": "gene:rhlB"
+    },
+    {
+      "contig": "MEOR_CONTIG_1",
+      "locus_tag": "M_010",
+      "gene": "rhlC",
+      "product": "rhamnosyltransferase 2",
+      "start": 1501,
+      "end": 1600,
+      "strand": "+",
+      "category_key": "cat6_glycolipid_biosurfactant",
+      "category_title": "Glycolipid Biosurfactants (Rhamnolipids & Trehalolipids)",
+      "marker_id": "rhlC",
+      "marker_name": "Rhamnosyltransferase II (rhlC / Di-rhamnolipid)",
+      "weight": 3,
+      "reason": "gene:rhlC"
+    }
+  ],
+  "clusters": [
+    {
+      "cluster_id": "MEOR_Cluster_01",
+      "contig": "MEOR_CONTIG_1",
+      "start": 1,
+      "end": 400,
+      "span_bp": 400,
+      "gene_count": 3,
+      "hit_count": 3,
+      "categories": [
+        "cat2_medium_alkane"
+      ],
+      "locus_tags": [
+        "M_001",
+        "M_002",
+        "M_003"
+      ],
+      "genes": [
+        "alkB",
+        "rubAB",
+        "alkJ"
+      ],
+      "members": [
+        {
+          "contig": "MEOR_CONTIG_1",
+          "locus_tag": "M_001",
+          "gene": "alkB",
+          "product": "alkane 1-monooxygenase",
+          "start": 1,
+          "end": 100,
+          "strand": "+",
+          "category_key": "cat2_medium_alkane",
+          "category_title": "Medium-Chain n-Alkanes (C5-C16)",
+          "marker_id": "alkB",
+          "marker_name": "Alkane 1-monooxygenase (alkB / alkB1 / alkB2)",
+          "weight": 3,
+          "reason": "KEGG:K00496"
+        },
+        {
+          "contig": "MEOR_CONTIG_1",
+          "locus_tag": "M_002",
+          "gene": "",
+          "product": "rubredoxin reductase",
+          "start": 151,
+          "end": 250,
+          "strand": "+",
+          "category_key": "cat2_medium_alkane",
+          "category_title": "Medium-Chain n-Alkanes (C5-C16)",
+          "marker_id": "rubAB",
+          "marker_name": "Rubredoxin & Rubredoxin Reductase (rubA/rubB)",
+          "weight": 3,
+          "reason": "EC:1.18.1.1"
+        },
+        {
+          "contig": "MEOR_CONTIG_1",
+          "locus_tag": "M_003",
+          "gene": "alkJ",
+          "product": "alcohol dehydrogenase",
+          "start": 301,
+          "end": 400,
+          "strand": "+",
+          "category_key": "cat2_medium_alkane",
+          "category_title": "Medium-Chain n-Alkanes (C5-C16)",
+          "marker_id": "alkJ",
+          "marker_name": "Alcohol Dehydrogenase (alkJ / Alkane pathway)",
+          "weight": 3,
+          "reason": "gene:alkJ"
+        }
+      ]
+    },
+    {
+      "cluster_id": "MEOR_Cluster_02",
+      "contig": "MEOR_CONTIG_1",
+      "start": 601,
+      "end": 1000,
+      "span_bp": 400,
+      "gene_count": 3,
+      "hit_count": 4,
+      "categories": [
+        "cat2_medium_alkane",
+        "cat3_long_alkane"
+      ],
+      "locus_tags": [
+        "M_005",
+        "M_006",
+        "M_007"
+      ],
+      "genes": [
+        "ladA",
+        "alkB",
+        "almA"
+      ],
+      "members": [
+        {
+          "contig": "MEOR_CONTIG_1",
+          "locus_tag": "M_005",
+          "gene": "",
+          "product": "",
+          "start": 601,
+          "end": 700,
+          "strand": "+",
+          "category_key": "cat3_long_alkane",
+          "category_title": "Long-Chain n-Alkanes & Heavy Paraffins (C18-C36+)",
+          "marker_id": "ladA",
+          "marker_name": "Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)",
+          "weight": 1,
+          "reason": "note:KEGG:K20938"
+        },
+        {
+          "contig": "MEOR_CONTIG_1",
+          "locus_tag": "M_006",
+          "gene": "",
+          "product": "",
+          "start": 751,
+          "end": 850,
+          "strand": "+",
+          "category_key": "cat3_long_alkane",
+          "category_title": "Long-Chain n-Alkanes & Heavy Paraffins (C18-C36+)",
+          "marker_id": "ladA",
+          "marker_name": "Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)",
+          "weight": 1,
+          "reason": "note:EC:1.14.14.28"
+        },
+        {
+          "contig": "MEOR_CONTIG_1",
+          "locus_tag": "M_007",
+          "gene": "",
+          "product": "long-chain alkane hydroxylase AlmA",
+          "start": 901,
+          "end": 1000,
+          "strand": "+",
+          "category_key": "cat2_medium_alkane",
+          "category_title": "Medium-Chain n-Alkanes (C5-C16)",
+          "marker_id": "alkB",
+          "marker_name": "Alkane 1-monooxygenase (alkB / alkB1 / alkB2)",
+          "weight": 2,
+          "reason": "product:alkane hydroxylase"
+        },
+        {
+          "contig": "MEOR_CONTIG_1",
+          "locus_tag": "M_007",
+          "gene": "",
+          "product": "long-chain alkane hydroxylase AlmA",
+          "start": 901,
+          "end": 1000,
+          "strand": "+",
+          "category_key": "cat3_long_alkane",
+          "category_title": "Long-Chain n-Alkanes & Heavy Paraffins (C18-C36+)",
+          "marker_id": "almA",
+          "marker_name": "Long-chain Alkane Hydroxylase AlmA/AlmA1/AlmA3 (Flavin-binding C20-C32)",
+          "weight": 2,
+          "reason": "product:long-chain alkane hydroxylase almA"
+        }
+      ]
+    },
+    {
+      "cluster_id": "MEOR_Cluster_03",
+      "contig": "MEOR_CONTIG_1",
+      "start": 1201,
+      "end": 1600,
+      "span_bp": 400,
+      "gene_count": 3,
+      "hit_count": 3,
+      "categories": [
+        "cat6_glycolipid_biosurfactant"
+      ],
+      "locus_tags": [
+        "M_008",
+        "M_009",
+        "M_010"
+      ],
+      "genes": [
+        "rhlA",
+        "rhlB",
+        "rhlC"
+      ],
+      "members": [
+        {
+          "contig": "MEOR_CONTIG_1",
+          "locus_tag": "M_008",
+          "gene": "rhlA",
+          "product": "HAA synthase",
+          "start": 1201,
+          "end": 1300,
+          "strand": "+",
+          "category_key": "cat6_glycolipid_biosurfactant",
+          "category_title": "Glycolipid Biosurfactants (Rhamnolipids & Trehalolipids)",
+          "marker_id": "rhlA",
+          "marker_name": "HAA Synthase (rhlA / Rhamnolipid precursor)",
+          "weight": 3,
+          "reason": "gene:rhlA"
+        },
+        {
+          "contig": "MEOR_CONTIG_1",
+          "locus_tag": "M_009",
+          "gene": "rhlB",
+          "product": "rhamnosyltransferase chain B",
+          "start": 1351,
+          "end": 1450,
+          "strand": "+",
+          "category_key": "cat6_glycolipid_biosurfactant",
+          "category_title": "Glycolipid Biosurfactants (Rhamnolipids & Trehalolipids)",
+          "marker_id": "rhlB",
+          "marker_name": "Rhamnosyltransferase I (rhlB / Mono-rhamnolipid)",
+          "weight": 3,
+          "reason": "gene:rhlB"
+        },
+        {
+          "contig": "MEOR_CONTIG_1",
+          "locus_tag": "M_010",
+          "gene": "rhlC",
+          "product": "rhamnosyltransferase 2",
+          "start": 1501,
+          "end": 1600,
+          "strand": "+",
+          "category_key": "cat6_glycolipid_biosurfactant",
+          "category_title": "Glycolipid Biosurfactants (Rhamnolipids & Trehalolipids)",
+          "marker_id": "rhlC",
+          "marker_name": "Rhamnosyltransferase II (rhlC / Di-rhamnolipid)",
+          "weight": 3,
+          "reason": "gene:rhlC"
+        }
+      ]
+    }
+  ],
+  "pathways": [
+    {
+      "pathway": "Medium Alkane Degradation Chain (C5-C16)",
+      "completeness_pct": 66.7,
+      "steps_present": 4,
+      "total_steps": 6,
+      "steps": [
+        {
+          "step": "Primary Alkane Hydroxylation",
+          "status": "PRESENT",
+          "target_markers": [
+            "alkB",
+            "CYP153"
+          ]
+        },
+        {
+          "step": "Electron Transfer (Rubredoxin System)",
+          "status": "PRESENT",
+          "target_markers": [
+            "rubAB"
+          ]
+        },
+        {
+          "step": "Alcohol Oxidation (Alcohol Dehydrogenase)",
+          "status": "PRESENT",
+          "target_markers": [
+            "alkJ"
+          ]
+        },
+        {
+          "step": "Aldehyde Oxidation (Aldehyde Dehydrogenase)",
+          "status": "PRESENT",
+          "target_markers": [
+            "alkH"
+          ]
+        },
+        {
+          "step": "Acyl-CoA Activation (Acyl-CoA Synthetase)",
+          "status": "ABSENT",
+          "target_markers": [
+            "alkK"
+          ]
+        },
+        {
+          "step": "Outer Membrane Alkane Import",
+          "status": "ABSENT",
+          "target_markers": [
+            "alkL"
+          ]
+        }
+      ]
+    },
+    {
+      "pathway": "Long-Chain Paraffin Wax Degradation (C18+)",
+      "completeness_pct": 100.0,
+      "steps_present": 2,
+      "total_steps": 2,
+      "steps": [
+        {
+          "step": "Long-Chain Monooxygenase (LadA)",
+          "status": "PRESENT",
+          "target_markers": [
+            "ladA"
+          ]
+        },
+        {
+          "step": "Long-Chain Hydroxylase (AlmA)",
+          "status": "PRESENT",
+          "target_markers": [
+            "almA"
+          ]
+        }
+      ]
+    },
+    {
+      "pathway": "Aromatic & PAH Degradation (BTEX/Naphthalene)",
+      "completeness_pct": 0.0,
+      "steps_present": 0,
+      "total_steps": 2,
+      "steps": [
+        {
+          "step": "Ring-activating Monooxygenase/Dioxygenase",
+          "status": "ABSENT",
+          "target_markers": [
+            "tmo_tod",
+            "ndo_nah",
+            "mahAB",
+            "dmpO_tomA"
+          ]
+        },
+        {
+          "step": "Central Ring-Cleavage Dioxygenase",
+          "status": "ABSENT",
+          "target_markers": [
+            "catA_xylE"
+          ]
+        }
+      ]
+    },
+    {
+      "pathway": "Rhamnolipid Biosurfactant Biosynthesis",
+      "completeness_pct": 100.0,
+      "steps_present": 3,
+      "total_steps": 3,
+      "steps": [
+        {
+          "step": "HAA Fatty Acid Precursor Synthase (RhlA)",
+          "status": "PRESENT",
+          "target_markers": [
+            "rhlA"
+          ]
+        },
+        {
+          "step": "Mono-rhamnolipid Synthase (RhlB)",
+          "status": "PRESENT",
+          "target_markers": [
+            "rhlB"
+          ]
+        },
+        {
+          "step": "Di-rhamnolipid Synthase (RhlC)",
+          "status": "PRESENT",
+          "target_markers": [
+            "rhlC"
+          ]
+        }
+      ]
+    },
+    {
+      "pathway": "Lipopeptide Biosurfactant BGC (Surfactin/Lichenysin)",
+      "completeness_pct": 0.0,
+      "steps_present": 0,
+      "total_steps": 2,
+      "steps": [
+        {
+          "step": "Surfactin / Lichenysin NRPS Modules",
+          "status": "ABSENT",
+          "target_markers": [
+            "srfA",
+            "licA_D"
+          ]
+        },
+        {
+          "step": "Phosphopantetheinyl Transferase (Sfp)",
+          "status": "ABSENT",
+          "target_markers": [
+            "sfp"
+          ]
+        }
+      ]
+    },
+    {
+      "pathway": "Anaerobic Alkane Activation (AssA)",
+      "completeness_pct": 0.0,
+      "steps_present": 0,
+      "total_steps": 1,
+      "steps": [
+        {
+          "step": "Alkylsuccinate Synthase catalytic alpha subunit",
+          "status": "ABSENT",
+          "target_markers": [
+            "assA_masD"
+          ]
+        }
+      ]
+    },
+    {
+      "pathway": "Gaseous & Aliphatic Alkene Degradation",
+      "completeness_pct": 0.0,
+      "steps_present": 0,
+      "total_steps": 2,
+      "steps": [
+        {
+          "step": "Alkene / Isoprene Monooxygenation",
+          "status": "ABSENT",
+          "target_markers": [
+            "isoA_I",
+            "xamo_xec"
+          ]
+        },
+        {
+          "step": "Epoxide Coenzyme M Conjugation (EtnE)",
+          "status": "ABSENT",
+          "target_markers": [
+            "etnE"
+          ]
+        }
+      ]
+    }
+  ],
+  "karyograms": {
+    "MEOR_CONTIG_1": {
+      "span_bp": 2400,
+      "window_size": 50000,
+      "total_hits": 11,
+      "ascii_map": "#"
+    },
+    "MEOR_CONTIG_2": {
+      "span_bp": 1000,
+      "window_size": 50000,
+      "total_hits": 0,
+      "ascii_map": "-"
+    }
+  }
+}

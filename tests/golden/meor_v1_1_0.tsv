@@ -1,0 +1,12 @@
+contig	locus_tag	gene	start	end	strand	category_key	marker_id	marker_name	weight	reason	product
+MEOR_CONTIG_1	M_001	alkB	1	100	+	cat2_medium_alkane	alkB	Alkane 1-monooxygenase (alkB / alkB1 / alkB2)	3	KEGG:K00496	alkane 1-monooxygenase
+MEOR_CONTIG_1	M_002		151	250	+	cat2_medium_alkane	rubAB	Rubredoxin & Rubredoxin Reductase (rubA/rubB)	3	EC:1.18.1.1	rubredoxin reductase
+MEOR_CONTIG_1	M_003	alkJ	301	400	+	cat2_medium_alkane	alkJ	Alcohol Dehydrogenase (alkJ / Alkane pathway)	3	gene:alkJ	alcohol dehydrogenase
+MEOR_CONTIG_1	M_004	alkH	451	550	-	cat2_medium_alkane	alkH	Aldehyde Dehydrogenase (alkH / Alkane pathway)	3	gene:alkH	fatty aldehyde dehydrogenase
+MEOR_CONTIG_1	M_005		601	700	+	cat3_long_alkane	ladA	Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)	1	note:KEGG:K20938	
+MEOR_CONTIG_1	M_006		751	850	+	cat3_long_alkane	ladA	Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)	1	note:EC:1.14.14.28	
+MEOR_CONTIG_1	M_007		901	1000	+	cat2_medium_alkane	alkB	Alkane 1-monooxygenase (alkB / alkB1 / alkB2)	2	product:alkane hydroxylase	long-chain alkane hydroxylase AlmA
+MEOR_CONTIG_1	M_007		901	1000	+	cat3_long_alkane	almA	Long-chain Alkane Hydroxylase AlmA/AlmA1/AlmA3 (Flavin-binding C20-C32)	2	product:long-chain alkane hydroxylase almA	long-chain alkane hydroxylase AlmA
+MEOR_CONTIG_1	M_008	rhlA	1201	1300	+	cat6_glycolipid_biosurfactant	rhlA	HAA Synthase (rhlA / Rhamnolipid precursor)	3	gene:rhlA	HAA synthase
+MEOR_CONTIG_1	M_009	rhlB	1351	1450	+	cat6_glycolipid_biosurfactant	rhlB	Rhamnosyltransferase I (rhlB / Mono-rhamnolipid)	3	gene:rhlB	rhamnosyltransferase chain B
+MEOR_CONTIG_1	M_010	rhlC	1501	1600	+	cat6_glycolipid_biosurfactant	rhlC	Rhamnosyltransferase II (rhlC / Di-rhamnolipid)	3	gene:rhlC	rhamnosyltransferase 2

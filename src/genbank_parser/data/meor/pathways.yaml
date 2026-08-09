@@ -1,0 +1,90 @@
+schema_version: 1
+pathways:
+- id: medium_alkane
+  name: Medium Alkane Degradation Chain (C5-C16)
+  category: cat2_medium_alkane
+  steps:
+  - name: Primary Alkane Hydroxylation
+    any_of:
+    - alkB
+    - CYP153
+  - name: Electron Transfer (Rubredoxin System)
+    any_of:
+    - rubAB
+  - name: Alcohol Oxidation (Alcohol Dehydrogenase)
+    any_of:
+    - alkJ
+  - name: Aldehyde Oxidation (Aldehyde Dehydrogenase)
+    any_of:
+    - alkH
+  - name: Acyl-CoA Activation (Acyl-CoA Synthetase)
+    any_of:
+    - alkK
+  - name: Outer Membrane Alkane Import
+    any_of:
+    - alkL
+- id: long_chain_paraffin
+  name: Long-Chain Paraffin Wax Degradation (C18+)
+  category: cat3_long_alkane
+  steps:
+  - name: Long-Chain Monooxygenase (LadA)
+    any_of:
+    - ladA
+  - name: Long-Chain Hydroxylase (AlmA)
+    any_of:
+    - almA
+- id: aromatic_pah
+  name: Aromatic & PAH Degradation (BTEX/Naphthalene)
+  category: cat4_aromatic_pah
+  steps:
+  - name: Ring-activating Monooxygenase/Dioxygenase
+    any_of:
+    - tmo_tod
+    - ndo_nah
+    - mahAB
+    - dmpO_tomA
+  - name: Central Ring-Cleavage Dioxygenase
+    any_of:
+    - catA_xylE
+- id: rhamnolipid
+  name: Rhamnolipid Biosurfactant Biosynthesis
+  category: cat6_glycolipid_biosurfactant
+  steps:
+  - name: HAA Fatty Acid Precursor Synthase (RhlA)
+    any_of:
+    - rhlA
+  - name: Mono-rhamnolipid Synthase (RhlB)
+    any_of:
+    - rhlB
+  - name: Di-rhamnolipid Synthase (RhlC)
+    any_of:
+    - rhlC
+- id: lipopeptide
+  name: Lipopeptide Biosurfactant BGC (Surfactin/Lichenysin)
+  category: cat7_lipopeptide_biosurfactant
+  steps:
+  - name: Surfactin / Lichenysin NRPS Modules
+    any_of:
+    - srfA
+    - licA_D
+  - name: Phosphopantetheinyl Transferase (Sfp)
+    any_of:
+    - sfp
+- id: anaerobic_alkane
+  name: Anaerobic Alkane Activation (AssA)
+  category: cat5_anaerobic_activation
+  steps:
+  - name: Alkylsuccinate Synthase catalytic alpha subunit
+    any_of:
+    - assA_masD
+- id: gaseous_alkene
+  name: Gaseous & Aliphatic Alkene Degradation
+  category: cat9_alkene
+  steps:
+  - name: Alkene / Isoprene Monooxygenation
+    any_of:
+    - isoA_I
+    - xamo_xec
+  - name: Epoxide Coenzyme M Conjugation (EtnE)
+    any_of:
+    - etnE

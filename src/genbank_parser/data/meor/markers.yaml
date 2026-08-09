@@ -1,0 +1,829 @@
+schema_version: 1
+categories:
+- id: cat1_short_alkane
+  title: Short-Chain Alkanes & Gaseous Hydrocarbons (C1-C4)
+  role: Methane/propane/butane oxidation & gas utilization
+- id: cat2_medium_alkane
+  title: Medium-Chain n-Alkanes (C5-C16)
+  role: Liquid alkane degradation & oil viscosity reduction
+- id: cat3_long_alkane
+  title: Long-Chain n-Alkanes & Heavy Paraffins (C18-C36+)
+  role: Heavy paraffin wax degradation & pour point reduction
+- id: cat4_aromatic_pah
+  title: Aromatic & Polycyclic Aromatic Hydrocarbons (BTEX & PAHs)
+  role: Aromatic fraction breakdown & heavy crude liquefaction
+- id: cat5_anaerobic_activation
+  title: Anaerobic Hydrocarbon Activation (Reservoir Anoxic Conditions)
+  role: Anoxic in-situ hydrocarbon activation via fumarate addition
+- id: cat6_glycolipid_biosurfactant
+  title: Glycolipid Biosurfactants (Rhamnolipids & Trehalolipids)
+  role: Surface tension reduction & bio-emulsification (IFT reduction)
+- id: cat7_lipopeptide_biosurfactant
+  title: Lipopeptide Biosurfactant NRPS BGCs (Surfactin & Lichenysin)
+  role: Potent lipopeptide biosurfactants & interfacial tension reduction
+- id: cat8_emulsifier_acid_gas
+  title: Polymeric Bio-emulsifiers & Organic Acid / Gas Production
+  role: Emulsification, rock dissolution, acid flooding & reservoir repressurization
+- id: cat9_alkene
+  title: Gaseous & Aliphatic Alkenes (Ethene, Propene, Isoprene)
+  role: Alkene monooxygenation, epoxide ring-opening & isoprene utilization
+markers:
+- id: pmoABC
+  category: cat1_short_alkane
+  name: Particulate Methane Monooxygenase (pmoABC)
+  genes:
+  - \bpmo[ABC]\b
+  ecs:
+  - 1.14.18.3
+  kos:
+  - K10944
+  - K10945
+  - K10946
+  products:
+  - particulate methane monooxygenase
+  - methane monooxygenase subunit
+  notes: []
+  sources:
+  - CANT-HYD
+  - HMDB
+- id: mmoXYZ
+  category: cat1_short_alkane
+  name: Soluble Methane Monooxygenase (mmoXYZ)
+  genes:
+  - \bmmo[X-Z]\b
+  - \bmmo[B-D]\b
+  ecs:
+  - 1.14.13.25
+  kos:
+  - K16157
+  - K16158
+  - K16159
+  - K16160
+  - K16161
+  - K16162
+  products:
+  - soluble methane monooxygenase
+  - methane monooxygenase hydroxylase
+  notes: []
+  sources:
+  - CANT-HYD
+  - HMDB
+- id: prmABCD
+  category: cat1_short_alkane
+  name: Propane Monooxygenase (prmABCD / bmo)
+  genes:
+  - \bprm[A-D]\b
+  - \bbmo[X-Z]\b
+  ecs:
+  - 1.14.13.-
+  kos:
+  - K22473
+  - K22474
+  - K22475
+  products:
+  - propane monooxygenase
+  - butane monooxygenase
+  notes: []
+  sources:
+  - CANT-HYD
+  - HMDB
+- id: pbmoABC
+  category: cat1_short_alkane
+  name: Membrane-bound Alkane/Butane Monooxygenase (pbmoA/B/C)
+  genes:
+  - \bpbmo[A-C]\b
+  ecs:
+  - 1.14.13.-
+  kos:
+  - K21320
+  - K21321
+  products:
+  - membrane-bound alkane monooxygenase
+  - membrane-bound butane monooxygenase
+  notes: []
+  sources:
+  - HMDB
+- id: sbmoXYZ
+  category: cat1_short_alkane
+  name: Soluble Alkane Monooxygenase Subunits (sbmoX/Y/Z)
+  genes:
+  - \bsbmo[X-Z]\b
+  ecs:
+  - 1.14.13.-
+  kos: []
+  products:
+  - soluble alkane monooxygenase
+  notes: []
+  sources:
+  - HMDB
+- id: ahyA
+  category: cat1_short_alkane
+  name: Molybdopterin-family Alkane C2 Methylene Hydroxylase (ahyA)
+  genes:
+  - \bahyA\b
+  ecs:
+  - 1.17.99.-
+  kos: []
+  products:
+  - molybdopterin.*alkane C2 methylene hydroxylase
+  - alkane C2 methylene hydroxylase
+  notes: []
+  sources:
+  - CANT-HYD
+- id: alkB
+  category: cat2_medium_alkane
+  name: Alkane 1-monooxygenase (alkB / alkB1 / alkB2)
+  genes:
+  - \balkB\d?\b
+  ecs:
+  - 1.14.15.3
+  kos:
+  - K00496
+  products:
+  - alkane 1-monooxygenase
+  - alkane hydroxylase
+  - alkane monooxygenase
+  notes: []
+  sources:
+  - CANT-HYD
+  - HMDB
+- id: CYP153
+  category: cat2_medium_alkane
+  name: Cytochrome P450 Alkane Hydroxylase (CYP153)
+  genes:
+  - \bcyp153\b
+  - \bcyp153A\d?\b
+  ecs:
+  - 1.14.15.-
+  kos:
+  - K00496
+  products:
+  - cytochrome P450.*alkane
+  - CYP153
+  notes: []
+  sources:
+  - CANT-HYD
+  - HMDB
+- id: rubAB
+  category: cat2_medium_alkane
+  name: Rubredoxin & Rubredoxin Reductase (rubA/rubB)
+  genes:
+  - \brubA\d?\b
+  - \brubB\b
+  ecs:
+  - 1.18.1.1
+  kos:
+  - K00389
+  - K03820
+  products:
+  - rubredoxin
+  - rubredoxin--NAD\+ reductase
+  - rubredoxin reductase
+  notes: []
+  sources:
+  - CANT-HYD
+- id: alkJ
+  category: cat2_medium_alkane
+  name: Alcohol Dehydrogenase (alkJ / Alkane pathway)
+  genes:
+  - \balkJ\b
+  ecs:
+  - 1.1.1.1
+  - 1.1.99.8
+  kos:
+  - K00001
+  - K13953
+  products:
+  - alkane alcohol dehydrogenase
+  - fatty alcohol dehydrogenase
+  notes: []
+  sources:
+  - CANT-HYD
+- id: alkH
+  category: cat2_medium_alkane
+  name: Aldehyde Dehydrogenase (alkH / Alkane pathway)
+  genes:
+  - \balkH\b
+  ecs:
+  - 1.2.1.3
+  kos:
+  - K00128
+  products:
+  - fatty aldehyde dehydrogenase
+  - alkane aldehyde dehydrogenase
+  notes: []
+  sources:
+  - CANT-HYD
+- id: alkK
+  category: cat2_medium_alkane
+  name: Fatty Acyl-CoA Synthetase (alkK)
+  genes:
+  - \balkK\b
+  ecs:
+  - 6.2.1.3
+  kos:
+  - K01897
+  products:
+  - acyl-CoA synthetase
+  - medium-chain fatty-acid--CoA ligase
+  notes: []
+  sources:
+  - CANT-HYD
+- id: alkL
+  category: cat2_medium_alkane
+  name: Outer Membrane Alkane Import Protein (alkL)
+  genes:
+  - \balkL\b
+  ecs: []
+  kos: []
+  products:
+  - outer membrane alkane import
+  - alkane outer membrane protein alkL
+  notes: []
+  sources:
+  - CANT-HYD
+- id: ladA
+  category: cat3_long_alkane
+  name: Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)
+  genes:
+  - \blad[AB]\d?\b
+  ecs:
+  - 1.14.14.28
+  kos:
+  - K20938
+  products:
+  - long-chain alkane monooxygenase
+  - flavoprotein monooxygenase ladA
+  notes: []
+  sources:
+  - CANT-HYD
+  - HMDB
+- id: almA
+  category: cat3_long_alkane
+  name: Long-chain Alkane Hydroxylase AlmA/AlmA1/AlmA3 (Flavin-binding C20-C32)
+  genes:
+  - \balmA\d?\b
+  ecs:
+  - 1.14.14.-
+  kos:
+  - K22477
+  products:
+  - flavin-binding monooxygenase almA
+  - long-chain alkane hydroxylase almA
+  notes: []
+  sources:
+  - CANT-HYD
+- id: tmo_tod
+  category: cat4_aromatic_pah
+  name: Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)
+  genes:
+  - \btmo[A-F]\b
+  - \btod[A-D]\b
+  - \bxyl[MA]\b
+  ecs:
+  - 1.14.13.-
+  kos:
+  - K15760
+  - K15761
+  - K15762
+  - K03268
+  - K16268
+  - K18089
+  - K18090
+  - K16269
+  - K16270
+  products:
+  - toluene monooxygenase
+  - xylene monooxygenase
+  - toluene dioxygenase
+  notes: []
+  sources:
+  - CANT-HYD
+  - HMDB
+- id: ndo_nah
+  category: cat4_aromatic_pah
+  name: Naphthalene / PAH Dioxygenase (ndoABC / nahAcAb / phnAc)
+  genes:
+  - \bndo[A-C]\b
+  - \bnahA[cb]?\b
+  - \bphnA[cb]?\b
+  - \bbphA[1-4]\b
+  ecs:
+  - 1.14.12.12
+  - 1.14.12.18
+  kos:
+  - K14579
+  - K14580
+  - K14581
+  products:
+  - naphthalene 1,2-dioxygenase
+  - biphenyl 2,3-dioxygenase
+  - polycyclic aromatic hydrocarbon dioxygenase
+  notes: []
+  sources:
+  - CANT-HYD
+- id: catA_xylE
+  category: cat4_aromatic_pah
+  name: Central Ring-Cleavage Dioxygenases (catA / xylE)
+  genes:
+  - \bcatA\b
+  - \bxylE\b
+  ecs:
+  - 1.13.11.1
+  - 1.13.11.2
+  kos:
+  - K03381
+  - K00446
+  products:
+  - catechol 1,2-dioxygenase
+  - catechol 2,3-dioxygenase
+  notes: []
+  sources:
+  - CANT-HYD
+- id: mahAB
+  category: cat4_aromatic_pah
+  name: Benzene / Toluene / Naphthalene Dioxygenase (mahA / mahB)
+  genes:
+  - \bmah[AB]\b
+  ecs:
+  - 1.14.12.-
+  kos: []
+  products:
+  - benzene/toluene/naphthalene dioxygenase
+  notes: []
+  sources:
+  - CANT-HYD
+- id: dmpO_tomA
+  category: cat4_aromatic_pah
+  name: Phenol / Toluene 2-Monooxygenase (dmpO / tomA1-A4)
+  genes:
+  - \bdmpO\b
+  - \btomA[1-4]\b
+  ecs:
+  - 1.14.13.7
+  kos:
+  - K14582
+  products:
+  - phenol/toluene 2-monooxygenase
+  - phenol monooxygenase
+  notes: []
+  sources:
+  - CANT-HYD
+- id: dszC
+  category: cat4_aromatic_pah
+  name: Dibenzothiophene Monooxygenase (dszC / Biodesulfurization)
+  genes:
+  - \bdszC\b
+  ecs:
+  - 1.14.14.24
+  kos:
+  - K22219
+  products:
+  - dibenzothiophene monooxygenase
+  - dibenzothiophene.*desulfurization
+  notes: []
+  sources:
+  - HADEG
+- id: pcaGH
+  category: cat4_aromatic_pah
+  name: Protocatechuate 3,4-Dioxygenase (pcaG / pcaH)
+  genes:
+  - \bpca[GH]\b
+  ecs:
+  - 1.13.11.4
+  kos:
+  - K00448
+  - K00449
+  products:
+  - protocatechuate 3,4-dioxygenase
+  - protocatechuate dioxygenase
+  notes: []
+  sources:
+  - CANT-HYD
+- id: assA_masD
+  category: cat5_anaerobic_activation
+  name: Alkylsuccinate Synthase / MasD (assA / masD)
+  genes:
+  - \bassA\b
+  - \bmasD\b
+  ecs:
+  - 4.1.99.16
+  kos:
+  - K22204
+  products:
+  - alkylsuccinate synthase
+  - alkylsuccinate synthase subunit alpha
+  notes: []
+  sources:
+  - CANT-HYD
+  - HADEG
+- id: bssABC
+  category: cat5_anaerobic_activation
+  name: Benzylsuccinate Synthase (bssA / bssB / bssC)
+  genes:
+  - \bbss[A-C]\b
+  ecs:
+  - 4.1.99.11
+  kos:
+  - K07540
+  - K07541
+  - K07542
+  products:
+  - benzylsuccinate synthase
+  notes: []
+  sources:
+  - CANT-HYD
+  - HADEG
+- id: nmsA
+  category: cat5_anaerobic_activation
+  name: Naphthylmethylsuccinate Synthase (nmsA)
+  genes:
+  - \bnmsA\b
+  ecs:
+  - 4.1.99.-
+  kos:
+  - K22205
+  products:
+  - naphthylmethylsuccinate synthase
+  notes: []
+  sources:
+  - CANT-HYD
+  - HADEG
+- id: cmdA_ebdA
+  category: cat5_anaerobic_activation
+  name: Ethylbenzene Dehydrogenase Subunit Alpha (cmdA / ebdA)
+  genes:
+  - \bcmdA\b
+  - \bebdA\b
+  ecs:
+  - 1.17.99.2
+  kos:
+  - K22206
+  products:
+  - ethylbenzene dehydrogenase
+  notes: []
+  sources:
+  - CANT-HYD
+  - HADEG
+- id: abcA
+  category: cat5_anaerobic_activation
+  name: Anaerobic Benzene Carboxylase Subunit A (abcA1 / abcA2)
+  genes:
+  - \babcA[12]\b
+  ecs:
+  - 4.1.1.-
+  kos: []
+  products:
+  - benzene carboxylase subunit A
+  notes: []
+  sources:
+  - HADEG
+- id: ncrA
+  category: cat5_anaerobic_activation
+  name: Naphthalene Carboxylase (ncrA)
+  genes:
+  - \bncrA\b
+  ecs:
+  - 4.1.1.-
+  kos:
+  - K27540
+  products:
+  - naphthalene carboxylase
+  notes: []
+  sources:
+  - HADEG
+- id: rhlA
+  category: cat6_glycolipid_biosurfactant
+  name: HAA Synthase (rhlA / Rhamnolipid precursor)
+  genes:
+  - \brhlA\b
+  ecs:
+  - 2.3.1.266
+  kos:
+  - K13057
+  products:
+  - rhamnolipid biosynthesis 3-hydroxyacyl-acyl carrier protein
+  - HAA synthase
+  - rhlA
+  notes: []
+  sources:
+  - HADEG
+- id: rhlB
+  category: cat6_glycolipid_biosurfactant
+  name: Rhamnosyltransferase I (rhlB / Mono-rhamnolipid)
+  genes:
+  - \brhlB\b
+  ecs:
+  - 2.4.1.189
+  kos:
+  - K13058
+  products:
+  - rhamnosyltransferase chain B
+  - rhamnosyltransferase 1
+  - rhlB
+  notes: []
+  sources:
+  - HADEG
+- id: rhlC
+  category: cat6_glycolipid_biosurfactant
+  name: Rhamnosyltransferase II (rhlC / Di-rhamnolipid)
+  genes:
+  - \brhlC\b
+  ecs:
+  - 2.4.1.298
+  kos:
+  - K13059
+  products:
+  - rhamnosyltransferase 2
+  - rhlC
+  notes: []
+  sources:
+  - HADEG
+- id: rhlRI
+  category: cat6_glycolipid_biosurfactant
+  name: Rhamnolipid Quorum Sensing Regulators (rhlR / rhlI)
+  genes:
+  - \brhlR\b
+  - \brhlI\b
+  ecs:
+  - 2.3.1.184
+  kos:
+  - K13060
+  - K13061
+  products:
+  - regulatory protein RhlR
+  - acyl-homoserine-lactone synthase RhlI
+  notes: []
+  sources:
+  - HADEG
+- id: trehalolipid
+  category: cat6_glycolipid_biosurfactant
+  name: Trehalolipid Biosynthesis (sdtA / otsA / otsB)
+  genes:
+  - \bsdtA\b
+  - \btshA\b
+  - \botsA\b
+  - \botsB\b
+  ecs:
+  - 2.4.1.15
+  - 3.1.3.12
+  kos:
+  - K00697
+  - K01087
+  products:
+  - trehalose-6-phosphate synthase
+  - trehalose-6-phosphatase
+  - sulfetolipid
+  notes: []
+  sources:
+  - HADEG
+- id: emt1
+  category: cat6_glycolipid_biosurfactant
+  name: Mannosylerythritol Lipid (MEL) Biosynthesis (emt1)
+  genes:
+  - \bemt1\b
+  ecs:
+  - 2.4.1.-
+  kos: []
+  products:
+  - mannosylerythritol lipid
+  - erythritol transferase emt1
+  notes: []
+  sources:
+  - HADEG
+- id: sble
+  category: cat6_glycolipid_biosurfactant
+  name: Sophorolipid Biosynthesis (sble / glucosyltransferase)
+  genes:
+  - \bsble\b
+  - \bat\b
+  ecs:
+  - 2.4.1.-
+  - 2.3.1.-
+  kos: []
+  products:
+  - sophorolipid
+  - lactonic sophorolipid
+  notes: []
+  sources:
+  - HADEG
+- id: srfA
+  category: cat7_lipopeptide_biosurfactant
+  name: Surfactin Synthetase NRPS (srfA-A / srfA-B / srfA-C / srfAD)
+  genes:
+  - \bsrfA-[A-D]\b
+  - \bsrfA[ABCD]\b
+  - \bsrfA\b
+  ecs:
+  - 2.7.7.-
+  - 6.3.2.-
+  kos:
+  - K15666
+  - K15667
+  - K15668
+  products:
+  - surfactin synthetase
+  - surfactin synthase
+  - surfactin biosynthesis
+  notes: []
+  sources:
+  - HADEG
+- id: licA_D
+  category: cat7_lipopeptide_biosurfactant
+  name: Lichenysin Synthetase NRPS (licA / licB / licC / licD)
+  genes:
+  - \blic[A-D]\b
+  ecs:
+  - 2.7.7.-
+  kos:
+  - K15666
+  products:
+  - lichenysin synthetase
+  - lichenysin synthase
+  - lichenysin biosynthesis
+  notes: []
+  sources:
+  - HADEG
+- id: fengycin_iturin
+  category: cat7_lipopeptide_biosurfactant
+  name: Fengycin / Iturin / Viscosin NRPS (fenA-E / ituA-C / vsnA-C)
+  genes:
+  - \bfen[A-E]\b
+  - \bpps[A-E]\b
+  - \bitu[A-C]\b
+  - \bvsn[A-C]\b
+  ecs:
+  - 2.7.7.-
+  kos:
+  - K15669
+  - K15670
+  products:
+  - fengycin synthetase
+  - iturin synthetase
+  - plipastatin synthase
+  - viscosin synthetase
+  notes: []
+  sources:
+  - HADEG
+- id: mycA_C
+  category: cat7_lipopeptide_biosurfactant
+  name: Mycosubtilin Lipopeptide Synthetase (mycA / mycB / mycC)
+  genes:
+  - \bmyc[A-C]\b
+  ecs:
+  - 2.7.7.-
+  kos:
+  - K15661
+  products:
+  - mycosubtilin synthetase
+  - mycosubtilin synthase
+  notes: []
+  sources:
+  - HADEG
+- id: arfA_C
+  category: cat7_lipopeptide_biosurfactant
+  name: Arthrofactin Lipopeptide Synthetase (arfA / arfB / arfC)
+  genes:
+  - \barf[A-C]\b
+  ecs:
+  - 2.7.7.-
+  kos:
+  - K15658
+  products:
+  - arthrofactin synthetase
+  - arthrofactin synthase
+  notes: []
+  sources:
+  - HADEG
+- id: pswP
+  category: cat7_lipopeptide_biosurfactant
+  name: Serrawettin Lipopeptide Synthetase (pswP)
+  genes:
+  - \bpswP\b
+  ecs:
+  - 2.7.7.-
+  kos: []
+  products:
+  - serrawettin synthetase
+  - serrawettin synthase
+  notes: []
+  sources:
+  - HADEG
+- id: sfp
+  category: cat7_lipopeptide_biosurfactant
+  name: 4'-Phosphopantetheinyl Transferase (sfp / NRPS activator)
+  genes:
+  - \bsfp\b
+  ecs:
+  - 2.7.8.7
+  kos:
+  - K02518
+  products:
+  - 4'-phosphopantetheinyl transferase
+  - phosphopantetheinyl transferase sfp
+  notes: []
+  sources:
+  - HADEG
+- id: wza_wzb_wzc
+  category: cat8_emulsifier_acid_gas
+  name: Polymeric Bio-emulsifier Secretion (wza / wzb / wzc / EPS)
+  genes:
+  - \bwz[abc]\b
+  ecs:
+  - 3.1.3.-
+  kos:
+  - K01990
+  - K01991
+  products:
+  - polysaccharide export protein Wza
+  - tyrosine-protein phosphatase Wzb
+  - emulsan
+  - alasan
+  notes: []
+  sources:
+  - HADEG
+- id: meor_acid_gas
+  category: cat8_emulsifier_acid_gas
+  name: MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)
+  genes:
+  - \bpflB\b
+  - \backA\b
+  - \bpta\b
+  - \bcan?\b
+  ecs:
+  - 2.3.1.54
+  - 2.7.2.1
+  - 2.3.1.8
+  - 4.2.1.1
+  kos:
+  - K00656
+  - K00925
+  - K00625
+  - K01672
+  - K01673
+  products:
+  - pyruvate formate-lyase
+  - acetate kinase
+  - phosphate acetyltransferase
+  - carbonic anhydrase
+  notes: []
+  sources:
+  - HADEG
+  - Literature
+- id: isoA_I
+  category: cat9_alkene
+  name: Isoprene Monooxygenase (isoA-I / Isoprene degradation)
+  genes:
+  - \biso[A-I]\b
+  ecs:
+  - 1.14.13.-
+  kos: []
+  products:
+  - isoprene monooxygenase
+  - isoprene degradation
+  notes: []
+  sources:
+  - HMDB
+- id: xamo_xec
+  category: cat9_alkene
+  name: Alkene / Ethene Monooxygenase (xamoA-F / xecA-E)
+  genes:
+  - \bxamo[A-F]\b
+  - \bxec[A-E]\d?\b
+  ecs:
+  - 1.14.13.-
+  kos: []
+  products:
+  - alkene monooxygenase
+  - ethene monooxygenase
+  - chloroethene monooxygenase
+  notes: []
+  sources:
+  - HMDB
+- id: etnE
+  category: cat9_alkene
+  name: Epoxyalkane:CoM Transferase (etnE / Ethene pathway)
+  genes:
+  - \betnE\b
+  ecs:
+  - 2.5.1.56
+  kos:
+  - K22363
+  products:
+  - epoxyalkane:coenzyme M transferase
+  - epoxyalkane.*coenzyme M
+  notes: []
+  sources:
+  - HMDB
+- id: mpdBC
+  category: cat9_alkene
+  name: 2-Methylpropene Degradation (mpdB / mpdC)
+  genes:
+  - \bmpd[BC]\b
+  ecs: []
+  kos: []
+  products:
+  - 2-methylpropene degradation
+  notes: []
+  sources:
+  - HMDB

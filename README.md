@@ -15,6 +15,7 @@ A Biopython-powered genome-annotation query engine, validation suite, and CLI to
 - **GFF3 Export**: Correctly computes CDS translation phase ($0, 1, 2$) across multi-exon/joined segments in 5' $\rightarrow$ 3' transcription order, emits complete `##sequence-region` extents, and handles ordinary features without artificial parent splits.
 - **QC & Semantic Validation**: Verifies translation integrity against genetic codes (`transl_table`) and `codon_start` offsets, with structured severity findings (`ERROR`, `WARNING`, `INFO`) and pseudogene tolerance.
 - **Unified CLI**: Provides `gbparse` subcommands for feature search, valid local sub-region extraction, annotation diffing, genetic-code-aware codon usage, annotation-based candidate phylogenetic markers, CRISPR/Cas annotation scanning, and declarative discovery.
+- **MEOR Evidence Engine**: Scans 48 curated markers across 9 hydrocarbon-degradation, biosurfactant, and bio-emulsifier categories; evaluates 7 genome-level pathway models; and reports co-directional candidate clusters.
 
 ---
 
@@ -92,7 +93,20 @@ gbparse gff input.gbff output.gff3 --include-fasta
 
 # 18. Parse Bakta multi-isolate summary tables
 gbparse batch-summary ./isolates/ --csv summary.csv
+
+# 19. Scan MEOR and petroleum-microbiology genomic potential
+gbparse meor input.gbff --min-weight 2 --format json --output meor.json
 ```
+
+### MEOR confidence and interpretation
+
+`gbparse meor` preserves the standalone `genbank-meor` v1.1.0 evidence tiers:
+
+- **Weight 3**: structured KEGG KO, structured EC number, or matching gene symbol.
+- **Weight 2**: specific product-annotation regex.
+- **Weight 1**: free-text note match, including KO or EC identifiers found only in `/note`.
+
+Marker hits indicate **annotation-supported genomic encoding potential**. They do not prove transcription, enzyme activity, hydrocarbon turnover, biosurfactant production, or field-scale enhanced oil recovery. See the [MEOR marker and scientific provenance reference](docs/meor_markers_reference.md) for the curated catalog and its limits.
 
 ---
 
@@ -116,6 +130,15 @@ if match:
     nt_seq = feat.extract(rec.seq)
     xrefs = extract_xrefs(feat)
     print("KEGG KOs:", xrefs["kegg_kos"])
+```
+
+MEOR analysis is also available as a data-returning Python API:
+
+```python
+from genbank_parser.meor import analyze_meor
+
+report = analyze_meor("input.gbff", min_weight=2, max_gap=200)
+print(report.total_hits, report.pathways)
 ```
 
 ---
