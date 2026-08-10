@@ -70,6 +70,14 @@ def load_meor_database(
     pathway_data = _read_yaml(pathways_path, "pathways.yaml")
     provenance = _read_yaml(None, "provenance.yaml")
 
+    raw_catalog_version = marker_data.get("catalog_version")
+    if raw_catalog_version is None and markers_path is not None:
+        catalog_version = "custom"
+    elif not isinstance(raw_catalog_version, str) or not raw_catalog_version.strip():
+        raise MeorDatabaseError("markers.yaml catalog_version must be a non-empty string")
+    else:
+        catalog_version = raw_catalog_version.strip()
+
     raw_categories = marker_data.get("categories")
     raw_markers = marker_data.get("markers")
     raw_pathways = pathway_data.get("pathways")
@@ -215,5 +223,6 @@ def load_meor_database(
         categories=categories,
         markers=tuple(markers),
         pathways=tuple(pathways),
+        catalog_version=catalog_version,
         provenance=provenance,
     )

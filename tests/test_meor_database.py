@@ -12,6 +12,7 @@ from genbank_parser.meor.database import MeorDatabaseError, load_meor_database
 
 def test_packaged_meor_database_integrity() -> None:
     database = load_meor_database()
+    assert database.catalog_version == "1.1"
     assert len(database.categories) == 9
     assert len(database.markers) == 48
     assert len(database.pathways) == 7
@@ -55,3 +56,12 @@ def test_loader_rejects_invalid_marker_regex(tmp_path: Path) -> None:
     custom.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     with pytest.raises(MeorDatabaseError, match="Invalid regex"):
         load_meor_database(markers_path=custom)
+
+
+def test_custom_catalog_without_version_is_backward_compatible(tmp_path: Path) -> None:
+    source = Path("src/genbank_parser/data/meor/markers.yaml")
+    payload = yaml.safe_load(source.read_text(encoding="utf-8"))
+    payload.pop("catalog_version")
+    custom = tmp_path / "markers.yaml"
+    custom.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    assert load_meor_database(markers_path=custom).catalog_version == "custom"

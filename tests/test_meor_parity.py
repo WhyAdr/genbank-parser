@@ -69,12 +69,22 @@ def test_integrated_engine_matches_legacy_biological_golden() -> None:
 
     assert actual["total_features"] == golden["total_features"]
     assert actual["total_hits"] == golden["total_hits"]
-    assert actual["total_clusters"] == golden["total_clusters"]
     assert [legacy_hit(hit) for hit in actual["hits"]] == golden["hits"]
-    assert [legacy_cluster(cluster) for cluster in actual["clusters"]] == golden["clusters"]
     assert [legacy_pathway(pathway) for pathway in actual["pathways"]] == golden["pathways"]
 
-    # v0.4.0 uses record length as authority; this fixture's source feature spans it.
+    # The v1.1.0 golden preserves the legacy off-by-one cluster behavior.
+    # Patch 6 uses inclusive GenBank coordinates: 1201 - 1000 - 1 == 200,
+    # so legacy clusters 2 and 3 correctly merge at max_gap=200.
+    assert golden["total_clusters"] == 3
+    assert actual["total_clusters"] == 2
+    assert legacy_cluster(actual["clusters"][0]) == golden["clusters"][0]
+    assert actual["clusters"][1]["start"] == golden["clusters"][1]["start"]
+    assert actual["clusters"][1]["end"] == golden["clusters"][2]["end"]
+    assert [
+        legacy_hit(member) for member in actual["clusters"][1]["members"]
+    ] == golden["clusters"][1]["members"] + golden["clusters"][2]["members"]
+
+    # Record length remains the authority; this fixture's source feature spans it.
     assert actual["karyograms"]["MEOR_CONTIG_1"]["span_bp"] == 2400
     assert golden["karyograms"]["MEOR_CONTIG_1"]["span_bp"] == 2400
     for contig in golden["karyograms"]:

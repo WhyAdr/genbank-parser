@@ -14,6 +14,8 @@ def test_report_contracts() -> None:
         "schema_version",
         "tool",
         "analysis",
+        "tool_version",
+        "catalog_version",
         "file",
         "total_features",
         "total_hits",
@@ -25,6 +27,8 @@ def test_report_contracts() -> None:
         "karyograms",
     ]
     assert payload["schema_version"] == "gbparse.meor.v1"
+    assert payload["tool_version"] == "0.4.1"
+    assert payload["catalog_version"] == "1.1"
     assert payload["parameters"] == {
         "min_weight": 1,
         "max_gap": 200,
@@ -41,6 +45,8 @@ def test_report_contracts() -> None:
         assert section in text
     assert "Low (W=1)" in text
     assert "1 kb windows" in text
+    assert "gbparse Version: 0.4.1" in text
+    assert "MEOR Catalog Version: 1.1" in text
 
 
 def test_min_weight_filters_hits_and_pathways() -> None:

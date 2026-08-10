@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 import yaml
 
-from scripts.audit_meor_identifiers import (
+from genbank_parser.meor.audit import (
+    Finding,
     ReferenceData,
     audit_markers,
     load_explorenz,
     load_fallback_ec,
     load_pfams,
+    write_reference_manifest,
+    write_reports,
 )
 
 
@@ -44,6 +48,11 @@ def test_identifier_remediation_assignments_are_regression_protected() -> None:
     assert markers["wza_wzb_wzc"]["kos"] == ["K01991"]
     assert markers["pcaGH"]["ecs"] == ["1.13.11.3"]
     assert markers["dszC"]["ecs"] == ["1.14.14.21"]
+    assert markers["alkJ"]["ecs"] == ["1.1.1.1"]
+    assert markers["ncrA"]["kos"] == []
+    assert markers["rhlRI"]["kos"] == ["K13061"]
+    assert markers["rhlRI"]["ecs"] == []
+    assert markers["etnE"]["kos"] == []
 
 
 def test_explorenz_hist_action_and_class_heading_are_authoritative(
@@ -117,4 +126,98 @@ def test_ko_ec_contradictions_are_reported_without_catalog_mutation() -> None:
     )
     assert ko.audit_status == "REVIEW"
     assert consistency.audit_status == "REVIEW"
+    assert consistency.reference_status == "KO_EC_NO_COMPATIBLE_EC"
     assert marker["kos"] == ["K00001"]
+
+
+def test_ko_ec_additional_scope_is_broader_not_a_contradiction() -> None:
+    marker = {
+        "id": "example",
+        "name": "Example marker",
+        "kos": ["K00001"],
+        "ecs": ["1.1.1.1"],
+        "cogs": [],
+        "pfams": [],
+    }
+    references = ReferenceData(
+        kegg={
+            "K00001": {
+                "definition": "example enzyme [EC:1.1.1.1 1.1.1.2]",
+                "ecs": ["1.1.1.1", "1.1.1.2"],
+            }
+        },
+        cogs={},
+        ec_entries={},
+        ec_classes={},
+        ec_history={},
+        pfams={},
+        ec_source="test",
+    )
+    findings = audit_markers([marker], references)
+    ko = next(item for item in findings if item.identifier_type == "KO")
+    consistency = next(
+        item for item in findings if item.identifier_type == "CONSISTENCY"
+    )
+    assert ko.audit_status == "PRESENT_UNREVIEWED"
+    assert consistency.audit_status == "PRESENT_UNREVIEWED"
+    assert consistency.reference_status == "KO_EC_COMPATIBLE_BUT_BROADER"
+
+
+def test_reference_manifest_is_hashed_and_posix_normalized(tmp_path: Path) -> None:
+    references: dict[str, Path] = {}
+    for label in ("kegg", "cog", "ec", "pfam"):
+        source = tmp_path / f"{label}.dat"
+        source.write_bytes(label.encode("ascii"))
+        references[label] = source
+    manifest = tmp_path / "reference_manifest.tsv"
+    write_reference_manifest(manifest, references)
+    text = manifest.read_text(encoding="utf-8")
+    assert "\\" not in text
+    assert hashlib.sha256(b"kegg").hexdigest() in text
+    assert text == manifest.read_text(encoding="utf-8")
+
+
+def test_report_exposes_broader_ko_ec_qualifications(tmp_path: Path) -> None:
+    reference_paths: dict[str, Path] = {}
+    for label in ("kegg", "cog", "ec", "pfam"):
+        source = tmp_path / f"{label}.dat"
+        source.write_bytes(label.encode("ascii"))
+        reference_paths[label] = source
+    markers = tmp_path / "markers.yaml"
+    markers.write_text("schema_version: 1\nmarkers: []\n", encoding="utf-8")
+    references = ReferenceData(
+        kegg={},
+        cogs={},
+        ec_entries={},
+        ec_classes={},
+        ec_history={},
+        pfams={},
+        ec_source=str(reference_paths["ec"]),
+    )
+    findings = [
+        Finding(
+            "tmo_tod",
+            "CONSISTENCY",
+            "tmo_tod",
+            "KO_EC_COMPATIBLE_BUT_BROADER",
+            "K00001: 1.1.1.2",
+            "1.1.1.-",
+            "PRESENT_UNREVIEWED",
+            "additional EC scope is broader",
+        ),
+        Finding(
+            "alkB",
+            "CONSISTENCY",
+            "alkB",
+            "KO_EC_EXACT_COMPATIBLE",
+            "K00496: 1.14.15.3",
+            "1.14.15.3",
+            "PRESENT_UNREVIEWED",
+            "all embedded KO ECs are compatible",
+        ),
+    ]
+    write_reports(tmp_path / "audit", findings, references, markers, reference_paths)
+    summary = (tmp_path / "audit" / "audit_summary.md").read_text(encoding="utf-8")
+    assert "KO_EC_COMPATIBLE_BUT_BROADER" not in summary
+    assert "`tmo_tod` | `CONSISTENCY` | `tmo_tod`" in summary
+    assert "additional EC scope is broader" in summary

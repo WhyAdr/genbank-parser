@@ -29,3 +29,31 @@ jobs:
     - name: Run Pytest suite
       run: |
         pytest -v
+
+  wheel:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Build wheel
+      run: |
+        python -m pip install --upgrade pip build
+        python -m build --wheel
+
+    - name: Install wheel in an isolated environment
+      run: |
+        python -m venv .wheel-venv
+        .wheel-venv/bin/python -m pip install dist/*.whl
+
+    - name: Verify installed API, data, CLI, and dependencies
+      run: |
+        .wheel-venv/bin/python -c "from importlib.resources import files; from genbank_parser import __version__; from genbank_parser.meor import load_meor_database; assert __version__ == '0.4.1'; assert load_meor_database().catalog_version == '1.1'; assert files('genbank_parser').joinpath('data/meor/markers.yaml').is_file()"
+        .wheel-venv/bin/gbparse --help
+        .wheel-venv/bin/gbparse meor tests/fixtures/meor_parity.gb --format json --output wheel-meor.json
+        .wheel-venv/bin/python -c "import json; p=json.load(open('wheel-meor.json')); assert p['tool_version'] == '0.4.1'; assert p['catalog_version'] == '1.1'"
+        .wheel-venv/bin/python -m pip check

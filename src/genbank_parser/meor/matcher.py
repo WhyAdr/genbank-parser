@@ -21,7 +21,7 @@ def match_feature_to_marker(
         if ko in marker.kos:
             return MarkerMatch(3, "kegg", ko)
     for ec in structured["ec_numbers"]:
-        if ec in marker.ecs:
+        if "-" not in ec and ec in marker.ecs:
             return MarkerMatch(3, "ec", ec)
     if gene:
         for pattern in marker.gene_patterns:

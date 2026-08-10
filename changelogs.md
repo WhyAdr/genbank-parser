@@ -4,6 +4,18 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.4.1] - 2026-08-10
+
+### MEOR identifier and reproducibility hardening
+- Added independent MEOR catalog version `1.1` and emitted software/catalog versions in reports.
+- Removed unresolved `K27540`, `K13060`, `K22363`, transferred EC `1.1.99.8`, and nondiscriminating `rhlRI` EC `2.3.1.184` from active evidence without guessing replacements.
+- Downgraded wildcard ECs from structured Weight 3 to contextual Weight-1 note evidence.
+- Replaced automatic audit `PASS` with `PRESENT_UNREVIEWED` and corrected marker-level KO/EC compatibility classification.
+- Added a SHA-256 reference manifest and cross-platform deterministic audit paths.
+- Moved the audit engine into `genbank_parser.meor.audit` with a thin script wrapper.
+- Hardened MEOR clustering to require distinct physical genes on known strands and defined gap size as intervening bases.
+- Added installed-wheel and package-data CI verification.
+
 ## [0.3.0] - 2026-08-09
 
 ### Breaking changes

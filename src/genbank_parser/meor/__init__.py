@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from .. import __version__
 from ..io import read_genbank
 from .database import MeorDatabaseError, load_meor_database
 from .karyogram import generate_meor_karyograms
@@ -49,6 +50,8 @@ def analyze_meor(
     )
     return MeorReport(
         source_file=Path(filepath).name,
+        tool_version=__version__,
+        catalog_version=database.catalog_version,
         total_features=document.total_features,
         parameters={
             "min_weight": min_weight,

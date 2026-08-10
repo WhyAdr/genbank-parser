@@ -1,40 +1,38 @@
 marker_id	identifier_type	identifier	reference_status	reference_name	catalog_interpretation	audit_status	notes
-pmoABC	EC	1.14.18.3	EXISTS	methane monooxygenase (particulate)	Particulate Methane Monooxygenase (pmoABC)	PASS	-
-mmoXYZ	EC	1.14.13.25	EXISTS	methane monooxygenase (soluble)	Soluble Methane Monooxygenase (mmoXYZ)	PASS	-
+pmoABC	EC	1.14.18.3	EXISTS	methane monooxygenase (particulate)	Particulate Methane Monooxygenase (pmoABC)	PRESENT_UNREVIEWED	-
+mmoXYZ	EC	1.14.13.25	EXISTS	methane monooxygenase (soluble)	Soluble Methane Monooxygenase (mmoXYZ)	PRESENT_UNREVIEWED	-
 prmABCD	EC	1.14.13.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of one atom of oxygen into the other donor	Propane Monooxygenase (prmABCD / bmo)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec
 pbmoABC	EC	1.14.13.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of one atom of oxygen into the other donor	Membrane-bound Alkane/Butane Monooxygenase (pbmoA/B/C)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec
 sbmoXYZ	EC	1.14.13.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of one atom of oxygen into the other donor	Soluble Alkane Monooxygenase Subunits (sbmoX/Y/Z)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec
 ahyA	EC	1.17.99.-	WILDCARD	With unknown physiological acceptors	Molybdopterin-family Alkane C2 Methylene Hydroxylase (ahyA)	NONSPECIFIC	wildcard EC is broad contextual evidence
-alkB	EC	1.14.15.3	EXISTS	alkane 1-monooxygenase	Alkane 1-monooxygenase (alkB / alkB1 / alkB2)	PASS	-
+alkB	EC	1.14.15.3	EXISTS	alkane 1-monooxygenase	Alkane 1-monooxygenase (alkB / alkB1 / alkB2)	PRESENT_UNREVIEWED	-
 CYP153	EC	1.14.15.-	WILDCARD	With reduced iron-sulfur protein as one donor, and incorporation of one atom of oxygen into the other donor	Cytochrome P450 Alkane Hydroxylase (CYP153)	NONSPECIFIC	wildcard EC is broad contextual evidence
-rubAB	EC	1.18.1.1	EXISTS	rubredoxin---NAD+ reductase	Rubredoxin & Rubredoxin Reductase (rubA/rubB)	PASS	-
-alkJ	EC	1.1.1.1	EXISTS	alcohol dehydrogenase	Alcohol Dehydrogenase (alkJ / Alkane pathway)	PASS	-
-alkJ	EC	1.1.99.8	HISTORICAL_TRANSFERRED	alcohol dehydrogenase (acceptor)	Alcohol Dehydrogenase (alkJ / Alkane pathway)	REPLACE	transferred EC; successor(s): 1.1.2.7, 1.1.2.8
-alkH	EC	1.2.1.3	EXISTS	aldehyde dehydrogenase (NAD+)	Aldehyde Dehydrogenase (alkH / Alkane pathway)	PASS	-
-alkK	EC	6.2.1.3	EXISTS	long-chain-fatty-acid---CoA ligase	Fatty Acyl-CoA Synthetase (alkK)	PASS	-
-ladA	EC	1.14.14.28	EXISTS	long-chain alkane monooxygenase	Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)	PASS	-
+rubAB	EC	1.18.1.1	EXISTS	rubredoxin---NAD+ reductase	Rubredoxin & Rubredoxin Reductase (rubA/rubB)	PRESENT_UNREVIEWED	-
+alkJ	EC	1.1.1.1	EXISTS	alcohol dehydrogenase	Alcohol Dehydrogenase (alkJ / Alkane pathway)	PRESENT_UNREVIEWED	-
+alkH	EC	1.2.1.3	EXISTS	aldehyde dehydrogenase (NAD+)	Aldehyde Dehydrogenase (alkH / Alkane pathway)	PRESENT_UNREVIEWED	-
+alkK	EC	6.2.1.3	EXISTS	long-chain-fatty-acid---CoA ligase	Fatty Acyl-CoA Synthetase (alkK)	PRESENT_UNREVIEWED	-
+ladA	EC	1.14.14.28	EXISTS	long-chain alkane monooxygenase	Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)	PRESENT_UNREVIEWED	-
 almA	EC	1.14.14.-	WILDCARD	With reduced flavin or flavoprotein as one donor, and incorporation of one atom of oxygen into the other donor	Long-chain Alkane Hydroxylase AlmA/AlmA1/AlmA3 (Flavin-binding C20-C32)	NONSPECIFIC	wildcard EC is broad contextual evidence
 tmo_tod	EC	1.14.13.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of one atom of oxygen into the other donor	Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec
-ndo_nah	EC	1.14.12.12	EXISTS	naphthalene 1,2-dioxygenase	Naphthalene / PAH Dioxygenase (ndoABC / nahAcAb / phnAc)	PASS	-
-ndo_nah	EC	1.14.12.18	EXISTS	biphenyl 2,3-dioxygenase	Naphthalene / PAH Dioxygenase (ndoABC / nahAcAb / phnAc)	PASS	-
-catA_xylE	EC	1.13.11.1	EXISTS	catechol 1,2-dioxygenase	Central Ring-Cleavage Dioxygenases (catA / xylE)	PASS	-
-catA_xylE	EC	1.13.11.2	EXISTS	catechol 2,3-dioxygenase	Central Ring-Cleavage Dioxygenases (catA / xylE)	PASS	-
+ndo_nah	EC	1.14.12.12	EXISTS	naphthalene 1,2-dioxygenase	Naphthalene / PAH Dioxygenase (ndoABC / nahAcAb / phnAc)	PRESENT_UNREVIEWED	-
+ndo_nah	EC	1.14.12.18	EXISTS	biphenyl 2,3-dioxygenase	Naphthalene / PAH Dioxygenase (ndoABC / nahAcAb / phnAc)	PRESENT_UNREVIEWED	-
+catA_xylE	EC	1.13.11.1	EXISTS	catechol 1,2-dioxygenase	Central Ring-Cleavage Dioxygenases (catA / xylE)	PRESENT_UNREVIEWED	-
+catA_xylE	EC	1.13.11.2	EXISTS	catechol 2,3-dioxygenase	Central Ring-Cleavage Dioxygenases (catA / xylE)	PRESENT_UNREVIEWED	-
 mahAB	EC	1.14.12.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of two atoms of oxygen into the other donor	Benzene / Toluene / Naphthalene Dioxygenase (mahA / mahB)	NONSPECIFIC	wildcard EC is broad contextual evidence
-dmpO_tomA	EC	1.14.13.7	EXISTS	phenol 2-monooxygenase (NADPH)	Phenol / Toluene 2-Monooxygenase (dmpO / tomA1-A4)	PASS	-
-dszC	EC	1.14.14.21	EXISTS	dibenzothiophene monooxygenase	Dibenzothiophene Monooxygenase (dszC / Biodesulfurization)	PASS	-
-pcaGH	EC	1.13.11.3	EXISTS	protocatechuate 3,4-dioxygenase	Protocatechuate 3,4-Dioxygenase (pcaG / pcaH)	PASS	-
-assA_masD	EC	4.1.99.16	EXISTS	geosmin synthase	Alkylsuccinate Synthase / MasD (assA / masD)	PASS	-
-bssABC	EC	4.1.99.11	EXISTS	benzylsuccinate synthase	Benzylsuccinate Synthase (bssA / bssB / bssC)	PASS	-
+dmpO_tomA	EC	1.14.13.7	EXISTS	phenol 2-monooxygenase (NADPH)	Phenol / Toluene 2-Monooxygenase (dmpO / tomA1-A4)	PRESENT_UNREVIEWED	-
+dszC	EC	1.14.14.21	EXISTS	dibenzothiophene monooxygenase	Dibenzothiophene Monooxygenase (dszC / Biodesulfurization)	PRESENT_UNREVIEWED	-
+pcaGH	EC	1.13.11.3	EXISTS	protocatechuate 3,4-dioxygenase	Protocatechuate 3,4-Dioxygenase (pcaG / pcaH)	PRESENT_UNREVIEWED	-
+assA_masD	EC	4.1.99.16	EXISTS	geosmin synthase	Alkylsuccinate Synthase / MasD (assA / masD)	PRESENT_UNREVIEWED	-
+bssABC	EC	4.1.99.11	EXISTS	benzylsuccinate synthase	Benzylsuccinate Synthase (bssA / bssB / bssC)	PRESENT_UNREVIEWED	-
 nmsA	EC	4.1.99.-	WILDCARD	Other carbon-carbon lyases	Naphthylmethylsuccinate Synthase (nmsA)	NONSPECIFIC	wildcard EC is broad contextual evidence
-cmdA_ebdA	EC	1.17.99.2	EXISTS	ethylbenzene hydroxylase	Ethylbenzene Dehydrogenase Subunit Alpha (cmdA / ebdA)	PASS	-
+cmdA_ebdA	EC	1.17.99.2	EXISTS	ethylbenzene hydroxylase	Ethylbenzene Dehydrogenase Subunit Alpha (cmdA / ebdA)	PRESENT_UNREVIEWED	-
 abcA	EC	4.1.1.-	WILDCARD	Carboxy-lyases	Anaerobic Benzene Carboxylase Subunit A (abcA1 / abcA2)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: abcA, ncrA
 ncrA	EC	4.1.1.-	WILDCARD	Carboxy-lyases	Naphthalene Carboxylase (ncrA)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: abcA, ncrA
-rhlA	EC	2.3.1.266	EXISTS	[ribosomal protein bS18]-alanine N-acetyltransferase	HAA Synthase (rhlA / Rhamnolipid precursor)	PASS	-
-rhlB	EC	2.4.1.189	EXISTS	luteolin 7-O-glucuronosyltransferase	Rhamnosyltransferase I (rhlB / Mono-rhamnolipid)	PASS	-
-rhlC	EC	2.4.1.298	EXISTS	anthocyanidin 3-O-glucoside 5-O-glucosyltransferase	Rhamnosyltransferase II (rhlC / Di-rhamnolipid)	PASS	-
-rhlRI	EC	2.3.1.184	EXISTS	acyl-homoserine-lactone synthase	Rhamnolipid Quorum Sensing Regulators (rhlR / rhlI)	PASS	-
-trehalolipid	EC	2.4.1.15	EXISTS	alpha,alpha-trehalose-phosphate synthase (UDP-forming)	Trehalolipid Biosynthesis (sdtA / otsA / otsB)	PASS	-
-trehalolipid	EC	3.1.3.12	EXISTS	trehalose-phosphatase	Trehalolipid Biosynthesis (sdtA / otsA / otsB)	PASS	-
+rhlA	EC	2.3.1.266	EXISTS	[ribosomal protein bS18]-alanine N-acetyltransferase	HAA Synthase (rhlA / Rhamnolipid precursor)	PRESENT_UNREVIEWED	-
+rhlB	EC	2.4.1.189	EXISTS	luteolin 7-O-glucuronosyltransferase	Rhamnosyltransferase I (rhlB / Mono-rhamnolipid)	PRESENT_UNREVIEWED	-
+rhlC	EC	2.4.1.298	EXISTS	anthocyanidin 3-O-glucoside 5-O-glucosyltransferase	Rhamnosyltransferase II (rhlC / Di-rhamnolipid)	PRESENT_UNREVIEWED	-
+trehalolipid	EC	2.4.1.15	EXISTS	alpha,alpha-trehalose-phosphate synthase (UDP-forming)	Trehalolipid Biosynthesis (sdtA / otsA / otsB)	PRESENT_UNREVIEWED	-
+trehalolipid	EC	3.1.3.12	EXISTS	trehalose-phosphatase	Trehalolipid Biosynthesis (sdtA / otsA / otsB)	PRESENT_UNREVIEWED	-
 emt1	EC	2.4.1.-	WILDCARD	Hexosyltransferases	Mannosylerythritol Lipid (MEL) Biosynthesis (emt1)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: emt1, sble
 sble	EC	2.4.1.-	WILDCARD	Hexosyltransferases	Sophorolipid Biosynthesis (sble / glucosyltransferase)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: emt1, sble
 sble	EC	2.3.1.-	WILDCARD	Transferring groups other than aminoacyl groups	Sophorolipid Biosynthesis (sble / glucosyltransferase)	NONSPECIFIC	wildcard EC is broad contextual evidence
@@ -45,12 +43,12 @@ fengycin_iturin	EC	2.7.7.-	WILDCARD	Nucleotidyltransferases	Fengycin / Iturin / 
 mycA_C	EC	2.7.7.-	WILDCARD	Nucleotidyltransferases	Mycosubtilin Lipopeptide Synthetase (mycA / mycB / mycC)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: srfA, licA_D, fengycin_iturin, mycA_C, arfA_C, pswP
 arfA_C	EC	2.7.7.-	WILDCARD	Nucleotidyltransferases	Arthrofactin Lipopeptide Synthetase (arfA / arfB / arfC)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: srfA, licA_D, fengycin_iturin, mycA_C, arfA_C, pswP
 pswP	EC	2.7.7.-	WILDCARD	Nucleotidyltransferases	Serrawettin Lipopeptide Synthetase (pswP)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: srfA, licA_D, fengycin_iturin, mycA_C, arfA_C, pswP
-sfp	EC	2.7.8.7	EXISTS	holo-[acyl-carrier-protein] synthase	4'-Phosphopantetheinyl Transferase (sfp / NRPS activator)	PASS	-
+sfp	EC	2.7.8.7	EXISTS	holo-[acyl-carrier-protein] synthase	4'-Phosphopantetheinyl Transferase (sfp / NRPS activator)	PRESENT_UNREVIEWED	-
 wza_wzb_wzc	EC	3.1.3.-	WILDCARD	Phosphoric-monoester hydrolases	Polymeric Bio-emulsifier Secretion (wza / wzb / wzc / EPS)	NONSPECIFIC	wildcard EC is broad contextual evidence
-meor_acid_gas	EC	2.3.1.54	EXISTS	formate C-acetyltransferase	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	-
-meor_acid_gas	EC	2.7.2.1	EXISTS	acetate kinase	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	-
-meor_acid_gas	EC	2.3.1.8	EXISTS	phosphate acetyltransferase	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	-
-meor_acid_gas	EC	4.2.1.1	EXISTS	carbonic anhydrase	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	-
+meor_acid_gas	EC	2.3.1.54	EXISTS	formate C-acetyltransferase	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PRESENT_UNREVIEWED	-
+meor_acid_gas	EC	2.7.2.1	EXISTS	acetate kinase	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PRESENT_UNREVIEWED	-
+meor_acid_gas	EC	2.3.1.8	EXISTS	phosphate acetyltransferase	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PRESENT_UNREVIEWED	-
+meor_acid_gas	EC	4.2.1.1	EXISTS	carbonic anhydrase	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PRESENT_UNREVIEWED	-
 isoA_I	EC	1.14.13.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of one atom of oxygen into the other donor	Isoprene Monooxygenase (isoA-I / Isoprene degradation)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec
 xamo_xec	EC	1.14.13.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of one atom of oxygen into the other donor	Alkene / Ethene Monooxygenase (xamoA-F / xecA-E)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec
-etnE	EC	2.5.1.56	EXISTS	N-acetylneuraminate synthase	Epoxyalkane:CoM Transferase (etnE / Ethene pathway)	PASS	-
+etnE	EC	2.5.1.56	EXISTS	N-acetylneuraminate synthase	Epoxyalkane:CoM Transferase (etnE / Ethene pathway)	PRESENT_UNREVIEWED	-

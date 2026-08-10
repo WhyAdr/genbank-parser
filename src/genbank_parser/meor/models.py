@@ -44,6 +44,7 @@ class MeorDatabase:
     categories: tuple[MeorCategory, ...]
     markers: tuple[MeorMarker, ...]
     pathways: tuple[MeorPathway, ...]
+    catalog_version: str
     provenance: dict[str, Any] = field(default_factory=dict, compare=False)
 
     @property
@@ -180,6 +181,8 @@ class MeorPathwayResult:
 @dataclass(frozen=True)
 class MeorReport:
     source_file: str
+    tool_version: str
+    catalog_version: str
     total_features: int
     parameters: dict[str, int]
     hits: tuple[MeorHit, ...]
@@ -201,6 +204,8 @@ class MeorReport:
             "schema_version": "gbparse.meor.v1",
             "tool": "gbparse",
             "analysis": "meor",
+            "tool_version": self.tool_version,
+            "catalog_version": self.catalog_version,
             "file": self.source_file,
             "total_features": self.total_features,
             "total_hits": self.total_hits,

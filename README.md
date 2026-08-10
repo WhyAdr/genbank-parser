@@ -15,7 +15,7 @@ A Biopython-powered genome-annotation query engine, validation suite, and CLI to
 - **GFF3 Export**: Correctly computes CDS translation phase ($0, 1, 2$) across multi-exon/joined segments in 5' $\rightarrow$ 3' transcription order, emits complete `##sequence-region` extents, and handles ordinary features without artificial parent splits.
 - **QC & Semantic Validation**: Verifies translation integrity against genetic codes (`transl_table`) and `codon_start` offsets, with structured severity findings (`ERROR`, `WARNING`, `INFO`) and pseudogene tolerance.
 - **Unified CLI**: Provides `gbparse` subcommands for feature search, valid local sub-region extraction, annotation diffing, genetic-code-aware codon usage, annotation-based candidate phylogenetic markers, CRISPR/Cas annotation scanning, and declarative discovery.
-- **MEOR Evidence Engine**: Scans 48 curated markers across 9 hydrocarbon-degradation, biosurfactant, and bio-emulsifier categories; evaluates 7 genome-level pathway models; and reports co-directional candidate clusters.
+- **MEOR Evidence Engine**: Scans 48 curated markers across 9 hydrocarbon-degradation, biosurfactant, and bio-emulsifier categories; evaluates 7 genome-level pathway models; and reports same-contig, known-strand candidate clusters with at most N intervening bases.
 
 ---
 
@@ -100,11 +100,13 @@ gbparse meor input.gbff --min-weight 2 --format json --output meor.json
 
 ### MEOR confidence and interpretation
 
-`gbparse meor` preserves the standalone `genbank-meor` v1.1.0 evidence tiers:
+`gbparse meor` uses the following evidence tiers (MEOR catalog `1.1`):
 
-- **Weight 3**: structured KEGG KO, structured EC number, or matching gene symbol.
+- **Weight 3**: active structured KEGG KO, fully specified structured EC number, or matching gene symbol.
 - **Weight 2**: specific product-annotation regex.
 - **Weight 1**: free-text note match, including KO or EC identifiers found only in `/note`.
+
+Wildcard ECs are contextual catalog metadata and never produce Weight-3 evidence.
 
 Marker hits indicate **annotation-supported genomic encoding potential**. They do not prove transcription, enzyme activity, hydrocarbon turnover, biosurfactant production, or field-scale enhanced oil recovery. See the [MEOR marker and scientific provenance reference](docs/meor_markers_reference.md) for the curated catalog and its limits.
 

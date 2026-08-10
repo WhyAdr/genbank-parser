@@ -47,6 +47,8 @@ def render_text(report: MeorReport) -> str:
     print("=" * 80, file=out)
     print(" MEOR & BIOSURFACTANT DISCOVERY REPORT", file=out)
     print(f" Target File: {report.source_file}", file=out)
+    print(f" gbparse Version: {report.tool_version}", file=out)
+    print(f" MEOR Catalog Version: {report.catalog_version}", file=out)
     print(f" Total Features Parsed: {report.total_features:,}", file=out)
     print(f" Total MEOR & Biosurfactant Hits: {report.total_hits}", file=out)
     print(f" Co-localized BGC / Operon Candidates: {report.total_clusters}", file=out)
@@ -90,7 +92,7 @@ def render_text(report: MeorReport) -> str:
 
     max_gap = report.parameters["max_gap"]
     print(
-        f"\n[3] CO-LOCALIZED MEOR OPERONS & BGC CLUSTERS (Gap <= {max_gap} bp)",
+        f"\n[3] CO-LOCALIZED MEOR OPERONS & BGC CLUSTERS (<= {max_gap} intervening bases)",
         file=out,
     )
     print("-" * 80, file=out)

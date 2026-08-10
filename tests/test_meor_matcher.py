@@ -63,3 +63,15 @@ def test_matcher_preserves_confidence_tiers_and_precedence() -> None:
     note_product = make_feature(note=["possible alkane monooxygenase"])
     assert match_feature_to_marker(note_product, marker).evidence_type == "note"
     assert match_feature_to_marker(note_product, marker).weight == 1
+
+
+def test_wildcard_ec_is_never_structured_weight_three() -> None:
+    marker = load_meor_database().marker_map["prmABCD"]
+    structured = make_feature(EC_number=["1.14.13.-"])
+    assert match_feature_to_marker(structured, marker) is None
+
+    note = make_feature(note=["EC:1.14.13.-"])
+    match = match_feature_to_marker(note, marker)
+    assert match is not None
+    assert match.evidence_type == "note_ec"
+    assert match.weight == 1

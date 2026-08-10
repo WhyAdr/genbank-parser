@@ -1,6 +1,6 @@
 # MEOR & Hydrocarbon Biosynthesis Marker Reference
 
-This reference documents the 48 marker definitions across 9 functional categories and 7 pathway-completeness models implemented by `gbparse meor` in `genbank-parser` v0.4.0. The catalog was migrated without biological-rule changes from `WhyAdr/genbank-meor` commit `42d09105ca63a47dac78e0990767124ccde2dab9` (v1.1.0 behavior).
+This reference documents MEOR catalog `1.1`: 48 marker definitions across 9 functional categories and 7 pathway-completeness models implemented by `gbparse meor` in `genbank-parser` v0.4.1. The catalog was initially migrated for behavioral parity from `WhyAdr/genbank-meor` commit `42d09105ca63a47dac78e0990767124ccde2dab9` (v1.1.0 behavior), then identifier-audited and corrected on 2026-08-10.
 
 ## Source Databases
 
@@ -12,15 +12,29 @@ This reference documents the 48 marker definitions across 9 functional categorie
 
 The identifier catalog was audited offline on 2026-08-10 against the supplied
 KEGG KO snapshot (`kegg_ko_list_2026-08-02.tsv`), COG-2024 definitions,
-ExplorEnz EC data, and Pfam-A headers. The audit preserves wildcard ECs as
-explicitly nonspecific evidence and does not infer COG or Pfam mappings.
+ExplorEnz EC data, and Pfam-A headers. Wildcard ECs are preserved as contextual
+catalog metadata but cannot produce structured Weight-3 matches. The catalog
+defines no COG or Pfam mappings; their reference parsers are audit support only,
+and the runtime MEOR model does not consume them.
 
 The audit removed direct definition mismatches (including stale AlkB,
 lipopeptide, anaerobic-activation, glycolipid, and transfer-system KOs),
 assigned KOs `K15666`-`K15668` to the fengycin/iturin marker, and corrected the
-protocatechuate and dibenzothiophene EC numbers. `ncrA` KO `K27540` is absent
-from the supplied KEGG snapshot and remains marked for curation; the
-transferred EC `1.1.99.8` on `alkJ` is likewise reported for successor review.
+protocatechuate and dibenzothiophene EC numbers. Unresolved `ncrA` KO `K27540`,
+transferred `alkJ` EC `1.1.99.8`, LasI KO `K13060` plus nondiscriminating EC
+`2.3.1.184` on `rhlRI`, and inconsistent `etnE` KO `K22363` were removed from
+active matching without guessed replacements. `rhlRI` retains structured KO
+support for RhlI (`K13061`); RhlR is supported by gene/product annotations only.
+
+### Audit status semantics
+
+- `PRESENT_UNREVIEWED`: present in the supplied reference and not disproved by an automated rule; not a curated biological validation.
+- `NONSPECIFIC`: broad identifier retained as context but excluded from structured Weight-3 matching.
+- `REVIEW`: internally inconsistent or otherwise requiring curator judgment; disabled from active evidence in catalog `1.1`.
+- `REPLACE`: deleted or transferred identifier; disabled until a unique successor is curated.
+- `MISSING_FROM_REFERENCE`: absent from the supplied snapshot; disabled from active evidence.
+
+Exact snapshot sizes and SHA-256 values are recorded in [`audit/reference_manifest.tsv`](../audit/reference_manifest.tsv).
 
 ---
 
@@ -109,7 +123,7 @@ transferred EC `1.1.99.8` on `alkJ` is likewise reported for successor review.
 9. **rubAB** — Rubredoxin & Rubredoxin Reductase (rubA/rubB)
    - EC: `1.18.1.1`
 10. **alkJ** — Alcohol Dehydrogenase (alkJ / Alkane pathway)
-    - EC: `1.1.1.1`, `1.1.99.8` | KO: `K00001`, `K13953`
+    - EC: `1.1.1.1` | KO: `K00001`, `K13953`
 11. **alkH** — Fatty Aldehyde Dehydrogenase (alkH)
     - EC: `1.2.1.3` | KO: `K00128`
 12. **alkK** — Fatty Acyl-CoA Synthetase (alkK)
@@ -162,7 +176,7 @@ transferred EC `1.1.99.8` on `alkJ` is likewise reported for successor review.
 27. **abcA** — Anaerobic Benzene Carboxylase Subunit A (abcA1 / abcA2)
     - EC: `4.1.1.-`
 28. **ncrA** — Naphthalene Carboxylase (ncrA)
-    - EC: `4.1.1.-` | KO: `K27540`
+    - EC: `4.1.1.-` | KO: none currently active
 
 ---
 
@@ -176,7 +190,7 @@ transferred EC `1.1.99.8` on `alkJ` is likewise reported for successor review.
 31. **rhlC** — Rhamnosyltransferase II (rhlC / Di-rhamnolipid)
     - EC: `2.4.1.298`
 32. **rhlRI** — Rhamnolipid Quorum Sensing Regulators (rhlR / rhlI)
-    - EC: `2.3.1.184` | KO: `K13060`, `K13061`
+    - EC: none currently active | KO: `K13061` (RhlI; RhlR has gene/product evidence only)
 33. **trehalolipid** — Trehalolipid Biosynthesis (sdtA / tshA / otsA / otsB)
     - EC: `2.4.1.15`, `3.1.3.12` | KO: `K00697`, `K01087`
 34. **emt1** — Mannosylerythritol Lipid (MEL) Biosynthesis (emt1)
@@ -224,7 +238,7 @@ transferred EC `1.1.99.8` on `alkJ` is likewise reported for successor review.
 46. **xamo_xec** — Alkene / Ethene Monooxygenase (xamoA-F / xecA-E)
     - EC: `1.14.13.-`
 47. **etnE** — Epoxyalkane:CoM Transferase (etnE)
-    - EC: `2.5.1.56` | KO: `K22363`
+    - EC: `2.5.1.56` | KO: none currently active
 48. **mpdBC** — 2-Methylpropene Degradation (mpdB / mpdC)
 
 ---
@@ -262,8 +276,10 @@ transferred EC `1.1.99.8` on `alkJ` is likewise reported for successor review.
 ## 3. Evidence Weighting Schema
 
 Matches from `gbparse meor` are assigned confidence weights from 1 to 3:
-- **Weight 3 (High Confidence)**: Match on exact KEGG KO accession, INSDC EC number, or exact gene symbol regex.
+- **Weight 3 (High Confidence)**: Match on an active structured KEGG KO, fully specified INSDC EC number, or exact gene symbol regex.
 - **Weight 2 (Medium Confidence)**: Match on specific product keyword regex.
 - **Weight 1 (Low Confidence)**: Match on broad note text, including a KO or EC identifier found only in `/note`.
+
+Wildcard ECs are contextual catalog metadata and never produce Weight-3 evidence.
 
 These annotation-supported candidates indicate genomic encoding potential. They do not demonstrate transcription, enzyme activity, hydrocarbon turnover, biosurfactant production, or enhanced oil recovery performance. The pathway scores are genome-level marker completeness, not cluster-local completeness or biochemical flux.

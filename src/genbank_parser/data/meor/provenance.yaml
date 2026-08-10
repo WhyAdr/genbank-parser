@@ -226,10 +226,34 @@ migration:
   behavior_version: 1.1.0
 identifier_audit:
   reference_snapshots:
-    kegg: kegg_ko_list_2026-08-02.tsv
-    cog: cog-24.def.tab
-    ec: explorenz-enzyme-data.xml
-    pfam: Pfam-A.hmm
+    kegg:
+      filename: kegg_ko_list_2026-08-02.tsv
+      bytes: 1429504
+      sha256: 33fa22900fe2808cd95e7885ce438ceb344fe8fecce4890267515d5831da3fab
+      declared_release: snapshot 2026-08-02
+      retrieved_date: '2026-08-10'
+    cog:
+      filename: cog-24.def.tab
+      bytes: 409510
+      sha256: f4f0007b356e81dac2afc46d062411bc65dce4de6d3c5d6ce4779687a7193de3
+      declared_release: COG 2024
+      retrieved_date: '2026-08-10'
+    ec:
+      filename: explorenz-enzyme-data.xml
+      bytes: 53479073
+      sha256: 0aa27430c8433d34944cc0685abcd7db8749d87e0724d1e32cb24da42cd13175
+      declared_release: supplied ExplorEnz XML snapshot
+      retrieved_date: '2026-08-10'
+    pfam:
+      filename: Pfam-A.hmm
+      bytes: 2246909846
+      sha256: 4b0da6399b97d2b23329de82190b2e5705bde1dea4cb2d028a52712d5966739e
+      declared_release: supplied Pfam-A snapshot
+      retrieved_date: '2026-08-10'
+  runtime_policy:
+    structured_kos: only identifiers retained in marker kos arrays
+    structured_ecs: only fully specified identifiers retained in marker ecs arrays
+    wildcard_ecs: contextual metadata eligible only for Weight-1 note matching
   corrections:
   - marker: CYP153
     change: removed K00496
@@ -288,3 +312,15 @@ identifier_audit:
   - marker: dszC
     change: replaced EC 1.14.14.24 with EC 1.14.14.21
     reason: ExplorEnz and K22219 define dibenzothiophene monooxygenase as EC 1.14.14.21.
+  - marker: alkJ
+    change: removed transferred EC 1.1.99.8 from active evidence
+    reason: ExplorEnz links it to multiple successors, so no unambiguous replacement was selected.
+  - marker: ncrA
+    change: removed K27540 from active evidence
+    reason: K27540 is absent from the supplied KEGG snapshot.
+  - marker: rhlRI
+    change: removed K13060 and EC 2.3.1.184 from active evidence; retained K13061
+    reason: KEGG defines K13060 as lasI and K13061 as RhlI-compatible; their shared EC cannot discriminate LasI from RhlI.
+  - marker: etnE
+    change: removed K22363 from active evidence
+    reason: KEGG defines K22363 as 2-hydroxypropyl-CoM lyase, inconsistent with the epoxyalkane CoM transferase marker.

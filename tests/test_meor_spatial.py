@@ -35,9 +35,9 @@ def hit(
 
 
 def test_gap_boundary_overlap_and_physical_feature_deduplication() -> None:
-    exact = cluster_meor_hits([hit(1, 1, 100), hit(2, 300, 400)], max_gap=200)
+    exact = cluster_meor_hits([hit(1, 1, 100), hit(2, 301, 400)], max_gap=200)
     assert len(exact) == 1
-    assert cluster_meor_hits([hit(1, 1, 100), hit(2, 301, 400)], max_gap=200) == []
+    assert cluster_meor_hits([hit(1, 1, 100), hit(2, 302, 400)], max_gap=200) == []
 
     overlapping = cluster_meor_hits([hit(1, 100, 300), hit(2, 200, 400)])
     assert len(overlapping) == 1
@@ -45,10 +45,11 @@ def test_gap_boundary_overlap_and_physical_feature_deduplication() -> None:
     duplicate_marker_hits = cluster_meor_hits(
         [hit(1, 1, 100, marker="alkB"), hit(1, 1, 100, marker="CYP153")]
     )
-    assert duplicate_marker_hits[0].gene_count == 1
-    assert duplicate_marker_hits[0].hit_count == 2
+    assert duplicate_marker_hits == []
 
 
 def test_contig_and_strand_partitioning() -> None:
     assert cluster_meor_hits([hit(1, 1, 100), hit(2, 150, 250, strand="-")]) == []
     assert cluster_meor_hits([hit(1, 1, 100), hit(2, 150, 250, contig="c2")]) == []
+    assert cluster_meor_hits([hit(1, 1, 100, strand="?"), hit(2, 150, 250, strand="?")]) == []
+    assert cluster_meor_hits([hit(1, 1, 100, strand="."), hit(2, 150, 250, strand=".")]) == []

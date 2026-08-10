@@ -4,33 +4,30 @@ This report was generated offline from the supplied snapshots. The audit is read
 
 ## Inputs
 
-- `markers`: `src\genbank_parser\data\meor\markers.yaml`
-- `kegg`: `audit-reference\kegg_ko_list_2026-08-02.tsv`
-- `cog`: `audit-reference\cog-24.def.tab`
-- `ec_xml`: `audit-reference\explorenz-enzyme-data.xml`
-- `pfam`: `audit-reference\Pfam-A.hmm`
-- `ec_source_used`: `audit-reference\explorenz-enzyme-data.xml`
+- `markers`: `src/genbank_parser/data/meor/markers.yaml`
+- `kegg`: `audit-reference/kegg_ko_list_2026-08-02.tsv`
+- `cog`: `audit-reference/cog-24.def.tab`
+- `ec`: `audit-reference/explorenz-enzyme-data.xml`
+- `pfam`: `audit-reference/Pfam-A.hmm`
+- `ec_source_used`: `audit-reference/explorenz-enzyme-data.xml`
 
 ## Coverage
 
 | Identifier type | Catalog assignments | Reference entries indexed |
 | --- | ---: | ---: |
-| KO | 52 | 24,514 |
+| KO | 49 | 24,514 |
 | COG | 0 | 5,061 |
-| EC | 55 | 8,343 entries; 8,343 history rows |
+| EC | 53 | 8,343 entries; 8,343 history rows |
 | Pfam | 0 | 0 aliases |
 
 ## Status counts
 
 | Status | Count |
 | --- | ---: |
-| `MISSING_FROM_REFERENCE` | 1 |
 | `NONSPECIFIC` | 24 |
-| `PASS` | 71 |
-| `REPLACE` | 1 |
-| `REVIEW` | 14 |
+| `PRESENT_UNREVIEWED` | 93 |
 
-## Findings requiring review or remediation
+## Detected problems and compatibility qualifications
 
 | Marker | Type | Identifier | Status | Notes |
 | --- | --- | --- | --- | --- |
@@ -39,23 +36,12 @@ This report was generated offline from the supplied snapshots. The audit is read
 | `sbmoXYZ` | `EC` | `1.14.13.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec |
 | `ahyA` | `EC` | `1.17.99.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence |
 | `CYP153` | `EC` | `1.14.15.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence |
-| `alkJ` | `EC` | `1.1.99.8` | `REPLACE` | transferred EC; successor(s): 1.1.2.7, 1.1.2.8 |
 | `almA` | `EC` | `1.14.14.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence |
-| `tmo_tod` | `KO` | `K03268` | `REVIEW` | embedded ECs: 1.14.12.3, 1.14.12.11, 1.14.12.26; KO/EC contradiction |
-| `tmo_tod` | `KO` | `K16268` | `REVIEW` | embedded ECs: 1.14.12.3, 1.14.12.11, 1.14.12.26; KO/EC contradiction |
-| `tmo_tod` | `KO` | `K18090` | `REVIEW` | embedded ECs: 1.18.1.3, 1.18.1.-; KO/EC contradiction |
-| `tmo_tod` | `KO` | `K16269` | `REVIEW` | embedded ECs: 1.3.1.19, 1.3.1.119; KO/EC contradiction |
-| `tmo_tod` | `KO` | `K16270` | `REVIEW` | embedded ECs: 1.13.11.-; KO/EC contradiction |
 | `tmo_tod` | `EC` | `1.14.13.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec |
-| `ndo_nah` | `KO` | `K14579` | `REVIEW` | embedded ECs: 1.14.12.12, 1.14.12.23, 1.14.12.24; KO/EC contradiction |
-| `ndo_nah` | `KO` | `K14580` | `REVIEW` | embedded ECs: 1.14.12.12, 1.14.12.23, 1.14.12.24; KO/EC contradiction |
-| `ndo_nah` | `KO` | `K14581` | `REVIEW` | embedded ECs: 1.18.1.7; KO/EC contradiction |
 | `mahAB` | `EC` | `1.14.12.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence |
 | `nmsA` | `EC` | `4.1.99.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence |
 | `abcA` | `EC` | `4.1.1.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence; shared across markers: abcA, ncrA |
-| `ncrA` | `KO` | `K27540` | `MISSING_FROM_REFERENCE` | KO identifier not present in KEGG snapshot |
 | `ncrA` | `EC` | `4.1.1.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence; shared across markers: abcA, ncrA |
-| `trehalolipid` | `KO` | `K00697` | `REVIEW` | embedded ECs: 2.4.1.15, 2.4.1.347; KO/EC contradiction |
 | `emt1` | `EC` | `2.4.1.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence; shared across markers: emt1, sble |
 | `sble` | `EC` | `2.4.1.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence; shared across markers: emt1, sble |
 | `sble` | `EC` | `2.3.1.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence |
@@ -69,11 +55,9 @@ This report was generated offline from the supplied snapshots. The audit is read
 | `wza_wzb_wzc` | `EC` | `3.1.3.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence |
 | `isoA_I` | `EC` | `1.14.13.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec |
 | `xamo_xec` | `EC` | `1.14.13.-` | `NONSPECIFIC` | wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec |
-| `etnE` | `KO` | `K22363` | `REVIEW` | embedded ECs: 4.4.1.23; KO/EC contradiction |
-| `tmo_tod` | `CONSISTENCY` | `tmo_tod` | `REVIEW` | KO definition embeds EC(s) not compatible with marker ecs |
-| `ndo_nah` | `CONSISTENCY` | `ndo_nah` | `REVIEW` | KO definition embeds EC(s) not compatible with marker ecs |
-| `trehalolipid` | `CONSISTENCY` | `trehalolipid` | `REVIEW` | KO definition embeds EC(s) not compatible with marker ecs |
-| `etnE` | `CONSISTENCY` | `etnE` | `REVIEW` | KO definition embeds EC(s) not compatible with marker ecs |
+| `tmo_tod` | `CONSISTENCY` | `tmo_tod` | `PRESENT_UNREVIEWED` | at least one KO EC matches; additional EC scope is broader |
+| `ndo_nah` | `CONSISTENCY` | `ndo_nah` | `PRESENT_UNREVIEWED` | at least one KO EC matches; additional EC scope is broader |
+| `trehalolipid` | `CONSISTENCY` | `trehalolipid` | `PRESENT_UNREVIEWED` | at least one KO EC matches; additional EC scope is broader |
 
 ## Reference index counts
 
@@ -85,4 +69,6 @@ This report was generated offline from the supplied snapshots. The audit is read
 
 ## Notes
 
-`NONSPECIFIC` wildcard ECs are retained as broad contextual evidence. `DUPLICATED` identifies reuse across markers; a high-confidence incompatible definition is reported as `DEFINITION_MISMATCH`. `REVIEW` consistency findings require curator judgment.
+`PRESENT_UNREVIEWED` means that an identifier exists and no implemented automatic rule disproved it; it is not curator-approved semantic validation. `NONSPECIFIC` wildcard ECs are retained only as broad contextual metadata and are excluded from structured Weight-3 matching. `DUPLICATED` identifies reuse across markers; `REVIEW` requires curator judgment.
+
+COG/Pfam reference parsing is implemented, but the current MEOR catalog defines zero COG or Pfam assignments. The runtime model does not consume COG/Pfam evidence.

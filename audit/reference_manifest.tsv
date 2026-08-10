@@ -1,0 +1,5 @@
+reference	filename	path	bytes	sha256	declared_release	retrieved_date
+kegg	kegg_ko_list_2026-08-02.tsv	audit-reference/kegg_ko_list_2026-08-02.tsv	1429504	33fa22900fe2808cd95e7885ce438ceb344fe8fecce4890267515d5831da3fab	snapshot 2026-08-02	2026-08-10
+cog	cog-24.def.tab	audit-reference/cog-24.def.tab	409510	f4f0007b356e81dac2afc46d062411bc65dce4de6d3c5d6ce4779687a7193de3	COG 2024	2026-08-10
+ec	explorenz-enzyme-data.xml	audit-reference/explorenz-enzyme-data.xml	53479073	0aa27430c8433d34944cc0685abcd7db8749d87e0724d1e32cb24da42cd13175	supplied ExplorEnz XML snapshot	2026-08-10
+pfam	Pfam-A.hmm	audit-reference/Pfam-A.hmm	2246909846	4b0da6399b97d2b23329de82190b2e5705bde1dea4cb2d028a52712d5966739e	supplied Pfam-A snapshot	2026-08-10
