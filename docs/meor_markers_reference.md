@@ -10,6 +10,18 @@ This reference documents the 48 marker definitions across 9 functional categorie
 | **HMDB** | Hydrocarbon Monooxygenase DB | http://www.hydrocarbonmonooxygenase.com/ | 2026-08-04 |
 | **HADEG** | Hydrocarbon Anaerobic & Degrading DB | https://hadeg.tu-braunschweig.de/ | 2026-08-04 |
 
+The identifier catalog was audited offline on 2026-08-10 against the supplied
+KEGG KO snapshot (`kegg_ko_list_2026-08-02.tsv`), COG-2024 definitions,
+ExplorEnz EC data, and Pfam-A headers. The audit preserves wildcard ECs as
+explicitly nonspecific evidence and does not infer COG or Pfam mappings.
+
+The audit removed direct definition mismatches (including stale AlkB,
+lipopeptide, anaerobic-activation, glycolipid, and transfer-system KOs),
+assigned KOs `K15666`-`K15668` to the fengycin/iturin marker, and corrected the
+protocatechuate and dibenzothiophene EC numbers. `ncrA` KO `K27540` is absent
+from the supplied KEGG snapshot and remains marked for curation; the
+transferred EC `1.1.99.8` on `alkJ` is likewise reported for successor review.
+
 ---
 
 ## 48-Marker Scientific Provenance & Traceability Matrix
@@ -77,7 +89,7 @@ This reference documents the 48 marker definitions across 9 functional categorie
 2. **mmoXYZ** — Soluble Methane Monooxygenase (mmoX/mmoY/mmoZ/mmoB/mmoC/mmoD)
    - EC: `1.14.13.25` | KO: `K16157`, `K16158`, `K16159`, `K16160`, `K16161`, `K16162`
 3. **prmABCD** — Propane Monooxygenase (prmA/prmB/prmC/prmD / bmo)
-   - EC: `1.14.13.-` | KO: `K22473`, `K22474`, `K22475`
+   - EC: `1.14.13.-`
 4. **pbmoABC** — Membrane-bound Alkane/Butane Monooxygenase (pbmoA/B/C)
    - EC: `1.14.13.-` | KO: `K21320`, `K21321`
 5. **sbmoXYZ** — Soluble Alkane Monooxygenase Subunits (sbmoX/Y/Z)
@@ -93,9 +105,9 @@ This reference documents the 48 marker definitions across 9 functional categorie
 7. **alkB** — Alkane 1-monooxygenase (alkB / alkB1 / alkB2)
    - EC: `1.14.15.3` | KO: `K00496`
 8. **CYP153** — Cytochrome P450 Alkane Hydroxylase (CYP153A)
-   - EC: `1.14.15.-` | KO: `K00496`
+   - EC: `1.14.15.-`
 9. **rubAB** — Rubredoxin & Rubredoxin Reductase (rubA/rubB)
-   - EC: `1.18.1.1` | KO: `K00389`, `K03820`
+   - EC: `1.18.1.1`
 10. **alkJ** — Alcohol Dehydrogenase (alkJ / Alkane pathway)
     - EC: `1.1.1.1`, `1.1.99.8` | KO: `K00001`, `K13953`
 11. **alkH** — Fatty Aldehyde Dehydrogenase (alkH)
@@ -112,7 +124,7 @@ This reference documents the 48 marker definitions across 9 functional categorie
 14. **ladA** — Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)
     - EC: `1.14.14.28` | KO: `K20938`
 15. **almA** — Long-chain Alkane Hydroxylase AlmA (Flavin-binding C20-C32)
-    - EC: `1.14.14.-` | KO: `K22477`
+    - EC: `1.14.14.-`
 
 ---
 
@@ -128,11 +140,11 @@ This reference documents the 48 marker definitions across 9 functional categorie
 19. **mahAB** — Benzene / Toluene / Naphthalene Dioxygenase (mahA / mahB)
     - EC: `1.14.12.-`
 20. **dmpO_tomA** — Phenol / Toluene 2-Monooxygenase (dmpO / tomA1-A4)
-    - EC: `1.14.13.7` | KO: `K14582`
+    - EC: `1.14.13.7`
 21. **dszC** — Dibenzothiophene Monooxygenase (dszC / Biodesulfurization)
-    - EC: `1.14.14.24` | KO: `K22219`
+    - EC: `1.14.14.21` | KO: `K22219`
 22. **pcaGH** — Protocatechuate 3,4-Dioxygenase (pcaG / pcaH)
-    - EC: `1.13.11.4` | KO: `K00448`, `K00449`
+    - EC: `1.13.11.3` | KO: `K00448`, `K00449`
 
 ---
 
@@ -140,13 +152,13 @@ This reference documents the 48 marker definitions across 9 functional categorie
 *Role: Anoxic in-situ hydrocarbon activation via fumarate addition under reservoir conditions.*
 
 23. **assA_masD** — Alkylsuccinate Synthase catalytic alpha subunit (assA / masD)
-    - EC: `4.1.99.16` | KO: `K22204`
+    - EC: `4.1.99.16`
 24. **bssABC** — Benzylsuccinate Synthase (bssA / bssB / bssC)
-    - EC: `4.1.99.11` | KO: `K07540`, `K07541`, `K07542`
+    - EC: `4.1.99.11` | KO: `K07540`
 25. **nmsA** — Naphthylmethylsuccinate Synthase (nmsA)
-    - EC: `4.1.99.-` | KO: `K22205`
+    - EC: `4.1.99.-`
 26. **cmdA_ebdA** — Ethylbenzene Dehydrogenase Subunit Alpha (cmdA / ebdA)
-    - EC: `1.17.99.2` | KO: `K22206`
+    - EC: `1.17.99.2`
 27. **abcA** — Anaerobic Benzene Carboxylase Subunit A (abcA1 / abcA2)
     - EC: `4.1.1.-`
 28. **ncrA** — Naphthalene Carboxylase (ncrA)
@@ -158,11 +170,11 @@ This reference documents the 48 marker definitions across 9 functional categorie
 *Role: Surface tension reduction, interfacial tension (IFT) drop, and oil bio-emulsification.*
 
 29. **rhlA** — HAA Synthase (rhlA / Rhamnolipid fatty acid precursor)
-    - EC: `2.3.1.266` | KO: `K13057`
+    - EC: `2.3.1.266`
 30. **rhlB** — Rhamnosyltransferase I (rhlB / Mono-rhamnolipid)
-    - EC: `2.4.1.189` | KO: `K13058`
+    - EC: `2.4.1.189`
 31. **rhlC** — Rhamnosyltransferase II (rhlC / Di-rhamnolipid)
-    - EC: `2.4.1.298` | KO: `K13059`
+    - EC: `2.4.1.298`
 32. **rhlRI** — Rhamnolipid Quorum Sensing Regulators (rhlR / rhlI)
     - EC: `2.3.1.184` | KO: `K13060`, `K13061`
 33. **trehalolipid** — Trehalolipid Biosynthesis (sdtA / tshA / otsA / otsB)
@@ -178,11 +190,11 @@ This reference documents the 48 marker definitions across 9 functional categorie
 *Role: Potent lipopeptide biosurfactants (surfactin, lichenysin) for ultra-low IFT reduction.*
 
 36. **srfA** — Surfactin Synthetase NRPS (srfA-A / srfA-B / srfA-C / srfAD)
-    - EC: `2.7.7.-`, `6.3.2.-` | KO: `K15666`, `K15667`, `K15668`
+    - EC: `2.7.7.-`, `6.3.2.-`
 37. **licA_D** — Lichenysin Synthetase NRPS (licA / licB / licC / licD)
-    - EC: `2.7.7.-` | KO: `K15666`
+    - EC: `2.7.7.-`
 38. **fengycin_iturin** — Fengycin / Iturin / Viscosin / Plipastatin NRPS (fenA-E / ituA-C / vsnA-C / ppsA-E)
-    - EC: `2.7.7.-` | KO: `K15669`, `K15670`
+    - EC: `2.7.7.-` | KO: `K15666`, `K15667`, `K15668`
 39. **mycA_C** — Mycosubtilin Lipopeptide Synthetase (mycA / mycB / mycC)
     - EC: `2.7.7.-` | KO: `K15661`
 40. **arfA_C** — Arthrofactin Lipopeptide Synthetase (arfA / arfB / arfC)
@@ -190,7 +202,7 @@ This reference documents the 48 marker definitions across 9 functional categorie
 41. **pswP** — Serrawettin Lipopeptide Synthetase (pswP)
     - EC: `2.7.7.-`
 42. **sfp** — 4'-Phosphopantetheinyl Transferase (sfp / NRPS activator)
-    - EC: `2.7.8.7` | KO: `K02518`
+    - EC: `2.7.8.7`
 
 ---
 
@@ -198,7 +210,7 @@ This reference documents the 48 marker definitions across 9 functional categorie
 *Role: Emulsification, carbonate rock dissolution, acid flooding, and reservoir repressurization.*
 
 43. **wza_wzb_wzc** — Polymeric Bio-emulsifier Secretion (wza / wzb / wzc / EPS / Emulsan / Alasan)
-    - EC: `3.1.3.-` | KO: `K01990`, `K01991`
+    - EC: `3.1.3.-` | KO: `K01991`
 44. **meor_acid_gas** — Organic Acid & Gas Drivers (pflB / ackA / pta / ca)
     - EC: `2.3.1.54`, `2.7.2.1`, `2.3.1.8`, `4.2.1.1` | KO: `K00656`, `K00925`, `K00625`, `K01672`, `K01673`
 

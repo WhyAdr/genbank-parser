@@ -76,10 +76,7 @@ markers:
   - \bbmo[X-Z]\b
   ecs:
   - 1.14.13.-
-  kos:
-  - K22473
-  - K22474
-  - K22475
+  kos: []
   products:
   - propane monooxygenase
   - butane monooxygenase
@@ -155,8 +152,7 @@ markers:
   - \bcyp153A\d?\b
   ecs:
   - 1.14.15.-
-  kos:
-  - K00496
+  kos: []
   products:
   - cytochrome P450.*alkane
   - CYP153
@@ -172,9 +168,7 @@ markers:
   - \brubB\b
   ecs:
   - 1.18.1.1
-  kos:
-  - K00389
-  - K03820
+  kos: []
   products:
   - rubredoxin
   - rubredoxin--NAD\+ reductase
@@ -265,8 +259,7 @@ markers:
   - \balmA\d?\b
   ecs:
   - 1.14.14.-
-  kos:
-  - K22477
+  kos: []
   products:
   - flavin-binding monooxygenase almA
   - long-chain alkane hydroxylase almA
@@ -361,8 +354,7 @@ markers:
   - \btomA[1-4]\b
   ecs:
   - 1.14.13.7
-  kos:
-  - K14582
+  kos: []
   products:
   - phenol/toluene 2-monooxygenase
   - phenol monooxygenase
@@ -375,7 +367,7 @@ markers:
   genes:
   - \bdszC\b
   ecs:
-  - 1.14.14.24
+  - 1.14.14.21
   kos:
   - K22219
   products:
@@ -390,7 +382,7 @@ markers:
   genes:
   - \bpca[GH]\b
   ecs:
-  - 1.13.11.4
+  - 1.13.11.3
   kos:
   - K00448
   - K00449
@@ -408,8 +400,7 @@ markers:
   - \bmasD\b
   ecs:
   - 4.1.99.16
-  kos:
-  - K22204
+  kos: []
   products:
   - alkylsuccinate synthase
   - alkylsuccinate synthase subunit alpha
@@ -426,8 +417,6 @@ markers:
   - 4.1.99.11
   kos:
   - K07540
-  - K07541
-  - K07542
   products:
   - benzylsuccinate synthase
   notes: []
@@ -441,8 +430,7 @@ markers:
   - \bnmsA\b
   ecs:
   - 4.1.99.-
-  kos:
-  - K22205
+  kos: []
   products:
   - naphthylmethylsuccinate synthase
   notes: []
@@ -457,8 +445,7 @@ markers:
   - \bebdA\b
   ecs:
   - 1.17.99.2
-  kos:
-  - K22206
+  kos: []
   products:
   - ethylbenzene dehydrogenase
   notes: []
@@ -499,8 +486,7 @@ markers:
   - \brhlA\b
   ecs:
   - 2.3.1.266
-  kos:
-  - K13057
+  kos: []
   products:
   - rhamnolipid biosynthesis 3-hydroxyacyl-acyl carrier protein
   - HAA synthase
@@ -515,8 +501,7 @@ markers:
   - \brhlB\b
   ecs:
   - 2.4.1.189
-  kos:
-  - K13058
+  kos: []
   products:
   - rhamnosyltransferase chain B
   - rhamnosyltransferase 1
@@ -531,8 +516,7 @@ markers:
   - \brhlC\b
   ecs:
   - 2.4.1.298
-  kos:
-  - K13059
+  kos: []
   products:
   - rhamnosyltransferase 2
   - rhlC
@@ -617,10 +601,7 @@ markers:
   ecs:
   - 2.7.7.-
   - 6.3.2.-
-  kos:
-  - K15666
-  - K15667
-  - K15668
+  kos: []
   products:
   - surfactin synthetase
   - surfactin synthase
@@ -635,8 +616,7 @@ markers:
   - \blic[A-D]\b
   ecs:
   - 2.7.7.-
-  kos:
-  - K15666
+  kos: []
   products:
   - lichenysin synthetase
   - lichenysin synthase
@@ -655,8 +635,9 @@ markers:
   ecs:
   - 2.7.7.-
   kos:
-  - K15669
-  - K15670
+  - K15666
+  - K15667
+  - K15668
   products:
   - fengycin synthetase
   - iturin synthetase
@@ -716,8 +697,7 @@ markers:
   - \bsfp\b
   ecs:
   - 2.7.8.7
-  kos:
-  - K02518
+  kos: []
   products:
   - 4'-phosphopantetheinyl transferase
   - phosphopantetheinyl transferase sfp
@@ -732,7 +712,6 @@ markers:
   ecs:
   - 3.1.3.-
   kos:
-  - K01990
   - K01991
   products:
   - polysaccharide export protein Wza

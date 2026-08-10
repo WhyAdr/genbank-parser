@@ -1,0 +1,112 @@
+marker_id	identifier_type	identifier	reference_status	reference_name	catalog_interpretation	audit_status	notes
+pmoABC	KO	K10944	EXISTS	pmoA; methane monooxygenase subunit A [EC:1.14.18.3]	Particulate Methane Monooxygenase (pmoABC)	PASS	embedded ECs: 1.14.18.3
+pmoABC	KO	K10945	EXISTS	pmoB-amoB; methane/ammonia monooxygenase subunit B	Particulate Methane Monooxygenase (pmoABC)	PASS	-
+pmoABC	KO	K10946	EXISTS	pmoC-amoC; methane/ammonia monooxygenase subunit C	Particulate Methane Monooxygenase (pmoABC)	PASS	-
+pmoABC	EC	1.14.18.3	EXISTS	methane monooxygenase (particulate)	Particulate Methane Monooxygenase (pmoABC)	PASS	-
+mmoXYZ	KO	K16157	EXISTS	mmoX; methane monooxygenase component A alpha chain [EC:1.14.13.25]	Soluble Methane Monooxygenase (mmoXYZ)	PASS	embedded ECs: 1.14.13.25
+mmoXYZ	KO	K16158	EXISTS	mmoY; methane monooxygenase component A beta chain [EC:1.14.13.25]	Soluble Methane Monooxygenase (mmoXYZ)	PASS	embedded ECs: 1.14.13.25
+mmoXYZ	KO	K16159	EXISTS	mmoZ; methane monooxygenase component A gamma chain [EC:1.14.13.25]	Soluble Methane Monooxygenase (mmoXYZ)	PASS	embedded ECs: 1.14.13.25
+mmoXYZ	KO	K16160	EXISTS	mmoB; methane monooxygenase regulatory protein B	Soluble Methane Monooxygenase (mmoXYZ)	PASS	-
+mmoXYZ	KO	K16161	EXISTS	mmoC; methane monooxygenase component C [EC:1.14.13.25]	Soluble Methane Monooxygenase (mmoXYZ)	PASS	embedded ECs: 1.14.13.25
+mmoXYZ	KO	K16162	EXISTS	mmoD; methane monooxygenase component D	Soluble Methane Monooxygenase (mmoXYZ)	PASS	-
+mmoXYZ	EC	1.14.13.25	EXISTS	methane monooxygenase (soluble)	Soluble Methane Monooxygenase (mmoXYZ)	PASS	-
+prmABCD	EC	1.14.13.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of one atom of oxygen into the other donor	Propane Monooxygenase (prmABCD / bmo)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec
+pbmoABC	KO	K21320	EXISTS	bmoC; butane monooxygenase reductase	Membrane-bound Alkane/Butane Monooxygenase (pbmoA/B/C)	PASS	-
+pbmoABC	KO	K21321	EXISTS	bmoB; butane monooxygenase regulatory protein	Membrane-bound Alkane/Butane Monooxygenase (pbmoA/B/C)	PASS	-
+pbmoABC	EC	1.14.13.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of one atom of oxygen into the other donor	Membrane-bound Alkane/Butane Monooxygenase (pbmoA/B/C)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec
+sbmoXYZ	EC	1.14.13.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of one atom of oxygen into the other donor	Soluble Alkane Monooxygenase Subunits (sbmoX/Y/Z)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec
+ahyA	EC	1.17.99.-	WILDCARD	With unknown physiological acceptors	Molybdopterin-family Alkane C2 Methylene Hydroxylase (ahyA)	NONSPECIFIC	wildcard EC is broad contextual evidence
+alkB	KO	K00496	EXISTS	alkB1_2, alkM; alkane 1-monooxygenase [EC:1.14.15.3]	Alkane 1-monooxygenase (alkB / alkB1 / alkB2)	PASS	embedded ECs: 1.14.15.3
+alkB	EC	1.14.15.3	EXISTS	alkane 1-monooxygenase	Alkane 1-monooxygenase (alkB / alkB1 / alkB2)	PASS	-
+CYP153	EC	1.14.15.-	WILDCARD	With reduced iron-sulfur protein as one donor, and incorporation of one atom of oxygen into the other donor	Cytochrome P450 Alkane Hydroxylase (CYP153)	NONSPECIFIC	wildcard EC is broad contextual evidence
+rubAB	EC	1.18.1.1	EXISTS	rubredoxin---NAD+ reductase	Rubredoxin & Rubredoxin Reductase (rubA/rubB)	PASS	-
+alkJ	KO	K00001	EXISTS	ADH; alcohol dehydrogenase [EC:1.1.1.1]	Alcohol Dehydrogenase (alkJ / Alkane pathway)	PASS	embedded ECs: 1.1.1.1
+alkJ	KO	K13953	EXISTS	adhP; alcohol dehydrogenase, propanol-preferring [EC:1.1.1.1]	Alcohol Dehydrogenase (alkJ / Alkane pathway)	PASS	embedded ECs: 1.1.1.1
+alkJ	EC	1.1.1.1	EXISTS	alcohol dehydrogenase	Alcohol Dehydrogenase (alkJ / Alkane pathway)	PASS	-
+alkJ	EC	1.1.99.8	HISTORICAL_TRANSFERRED	alcohol dehydrogenase (acceptor)	Alcohol Dehydrogenase (alkJ / Alkane pathway)	REPLACE	transferred EC; successor(s): 1.1.2.7, 1.1.2.8
+alkH	KO	K00128	EXISTS	ALDH; aldehyde dehydrogenase (NAD+) [EC:1.2.1.3]	Aldehyde Dehydrogenase (alkH / Alkane pathway)	PASS	embedded ECs: 1.2.1.3
+alkH	EC	1.2.1.3	EXISTS	aldehyde dehydrogenase (NAD+)	Aldehyde Dehydrogenase (alkH / Alkane pathway)	PASS	-
+alkK	KO	K01897	EXISTS	ACSL, fadD; long-chain-fatty-acid---CoA ligase [EC:6.2.1.3]	Fatty Acyl-CoA Synthetase (alkK)	PASS	embedded ECs: 6.2.1.3
+alkK	EC	6.2.1.3	EXISTS	long-chain-fatty-acid---CoA ligase	Fatty Acyl-CoA Synthetase (alkK)	PASS	-
+ladA	KO	K20938	EXISTS	ladA; long-chain alkane monooxygenase [EC:1.14.14.28]	Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)	PASS	embedded ECs: 1.14.14.28
+ladA	EC	1.14.14.28	EXISTS	long-chain alkane monooxygenase	Long-chain Alkane Monooxygenase LadA/LadB (Flavoprotein C15-C36)	PASS	-
+almA	EC	1.14.14.-	WILDCARD	With reduced flavin or flavoprotein as one donor, and incorporation of one atom of oxygen into the other donor	Long-chain Alkane Hydroxylase AlmA/AlmA1/AlmA3 (Flavin-binding C20-C32)	NONSPECIFIC	wildcard EC is broad contextual evidence
+tmo_tod	KO	K15760	EXISTS	tmoA, tbuA1, touA; toluene monooxygenase system protein A [EC:1.14.13.236 1.14.13.-]	Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)	PASS	embedded ECs: 1.14.13.236, 1.14.13.-
+tmo_tod	KO	K15761	EXISTS	tmoB, tbuU, touB; toluene monooxygenase system protein B [EC:1.14.13.236 1.14.13.-]	Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)	PASS	embedded ECs: 1.14.13.236, 1.14.13.-
+tmo_tod	KO	K15762	EXISTS	tmoC, tbuB, touC; toluene monooxygenase system ferredoxin subunit	Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)	PASS	-
+tmo_tod	KO	K03268	EXISTS	todC1, bedC1, tcbAa; benzene/toluene/chlorobenzene dioxygenase subunit alpha [EC:1.14.12.3 1.14.12.11 1.14.12.26]	Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)	REVIEW	embedded ECs: 1.14.12.3, 1.14.12.11, 1.14.12.26; KO/EC contradiction
+tmo_tod	KO	K16268	EXISTS	todC2, bedC2, tcbAb; benzene/toluene/chlorobenzene dioxygenase subunit beta [EC:1.14.12.3 1.14.12.11 1.14.12.26]	Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)	REVIEW	embedded ECs: 1.14.12.3, 1.14.12.11, 1.14.12.26; KO/EC contradiction
+tmo_tod	KO	K18089	EXISTS	todB, tcbAc; benzene/toluene/chlorobenzene dioxygenase ferredoxin component	Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)	PASS	-
+tmo_tod	KO	K18090	EXISTS	todA, tcbAd; benzene/toluene/chlorobenzene dioxygenase ferredoxin reductase component [EC:1.18.1.3 1.18.1.-]	Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)	REVIEW	embedded ECs: 1.18.1.3, 1.18.1.-; KO/EC contradiction
+tmo_tod	KO	K16269	EXISTS	todD, tcbB; cis-1,2-dihydrobenzene-1,2-diol/chlorobenzene dihydrodiol dehydrogenase [EC:1.3.1.19 1.3.1.119]	Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)	REVIEW	embedded ECs: 1.3.1.19, 1.3.1.119; KO/EC contradiction
+tmo_tod	KO	K16270	EXISTS	todE; 3-methylcatechol 2,3-dioxygenase [EC:1.13.11.-]	Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)	REVIEW	embedded ECs: 1.13.11.-; KO/EC contradiction
+tmo_tod	EC	1.14.13.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of one atom of oxygen into the other donor	Toluene / BTEX Monooxygenase (tmoABCDEF / todC1C2BA)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec
+ndo_nah	KO	K14579	EXISTS	nahAc, ndoB, nbzAc, dntAc; naphthalene 1,2-dioxygenase subunit alpha [EC:1.14.12.12 1.14.12.23 1.14.12.24]	Naphthalene / PAH Dioxygenase (ndoABC / nahAcAb / phnAc)	REVIEW	embedded ECs: 1.14.12.12, 1.14.12.23, 1.14.12.24; KO/EC contradiction
+ndo_nah	KO	K14580	EXISTS	nahAd, ndoC, nbzAd, dntAd; naphthalene 1,2-dioxygenase subunit beta [EC:1.14.12.12 1.14.12.23 1.14.12.24]	Naphthalene / PAH Dioxygenase (ndoABC / nahAcAb / phnAc)	REVIEW	embedded ECs: 1.14.12.12, 1.14.12.23, 1.14.12.24; KO/EC contradiction
+ndo_nah	KO	K14581	EXISTS	nahAa, nagAa, ndoR, nbzAa, dntAa; naphthalene 1,2-dioxygenase ferredoxin reductase component [EC:1.18.1.7]	Naphthalene / PAH Dioxygenase (ndoABC / nahAcAb / phnAc)	REVIEW	embedded ECs: 1.18.1.7; KO/EC contradiction
+ndo_nah	EC	1.14.12.12	EXISTS	naphthalene 1,2-dioxygenase	Naphthalene / PAH Dioxygenase (ndoABC / nahAcAb / phnAc)	PASS	-
+ndo_nah	EC	1.14.12.18	EXISTS	biphenyl 2,3-dioxygenase	Naphthalene / PAH Dioxygenase (ndoABC / nahAcAb / phnAc)	PASS	-
+catA_xylE	KO	K03381	EXISTS	catA; catechol 1,2-dioxygenase [EC:1.13.11.1]	Central Ring-Cleavage Dioxygenases (catA / xylE)	PASS	embedded ECs: 1.13.11.1
+catA_xylE	KO	K00446	EXISTS	dmpB, xylE; catechol 2,3-dioxygenase [EC:1.13.11.2]	Central Ring-Cleavage Dioxygenases (catA / xylE)	PASS	embedded ECs: 1.13.11.2
+catA_xylE	EC	1.13.11.1	EXISTS	catechol 1,2-dioxygenase	Central Ring-Cleavage Dioxygenases (catA / xylE)	PASS	-
+catA_xylE	EC	1.13.11.2	EXISTS	catechol 2,3-dioxygenase	Central Ring-Cleavage Dioxygenases (catA / xylE)	PASS	-
+mahAB	EC	1.14.12.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of two atoms of oxygen into the other donor	Benzene / Toluene / Naphthalene Dioxygenase (mahA / mahB)	NONSPECIFIC	wildcard EC is broad contextual evidence
+dmpO_tomA	EC	1.14.13.7	EXISTS	phenol 2-monooxygenase (NADPH)	Phenol / Toluene 2-Monooxygenase (dmpO / tomA1-A4)	PASS	-
+dszC	KO	K22219	EXISTS	dszC; dibenzothiophene monooxygenase [EC:1.14.14.21]	Dibenzothiophene Monooxygenase (dszC / Biodesulfurization)	PASS	embedded ECs: 1.14.14.21
+dszC	EC	1.14.14.21	EXISTS	dibenzothiophene monooxygenase	Dibenzothiophene Monooxygenase (dszC / Biodesulfurization)	PASS	-
+pcaGH	KO	K00448	EXISTS	pcaG; protocatechuate 3,4-dioxygenase, alpha subunit [EC:1.13.11.3]	Protocatechuate 3,4-Dioxygenase (pcaG / pcaH)	PASS	embedded ECs: 1.13.11.3
+pcaGH	KO	K00449	EXISTS	pcaH; protocatechuate 3,4-dioxygenase, beta subunit [EC:1.13.11.3]	Protocatechuate 3,4-Dioxygenase (pcaG / pcaH)	PASS	embedded ECs: 1.13.11.3
+pcaGH	EC	1.13.11.3	EXISTS	protocatechuate 3,4-dioxygenase	Protocatechuate 3,4-Dioxygenase (pcaG / pcaH)	PASS	-
+assA_masD	EC	4.1.99.16	EXISTS	geosmin synthase	Alkylsuccinate Synthase / MasD (assA / masD)	PASS	-
+bssABC	KO	K07540	EXISTS	bssA; benzylsuccinate synthase alpha subunit [EC:4.1.99.11]	Benzylsuccinate Synthase (bssA / bssB / bssC)	PASS	embedded ECs: 4.1.99.11
+bssABC	EC	4.1.99.11	EXISTS	benzylsuccinate synthase	Benzylsuccinate Synthase (bssA / bssB / bssC)	PASS	-
+nmsA	EC	4.1.99.-	WILDCARD	Other carbon-carbon lyases	Naphthylmethylsuccinate Synthase (nmsA)	NONSPECIFIC	wildcard EC is broad contextual evidence
+cmdA_ebdA	EC	1.17.99.2	EXISTS	ethylbenzene hydroxylase	Ethylbenzene Dehydrogenase Subunit Alpha (cmdA / ebdA)	PASS	-
+abcA	EC	4.1.1.-	WILDCARD	Carboxy-lyases	Anaerobic Benzene Carboxylase Subunit A (abcA1 / abcA2)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: abcA, ncrA
+ncrA	KO	K27540	ABSENT	N/A	Naphthalene Carboxylase (ncrA)	MISSING_FROM_REFERENCE	KO identifier not present in KEGG snapshot
+ncrA	EC	4.1.1.-	WILDCARD	Carboxy-lyases	Naphthalene Carboxylase (ncrA)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: abcA, ncrA
+rhlA	EC	2.3.1.266	EXISTS	[ribosomal protein bS18]-alanine N-acetyltransferase	HAA Synthase (rhlA / Rhamnolipid precursor)	PASS	-
+rhlB	EC	2.4.1.189	EXISTS	luteolin 7-O-glucuronosyltransferase	Rhamnosyltransferase I (rhlB / Mono-rhamnolipid)	PASS	-
+rhlC	EC	2.4.1.298	EXISTS	anthocyanidin 3-O-glucoside 5-O-glucosyltransferase	Rhamnosyltransferase II (rhlC / Di-rhamnolipid)	PASS	-
+rhlRI	KO	K13060	EXISTS	lasI; acyl homoserine lactone synthase [EC:2.3.1.184]	Rhamnolipid Quorum Sensing Regulators (rhlR / rhlI)	PASS	embedded ECs: 2.3.1.184
+rhlRI	KO	K13061	EXISTS	rhlI, phzI, solI, cepI, tofI; acyl homoserine lactone synthase [EC:2.3.1.184]	Rhamnolipid Quorum Sensing Regulators (rhlR / rhlI)	PASS	embedded ECs: 2.3.1.184
+rhlRI	EC	2.3.1.184	EXISTS	acyl-homoserine-lactone synthase	Rhamnolipid Quorum Sensing Regulators (rhlR / rhlI)	PASS	-
+trehalolipid	KO	K00697	EXISTS	otsA; trehalose 6-phosphate synthase [EC:2.4.1.15 2.4.1.347]	Trehalolipid Biosynthesis (sdtA / otsA / otsB)	REVIEW	embedded ECs: 2.4.1.15, 2.4.1.347; KO/EC contradiction
+trehalolipid	KO	K01087	EXISTS	otsB; trehalose 6-phosphate phosphatase [EC:3.1.3.12]	Trehalolipid Biosynthesis (sdtA / otsA / otsB)	PASS	embedded ECs: 3.1.3.12
+trehalolipid	EC	2.4.1.15	EXISTS	alpha,alpha-trehalose-phosphate synthase (UDP-forming)	Trehalolipid Biosynthesis (sdtA / otsA / otsB)	PASS	-
+trehalolipid	EC	3.1.3.12	EXISTS	trehalose-phosphatase	Trehalolipid Biosynthesis (sdtA / otsA / otsB)	PASS	-
+emt1	EC	2.4.1.-	WILDCARD	Hexosyltransferases	Mannosylerythritol Lipid (MEL) Biosynthesis (emt1)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: emt1, sble
+sble	EC	2.4.1.-	WILDCARD	Hexosyltransferases	Sophorolipid Biosynthesis (sble / glucosyltransferase)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: emt1, sble
+sble	EC	2.3.1.-	WILDCARD	Transferring groups other than aminoacyl groups	Sophorolipid Biosynthesis (sble / glucosyltransferase)	NONSPECIFIC	wildcard EC is broad contextual evidence
+srfA	EC	2.7.7.-	WILDCARD	Nucleotidyltransferases	Surfactin Synthetase NRPS (srfA-A / srfA-B / srfA-C / srfAD)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: srfA, licA_D, fengycin_iturin, mycA_C, arfA_C, pswP
+srfA	EC	6.3.2.-	WILDCARD	Acid—amino-acid ligases (peptide synthases)	Surfactin Synthetase NRPS (srfA-A / srfA-B / srfA-C / srfAD)	NONSPECIFIC	wildcard EC is broad contextual evidence
+licA_D	EC	2.7.7.-	WILDCARD	Nucleotidyltransferases	Lichenysin Synthetase NRPS (licA / licB / licC / licD)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: srfA, licA_D, fengycin_iturin, mycA_C, arfA_C, pswP
+fengycin_iturin	KO	K15666	EXISTS	ppsC, fenE; plipastatin/fengycin lipopeptide synthetase C	Fengycin / Iturin / Viscosin NRPS (fenA-E / ituA-C / vsnA-C)	PASS	-
+fengycin_iturin	KO	K15667	EXISTS	ppsD, fenA; plipastatin/fengycin lipopeptide synthetase D	Fengycin / Iturin / Viscosin NRPS (fenA-E / ituA-C / vsnA-C)	PASS	-
+fengycin_iturin	KO	K15668	EXISTS	ppsE, fenB; plipastatin/fengycin lipopeptide synthetase E	Fengycin / Iturin / Viscosin NRPS (fenA-E / ituA-C / vsnA-C)	PASS	-
+fengycin_iturin	EC	2.7.7.-	WILDCARD	Nucleotidyltransferases	Fengycin / Iturin / Viscosin NRPS (fenA-E / ituA-C / vsnA-C)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: srfA, licA_D, fengycin_iturin, mycA_C, arfA_C, pswP
+mycA_C	KO	K15661	EXISTS	ituA, mycA, bmyA; iturin family lipopeptide synthetase A	Mycosubtilin Lipopeptide Synthetase (mycA / mycB / mycC)	PASS	-
+mycA_C	EC	2.7.7.-	WILDCARD	Nucleotidyltransferases	Mycosubtilin Lipopeptide Synthetase (mycA / mycB / mycC)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: srfA, licA_D, fengycin_iturin, mycA_C, arfA_C, pswP
+arfA_C	KO	K15658	EXISTS	ofaA, arfA; arthrofactin-type cyclic lipopeptide synthetase A	Arthrofactin Lipopeptide Synthetase (arfA / arfB / arfC)	PASS	-
+arfA_C	EC	2.7.7.-	WILDCARD	Nucleotidyltransferases	Arthrofactin Lipopeptide Synthetase (arfA / arfB / arfC)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: srfA, licA_D, fengycin_iturin, mycA_C, arfA_C, pswP
+pswP	EC	2.7.7.-	WILDCARD	Nucleotidyltransferases	Serrawettin Lipopeptide Synthetase (pswP)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: srfA, licA_D, fengycin_iturin, mycA_C, arfA_C, pswP
+sfp	EC	2.7.8.7	EXISTS	holo-[acyl-carrier-protein] synthase	4'-Phosphopantetheinyl Transferase (sfp / NRPS activator)	PASS	-
+wza_wzb_wzc	KO	K01991	EXISTS	wza, gfcE; polysaccharide biosynthesis/export protein	Polymeric Bio-emulsifier Secretion (wza / wzb / wzc / EPS)	PASS	-
+wza_wzb_wzc	EC	3.1.3.-	WILDCARD	Phosphoric-monoester hydrolases	Polymeric Bio-emulsifier Secretion (wza / wzb / wzc / EPS)	NONSPECIFIC	wildcard EC is broad contextual evidence
+meor_acid_gas	KO	K00656	EXISTS	E2.3.1.54, pflD; formate C-acetyltransferase [EC:2.3.1.54]	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	embedded ECs: 2.3.1.54
+meor_acid_gas	KO	K00925	EXISTS	ackA; acetate kinase [EC:2.7.2.1]	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	embedded ECs: 2.7.2.1
+meor_acid_gas	KO	K00625	EXISTS	pta; phosphate acetyltransferase [EC:2.3.1.8]	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	embedded ECs: 2.3.1.8
+meor_acid_gas	KO	K01672	EXISTS	CA; carbonic anhydrase [EC:4.2.1.1]	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	embedded ECs: 4.2.1.1
+meor_acid_gas	KO	K01673	EXISTS	cynT, can; carbonic anhydrase [EC:4.2.1.1]	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	embedded ECs: 4.2.1.1
+meor_acid_gas	EC	2.3.1.54	EXISTS	formate C-acetyltransferase	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	-
+meor_acid_gas	EC	2.7.2.1	EXISTS	acetate kinase	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	-
+meor_acid_gas	EC	2.3.1.8	EXISTS	phosphate acetyltransferase	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	-
+meor_acid_gas	EC	4.2.1.1	EXISTS	carbonic anhydrase	MEOR Organic Acid & Gas Drivers (pflB / ackA / pta / ca)	PASS	-
+isoA_I	EC	1.14.13.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of one atom of oxygen into the other donor	Isoprene Monooxygenase (isoA-I / Isoprene degradation)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec
+xamo_xec	EC	1.14.13.-	WILDCARD	With NADH or NADPH as one donor, and incorporation of one atom of oxygen into the other donor	Alkene / Ethene Monooxygenase (xamoA-F / xecA-E)	NONSPECIFIC	wildcard EC is broad contextual evidence; shared across markers: prmABCD, pbmoABC, sbmoXYZ, tmo_tod, isoA_I, xamo_xec
+etnE	KO	K22363	EXISTS	etnE; 2-hydroxypropyl-CoM lyase [EC:4.4.1.23]	Epoxyalkane:CoM Transferase (etnE / Ethene pathway)	REVIEW	embedded ECs: 4.4.1.23; KO/EC contradiction
+etnE	EC	2.5.1.56	EXISTS	N-acetylneuraminate synthase	Epoxyalkane:CoM Transferase (etnE / Ethene pathway)	PASS	-
+tmo_tod	CONSISTENCY	tmo_tod	KO_EC_CONTRADICTION	K03268: 1.14.12.3; K03268: 1.14.12.11; K03268: 1.14.12.26; K16268: 1.14.12.3; K16268: 1.14.12.11; K16268: 1.14.12.26; K18090: 1.18.1.3; K18090: 1.18.1.-; K16269: 1.3.1.19; K16269: 1.3.1.119; K16270: 1.13.11.-	1.14.13.-	REVIEW	KO definition embeds EC(s) not compatible with marker ecs
+ndo_nah	CONSISTENCY	ndo_nah	KO_EC_CONTRADICTION	K14579: 1.14.12.23; K14579: 1.14.12.24; K14580: 1.14.12.23; K14580: 1.14.12.24; K14581: 1.18.1.7	1.14.12.12, 1.14.12.18	REVIEW	KO definition embeds EC(s) not compatible with marker ecs
+trehalolipid	CONSISTENCY	trehalolipid	KO_EC_CONTRADICTION	K00697: 2.4.1.347	2.4.1.15, 3.1.3.12	REVIEW	KO definition embeds EC(s) not compatible with marker ecs
+etnE	CONSISTENCY	etnE	KO_EC_CONTRADICTION	K22363: 4.4.1.23	2.5.1.56	REVIEW	KO definition embeds EC(s) not compatible with marker ecs

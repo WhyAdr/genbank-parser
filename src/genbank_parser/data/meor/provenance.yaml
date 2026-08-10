@@ -224,3 +224,67 @@ migration:
   source_repository: https://github.com/WhyAdr/genbank-meor
   source_commit: 42d09105ca63a47dac78e0990767124ccde2dab9
   behavior_version: 1.1.0
+identifier_audit:
+  reference_snapshots:
+    kegg: kegg_ko_list_2026-08-02.tsv
+    cog: cog-24.def.tab
+    ec: explorenz-enzyme-data.xml
+    pfam: Pfam-A.hmm
+  corrections:
+  - marker: CYP153
+    change: removed K00496
+    reason: KEGG defines K00496 as an AlkB-family alkane 1-monooxygenase.
+  - marker: srfA
+    change: removed K15666, K15667, K15668
+    reason: KEGG defines these as pps/fen plipastatin/fengycin synthetase subunits.
+  - marker: licA_D
+    change: removed K15666
+    reason: KEGG defines K15666 as a pps/fen plipastatin/fengycin synthetase subunit.
+  - marker: fengycin_iturin
+    change: replaced K15669, K15670 with K15666, K15667, K15668
+    reason: K15666-K15668 are the pps/fen synthetase subunits; K15669 and K15670 are unrelated.
+  - marker: prmABCD
+    change: removed K22473, K22474, K22475
+    reason: the snapshot defines these KOs as alcohol dehydrogenase subunits.
+  - marker: rubAB
+    change: removed K00389, K03820
+    reason: the snapshot defines these KOs as unrelated membrane/acyltransferase proteins.
+  - marker: almA
+    change: removed K22477
+    reason: the snapshot defines K22477 as ArgO/N-acetylglutamate synthase.
+  - marker: dmpO_tomA
+    change: removed K14582
+    reason: the snapshot defines K14582 as a downstream dihydrodiol dehydrogenase.
+  - marker: assA_masD
+    change: removed K22204
+    reason: the snapshot defines K22204 as bestrophin.
+  - marker: bssABC
+    change: removed K07541, K07542
+    reason: the snapshot defines these KOs as GPI mannosyltransferase subunits.
+  - marker: nmsA
+    change: removed K22205
+    reason: the snapshot defines K22205 as S-adenosyl-L-methionine hydrolase.
+  - marker: cmdA_ebdA
+    change: removed K22206
+    reason: the snapshot defines K22206 as a transcriptional regulator.
+  - marker: rhlA
+    change: removed K13057
+    reason: the snapshot defines K13057 as trehalose synthase.
+  - marker: rhlB
+    change: removed K13058
+    reason: the snapshot defines K13058 as mannosylfructose-phosphate synthase.
+  - marker: rhlC
+    change: removed K13059
+    reason: the snapshot defines K13059 as N-acetylhexosamine 1-kinase.
+  - marker: sfp
+    change: removed K02518
+    reason: the snapshot defines K02518 as translation initiation factor IF-1.
+  - marker: wza_wzb_wzc
+    change: removed K01990
+    reason: the snapshot defines K01990 as an ABC-2 ATP-binding protein; K01991 remains Wza.
+  - marker: pcaGH
+    change: replaced EC 1.13.11.4 with EC 1.13.11.3
+    reason: ExplorEnz and both pcaG/pcaH KOs define protocatechuate 3,4-dioxygenase as EC 1.13.11.3.
+  - marker: dszC
+    change: replaced EC 1.14.14.24 with EC 1.14.14.21
+    reason: ExplorEnz and K22219 define dibenzothiophene monooxygenase as EC 1.14.14.21.
