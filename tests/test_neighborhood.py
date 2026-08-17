@@ -13,6 +13,8 @@ from genbank_parser.neighborhood import (
     serialize_neighborhood,
     write_neighborhood,
 )
+from genbank_parser.discover import load_ruleset, match_feature_rules
+from genbank_parser.io import read_genbank
 from genbank_parser.spatial import TargetNotFoundError, select_cds_window
 
 
@@ -146,3 +148,36 @@ def test_missing_target_raises_domain_error(tmp_path) -> None:
     _write_circular_genbank(source)
     with pytest.raises(TargetNotFoundError, match="was not found"):
         build_neighborhood(source, "absent", 1)
+
+
+def test_canonical_rules_context_features_and_operon_links(
+    context_neighborhood_gbff,
+) -> None:
+    document = read_genbank(context_neighborhood_gbff)
+    matches = match_feature_rules(
+        document.records[0].cds_features[0], load_ruleset("mobilome")
+    )
+    assert [(match.rule_id, match.weight) for match in matches] == [
+        ("transposase", 3)
+    ]
+
+    result = build_neighborhood(
+        context_neighborhood_gbff,
+        "CTX_001",
+        1,
+        include_feature_types=("CDS", "tRNA"),
+        ruleset="mobilome",
+        show_operons=True,
+        operon_gap=60,
+    )
+    assert [item.feature.type for item in result.features] == [
+        "CDS",
+        "CDS",
+        "tRNA",
+        "CDS",
+    ]
+    assert result.target.rule_matches[0].rule_id == "transposase"
+    assert len(result.operon_links) == 2
+    payload = result.to_dict()
+    assert payload["ruleset"] == "mobilome"
+    assert payload["features"][1]["rule_matches"][0]["rule"] == "transposase"

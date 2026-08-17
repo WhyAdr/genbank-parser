@@ -7,6 +7,8 @@ import collections
 import csv
 import json
 import sys
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
 from typing import Any
@@ -14,7 +16,20 @@ from typing import Any
 import yaml  # type: ignore[import-untyped]
 
 from .io import read_genbank
+from .model import GenBankFeature
 from .operons import find_operon_pairs
+
+
+@dataclass(frozen=True)
+class RuleMatch:
+    """One annotation term matched by a declarative discovery rule."""
+
+    rule_id: str
+    term: str
+    weight: int
+
+    def to_dict(self) -> dict[str, object]:
+        return {"rule": self.rule_id, "term": self.term, "weight": self.weight}
 
 
 def _load_packaged_rules(ruleset: str) -> list[dict[str, Any]]:
@@ -50,6 +65,42 @@ def _load_rules(
     return loaded
 
 
+def load_ruleset(
+    ruleset: str = "mobilome",
+    rules_file: str | Path | None = None,
+) -> list[dict[str, Any]]:
+    """Load one packaged ruleset or an explicit user-supplied rules file."""
+    return _load_rules(ruleset, rules_file)
+
+
+def match_feature_rules(
+    feature: GenBankFeature,
+    rules: Sequence[Mapping[str, Any]],
+) -> tuple[RuleMatch, ...]:
+    """Return canonical annotation-rule matches for one feature."""
+    searchable = " ".join(
+        [
+            feature.gene or "",
+            feature.product or "",
+            " ".join(feature.qualifiers.get("note", [])),
+        ]
+    ).casefold()
+    matches: list[RuleMatch] = []
+    for rule in rules:
+        for term in rule.get("terms", []):
+            term_text = str(term)
+            if term_text.casefold() in searchable:
+                matches.append(
+                    RuleMatch(
+                        rule_id=str(rule["id"]),
+                        term=term_text,
+                        weight=int(rule.get("weight", 1)),
+                    )
+                )
+                break
+    return tuple(matches)
+
+
 def discover_clusters(
     filepath: str | Path,
     cluster_gap: int = 5000,
@@ -76,26 +127,9 @@ def discover_clusters(
 
     for rec in doc.records:
         for feature in rec.cds_features:
-            gene = (feature.gene or "").casefold()
-            product = (feature.product or "").casefold()
-            notes = " ".join(feature.qualifiers.get("note", [])).casefold()
-            matched_rules: list[dict[str, Any]] = []
-            total_weight = 0
-            for rule in rules:
-                for term in rule.get("terms", []):
-                    term_text = str(term)
-                    term_lower = term_text.casefold()
-                    if (
-                        term_lower in gene
-                        or term_lower in product
-                        or term_lower in notes
-                    ):
-                        weight = int(rule.get("weight", 1))
-                        matched_rules.append(
-                            {"rule": rule["id"], "term": term_text, "weight": weight}
-                        )
-                        total_weight += weight
-                        break
+            rule_matches = match_feature_rules(feature, rules)
+            matched_rules = [match.to_dict() for match in rule_matches]
+            total_weight = sum(match.weight for match in rule_matches)
             if total_weight >= min_weight:
                 hits.append(
                     {

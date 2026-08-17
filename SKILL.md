@@ -74,6 +74,7 @@ if match:
 - **Compound Locations**: Preserves `join()` and `order()` sub-segments, phases in GFF3, and biological lengths.
 - **Strand Semantics**: Preserves $+1$, $-1$, $0$, and `None` states (rendered as `+`, `-`, `?`, `.`).
 - **Circular Topology**: Handles circular contigs/plasmids and origin-spanning neighborhoods.
+- **Neighborhood Context Overlays**: Optional non-CDS context, canonical mobilome/xenobiotics annotation-rule matches, and tested same-strand proximity links feed the structured result before dna_features_viewer renders it. These overlays are annotation-supported context, not evidence of horizontal transfer, co-transcription, or phenotype.
 - **Semantic Cross-References**: Maps INSDC and Bakta `/db_xref`, `/note`, and `/EC_number` to typed identifiers (`go_terms`, `cog_ids`, `kegg_kos`, `pfam`, `rfam`, `ec_numbers`).
 - **Source-Aware MEOR Evidence**: Active structured KO, fully specified structured EC, and gene evidence is Weight 3; product evidence is Weight 2; free-text `/note` evidence is Weight 1. Wildcard ECs and note-only identifiers are never promoted to structured evidence.
 - **MEOR Scope**: Pathway completeness is genome-level annotation completeness, while clusters require distinct physical genes on the same contig and known common strand with at most N intervening bases. Neither is sequence-family confirmation or phenotype.

@@ -1,0 +1,34 @@
+LOCUS       CONTEXT                   400 bp    DNA     circular BCT 17-AUG-2026
+DEFINITION  Synthetic context neighborhood.
+ACCESSION   CONTEXT
+VERSION     CONTEXT
+FEATURES             Location/Qualifiers
+     source          1..400
+                     /organism="Synthetic context bacterium"
+     CDS             20..79
+                     /locus_tag="CTX_001"
+                     /gene="tnpA"
+                     /product="IS element transposase"
+                     /translation="KKKKKKKKKKKKKKKKKKKK"
+     tRNA            100..120
+                     /locus_tag="CTX_TRNA"
+                     /product="tRNA-Lys"
+     CDS             140..199
+                     /locus_tag="CTX_002"
+                     /gene="nextA"
+                     /product="neighbor protein"
+                     /translation="KKKKKKKKKKKKKKKKKKKK"
+     CDS             340..378
+                     /locus_tag="CTX_003"
+                     /gene="prevA"
+                     /product="previous protein"
+                     /translation="KKKKKKKKKKKKK"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      121 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      181 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      241 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      301 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      361 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//

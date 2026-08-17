@@ -8,9 +8,12 @@ import io
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from collections.abc import Sequence
 
+from .discover import RuleMatch, load_ruleset, match_feature_rules
 from .io import read_genbank
 from .model import GenBankFeature
+from .operons import find_operon_pairs
 from .spatial import resolve_target, select_cds_window
 
 SCHEMA_VERSION = "gbparse.neighborhood.v1"
@@ -30,6 +33,8 @@ TSV_COLUMNS = (
     "local_end",
     "partial",
     "pseudo",
+    "rule_matches",
+    "operon_neighbors",
 )
 
 
@@ -42,6 +47,8 @@ class NeighborhoodFeature:
     is_target: bool
     local_start: int
     local_end: int
+    rule_matches: tuple[RuleMatch, ...] = ()
+    operon_neighbors: tuple[int, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         feature = self.feature
@@ -61,6 +68,35 @@ class NeighborhoodFeature:
             "local_end": self.local_end,
             "partial": feature.is_partial,
             "pseudo": feature.is_pseudo,
+            "rule_matches": [match.to_dict() for match in self.rule_matches],
+            "operon_neighbors": list(self.operon_neighbors),
+        }
+
+    def to_tsv_dict(self) -> dict[str, object]:
+        row = self.to_dict()
+        row["rule_matches"] = ";".join(
+            f"{match.rule_id}:{match.term}:{match.weight}"
+            for match in self.rule_matches
+        )
+        row["operon_neighbors"] = ";".join(
+            str(index) for index in self.operon_neighbors
+        )
+        return row
+
+
+@dataclass(frozen=True)
+class NeighborhoodOperonLink:
+    """A tested same-strand proximity link between two displayed CDSs."""
+
+    first_feature_index: int
+    second_feature_index: int
+    gap: int
+
+    def to_dict(self) -> dict[str, int]:
+        return {
+            "first_feature_index": self.first_feature_index,
+            "second_feature_index": self.second_feature_index,
+            "gap": self.gap,
         }
 
 
@@ -76,6 +112,8 @@ class NeighborhoodResult:
     window: int
     wraps_origin: bool
     features: tuple[NeighborhoodFeature, ...]
+    ruleset: str | None = None
+    operon_links: tuple[NeighborhoodOperonLink, ...] = ()
 
     @property
     def target(self) -> NeighborhoodFeature:
@@ -93,6 +131,8 @@ class NeighborhoodResult:
             },
             "window": self.window,
             "wraps_origin": self.wraps_origin,
+            "ruleset": self.ruleset,
+            "operon_links": [link.to_dict() for link in self.operon_links],
             "features": [feature.to_dict() for feature in self.features],
         }
 
@@ -125,10 +165,37 @@ def _local_coordinates(
     return tuple((start - origin + 1, end - origin + 1) for start, end in unwrapped)
 
 
+def _context_coordinates(
+    feature: GenBankFeature,
+    *,
+    anchor_start: int,
+    span_end: int,
+    circular: bool,
+    record_length: int,
+) -> tuple[int, int] | None:
+    """Map a context feature to the selected unwrapped span when it overlaps."""
+    shifts = (-record_length, 0, record_length) if circular else (0,)
+    for shift in shifts:
+        start = feature.start + shift
+        end = feature.end + shift
+        if end < start:
+            end += record_length
+        local_start = start - anchor_start + 1
+        local_end = end - anchor_start + 1
+        if local_end >= 1 and local_start <= span_end:
+            return max(1, local_start), min(span_end, local_end)
+    return None
+
+
 def build_neighborhood(
     filepath: str | Path,
     target: str,
     window: int = 5,
+    *,
+    include_feature_types: Sequence[str] = ("CDS",),
+    ruleset: str | None = None,
+    show_operons: bool = False,
+    operon_gap: int = 150,
 ) -> NeighborhoodResult:
     """Build a neighborhood without printing or terminating the process."""
     input_path = Path(filepath)
@@ -140,6 +207,59 @@ def build_neighborhood(
         circular=record.topology == "circular",
         record_length=record.length,
     )
+    selected_coordinates = {
+        feature.feature_index: coordinate
+        for feature, coordinate in zip(selected.features, coordinates)
+    }
+    allowed_types = {feature_type.casefold() for feature_type in include_feature_types}
+    allowed_types.add("cds")
+    anchor_start = selected.features[0].start
+    span_end = max(end for _, end in coordinates)
+
+    displayed: list[tuple[GenBankFeature, int, int]] = [
+        (feature, *selected_coordinates[feature.feature_index])
+        for feature in selected.features
+    ]
+    selected_indices = set(selected_coordinates)
+    for feature in record.features:
+        if feature.feature_index in selected_indices or feature.type.casefold() == "cds":
+            continue
+        if feature.type.casefold() not in allowed_types:
+            continue
+        context_coordinates = _context_coordinates(
+            feature,
+            anchor_start=anchor_start,
+            span_end=span_end,
+            circular=record.topology == "circular",
+            record_length=record.length,
+        )
+        if context_coordinates is not None:
+            displayed.append((feature, *context_coordinates))
+
+    displayed.sort(key=lambda item: (item[1], item[2], item[0].feature_index))
+    rules = load_ruleset(ruleset) if ruleset is not None else None
+    links: tuple[NeighborhoodOperonLink, ...] = ()
+    neighbor_indices: dict[int, set[int]] = {}
+    if show_operons:
+        pairs = find_operon_pairs(
+            record.features,
+            max_gap=operon_gap,
+            circular=record.topology == "circular",
+            record_length=record.length,
+        )
+        links = tuple(
+            NeighborhoodOperonLink(a.feature_index, b.feature_index, gap)
+            for a, b, gap in pairs
+            if a.feature_index in selected_indices and b.feature_index in selected_indices
+        )
+        for link in links:
+            neighbor_indices.setdefault(link.first_feature_index, set()).add(
+                link.second_feature_index
+            )
+            neighbor_indices.setdefault(link.second_feature_index, set()).add(
+                link.first_feature_index
+            )
+
     features = tuple(
         NeighborhoodFeature(
             feature=feature,
@@ -147,10 +267,10 @@ def build_neighborhood(
             is_target=feature.feature_index == target_feature.feature_index,
             local_start=local_start,
             local_end=local_end,
+            rule_matches=match_feature_rules(feature, rules) if rules is not None else (),
+            operon_neighbors=tuple(sorted(neighbor_indices.get(feature.feature_index, ()))),
         )
-        for order, (feature, (local_start, local_end)) in enumerate(
-            zip(selected.features, coordinates), 1
-        )
+        for order, (feature, local_start, local_end) in enumerate(displayed, 1)
     )
     return NeighborhoodResult(
         input_path=input_path,
@@ -161,6 +281,8 @@ def build_neighborhood(
         window=window,
         wraps_origin=selected.wraps_origin,
         features=features,
+        ruleset=ruleset,
+        operon_links=links,
     )
 
 
@@ -180,7 +302,7 @@ def serialize_neighborhood(
             lineterminator="\n",
         )
         writer.writeheader()
-        writer.writerows(feature.to_dict() for feature in result.features)
+        writer.writerows(feature.to_tsv_dict() for feature in result.features)
         return stream.getvalue()
     if format_type != "text":
         raise ValueError(f"Unsupported neighborhood format: {format_type}")

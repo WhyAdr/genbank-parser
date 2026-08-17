@@ -9,6 +9,15 @@ from typing import Any
 from ..neighborhood import NeighborhoodFeature, NeighborhoodResult
 
 SUPPORTED_SUFFIXES = {".svg", ".png", ".pdf"}
+RULE_PALETTE = (
+    "#4c78a8",
+    "#f58518",
+    "#54a24b",
+    "#b279a2",
+    "#e45756",
+    "#72b7b2",
+    "#ff9da6",
+)
 DEPENDENCY_MESSAGE = (
     "Neighborhood visualization requires the optional 'viz' dependencies.\n"
     "Install with: pip install 'genbank-parser[viz]'"
@@ -72,8 +81,10 @@ def render_neighborhood(
     color_mode: str = "default",
 ) -> Path:
     """Render one linear-unwrapped neighborhood and return the written path."""
-    if color_mode != "default":
+    if color_mode not in {"default", "ruleset"}:
         raise ValueError(f"Unsupported color mode: {color_mode}")
+    if color_mode == "ruleset" and result.ruleset is None:
+        raise ValueError("Ruleset coloring requires canonical rule matches in the result")
 
     output = Path(output_path) if output_path is not None else default_visualization_path(result)
     if not output.suffix:
@@ -86,9 +97,22 @@ def render_neighborhood(
 
     GraphicFeature, GraphicRecord, pyplot = _load_plotting()
     graphic_features = []
+    rule_ids = sorted(
+        {
+            match.rule_id
+            for item in result.features
+            for match in item.rule_matches
+        }
+    )
+    rule_colors = {
+        rule_id: RULE_PALETTE[index % len(RULE_PALETTE)]
+        for index, rule_id in enumerate(rule_ids)
+    }
     for item in result.features:
         feature = item.feature
-        if item.is_target:
+        if color_mode == "ruleset" and item.rule_matches:
+            color = rule_colors[item.rule_matches[0].rule_id]
+        elif item.is_target:
             color = "#d1495b"
         elif feature.is_pseudo:
             color = "#bdbdbd"
@@ -100,7 +124,13 @@ def render_neighborhood(
                 end=item.local_end,
                 strand=feature.strand if feature.strand in (-1, 1) else 0,
                 color=color,
-                linecolor="#7f0000" if feature.is_partial else "#355c7d",
+                linecolor=(
+                    "#d1495b"
+                    if item.is_target
+                    else "#7f0000"
+                    if feature.is_partial
+                    else "#355c7d"
+                ),
                 label=feature_label(item, label_mode),
             )
         )
@@ -119,6 +149,43 @@ def render_neighborhood(
         loc="left",
         weight="bold",
     )
+    item_by_index = {
+        item.feature.feature_index: item for item in result.features
+    }
+    if result.operon_links:
+        ymin, ymax = axis.get_ylim()
+        bracket_y = ymin + 0.08 * (ymax - ymin)
+        cap = 0.025 * (ymax - ymin)
+        for link in result.operon_links:
+            first = item_by_index[link.first_feature_index]
+            second = item_by_index[link.second_feature_index]
+            left = min(first.local_end, second.local_end)
+            right = max(first.local_start, second.local_start)
+            axis.plot(
+                [left, left, right, right],
+                [bracket_y + cap, bracket_y, bracket_y, bracket_y + cap],
+                color="#4d4d4d",
+                linewidth=1.5,
+            )
+
+    if color_mode == "ruleset" or result.operon_links:
+        for rule_id in rule_ids:
+            axis.plot(
+                [],
+                [],
+                color=rule_colors[rule_id],
+                linewidth=8,
+                label=f"{rule_id} annotation-rule match",
+            )
+        if result.operon_links:
+            axis.plot(
+                [],
+                [],
+                color="#4d4d4d",
+                linewidth=1.5,
+                label="Same-strand proximity link",
+            )
+        axis.legend(loc="upper right", frameon=False, fontsize="small")
     output.parent.mkdir(parents=True, exist_ok=True)
     axis.figure.savefig(output, bbox_inches="tight", dpi=200)
     pyplot.close(axis.figure)

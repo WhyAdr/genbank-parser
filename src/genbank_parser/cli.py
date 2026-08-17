@@ -132,6 +132,34 @@ def create_parser() -> argparse.ArgumentParser:
         default="auto",
         help="Feature label source for visualization (default: auto)",
     )
+    p_neigh.add_argument(
+        "--include-feature-types",
+        default="CDS",
+        help="Comma-separated context feature types overlapping the CDS window",
+    )
+    p_neigh.add_argument(
+        "--color-by",
+        choices=["default", "ruleset"],
+        default="default",
+        help="Visualization coloring source (default: target emphasis)",
+    )
+    p_neigh.add_argument(
+        "--ruleset",
+        choices=["mobilome", "xenobiotics"],
+        default="mobilome",
+        help="Canonical annotation ruleset used by --color-by ruleset",
+    )
+    p_neigh.add_argument(
+        "--show-operons",
+        action="store_true",
+        help="Attach tested same-strand proximity links",
+    )
+    p_neigh.add_argument(
+        "--operon-gap",
+        type=_nonnegative_int,
+        default=150,
+        help="Maximum intervening bases for operon links (default: 150)",
+    )
 
     # 7. region
     p_reg = subparsers.add_parser(
@@ -323,7 +351,22 @@ def main(argv: Sequence[str] | None = None) -> int:
             and Path(args.output).resolve() == Path(args.viz_output).resolve()
         ):
             parser.error("Neighborhood data and figure outputs must use different paths")
-        result = build_neighborhood(args.input, args.locus_tag, window=args.window)
+        feature_types = tuple(
+            feature_type.strip()
+            for feature_type in args.include_feature_types.split(",")
+            if feature_type.strip()
+        )
+        if not feature_types:
+            parser.error("--include-feature-types must contain at least one type")
+        result = build_neighborhood(
+            args.input,
+            args.locus_tag,
+            window=args.window,
+            include_feature_types=feature_types,
+            ruleset=args.ruleset if args.color_by == "ruleset" else None,
+            show_operons=args.show_operons,
+            operon_gap=args.operon_gap,
+        )
         rendered = write_neighborhood(
             result,
             format_type=args.format,
@@ -342,6 +385,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     result,
                     args.viz_output,
                     label_mode=args.label_mode,
+                    color_mode=args.color_by,
                 )
             except (VisualizationDependencyError, ValueError) as exc:
                 parser.error(str(exc))

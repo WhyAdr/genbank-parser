@@ -124,6 +124,18 @@ Visualization is optional: the core package does not install Matplotlib or a plo
 
 `dna_features_viewer` is the supported single-neighborhood backend in this release. Comparative multi-genome synteny and a possible pyGenomeViz backend are intentionally deferred until explicit alignment or orthology evidence can support links between tracks.
 
+Optional context overlays reuse canonical analysis logic:
+
+```bash
+gbparse neighborhood input.gbff LOCUS_TAG 8 \
+  --visualize --viz-output locus-context.svg \
+  --include-feature-types CDS,tRNA,rRNA,ncRNA,tmRNA,mobile_element \
+  --color-by ruleset --ruleset mobilome \
+  --show-operons --operon-gap 150
+```
+
+Ruleset colors mean only that an existing annotation matched a declared mobilome or xenobiotics term; the legend deliberately labels these as `annotation-rule match`. Operon links mean same-contig, adjacent, known-common-strand CDSs within the requested intervening-base threshold. Neither overlay demonstrates expression, horizontal transfer, operon co-transcription, or phenotype.
+
 ---
 
 ## Python API Usage

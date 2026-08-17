@@ -36,6 +36,11 @@ def duplicate_locus_gbff() -> Path:
 
 
 @pytest.fixture
+def context_neighborhood_gbff() -> Path:
+    return FIXTURES_DIR / "context_neighborhood.gb"
+
+
+@pytest.fixture
 def real_c14_gbff() -> Path:
     p = Path(__file__).resolve().parent.parent / "C14-NMZ.gbff"
     return p if p.exists() else None
