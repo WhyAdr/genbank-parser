@@ -72,6 +72,17 @@ def test_neighborhood_cli_machine_outputs(simple_cds_gbff: Path, tmp_path: Path,
     assert capsys.readouterr().out == ""
     assert output.read_text(encoding="utf-8").startswith("record\torder\t")
 
+    with pytest.raises(SystemExit):
+        main([
+            "neighborhood",
+            str(simple_cds_gbff),
+            "TEST_001",
+            "--output",
+            str(output),
+            "--viz-output",
+            str(output),
+        ])
+
 
 def test_meor_cli_formats_output_and_validation(tmp_path: Path, capsys) -> None:
     fixture = Path("tests/fixtures/meor_parity.gb")

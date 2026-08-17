@@ -52,8 +52,20 @@ jobs:
 
     - name: Verify installed API, data, CLI, and dependencies
       run: |
-        .wheel-venv/bin/python -c "from importlib.resources import files; from genbank_parser import __version__; from genbank_parser.meor import load_meor_database; assert __version__ == '0.4.1'; assert load_meor_database().catalog_version == '1.1'; assert files('genbank_parser').joinpath('data/meor/markers.yaml').is_file()"
+        .wheel-venv/bin/python -c "from importlib.resources import files; from genbank_parser import __version__; from genbank_parser.meor import load_meor_database; assert __version__ == '0.5.0'; assert load_meor_database().catalog_version == '1.1'; assert files('genbank_parser').joinpath('data/meor/markers.yaml').is_file()"
         .wheel-venv/bin/gbparse --help
         .wheel-venv/bin/gbparse meor tests/fixtures/meor_parity.gb --format json --output wheel-meor.json
-        .wheel-venv/bin/python -c "import json; p=json.load(open('wheel-meor.json')); assert p['tool_version'] == '0.4.1'; assert p['catalog_version'] == '1.1'"
+        .wheel-venv/bin/python -c "import json; p=json.load(open('wheel-meor.json')); assert p['tool_version'] == '0.5.0'; assert p['catalog_version'] == '1.1'"
         .wheel-venv/bin/python -m pip check
+
+    - name: Verify optional visualization extra from the wheel
+      env:
+        MPLBACKEND: Agg
+      run: |
+        python -m venv .viz-venv
+        wheel_path=$(find dist -name '*.whl' -print -quit)
+        .viz-venv/bin/python -m pip install "${wheel_path}[viz]"
+        .viz-venv/bin/gbparse neighborhood tests/fixtures/simple_cds.gb TEST_001 1 --format json --output wheel-neighborhood.json --visualize --viz-output wheel-neighborhood.svg
+        test -s wheel-neighborhood.svg
+        grep -q '<svg' wheel-neighborhood.svg
+        .viz-venv/bin/python -m pip check

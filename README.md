@@ -33,6 +33,9 @@ pip install -e .
 
 # Or install with test dependencies
 pip install -e .[test]
+
+# Optional static neighborhood visualization
+pip install -e .[viz]
 ```
 
 ---
@@ -57,6 +60,11 @@ gbparse locus input.gbff LOCUS_TAG
 
 # 6. View genomic neighborhood window (+/- N genes, circular-aware)
 gbparse neighborhood input.gbff LOCUS_TAG 5
+
+# Emit schema-versioned data and an independent dna_features_viewer figure
+gbparse neighborhood input.gbff LOCUS_TAG 5 \
+  --format json --output neighborhood.json \
+  --visualize --viz-output neighborhood.svg
 
 # 7. Extract genomic sub-region with valid local coordinates
 gbparse region input.gbff --locus LOCUS_TAG --flank-genes 5 --output region.gbk
@@ -109,6 +117,12 @@ gbparse meor input.gbff --min-weight 2 --format json --output meor.json
 Wildcard ECs are contextual catalog metadata and never produce Weight-3 evidence.
 
 Marker hits indicate **annotation-supported genomic encoding potential**. They do not prove transcription, enzyme activity, hydrocarbon turnover, biosurfactant production, or field-scale enhanced oil recovery. See the [MEOR marker and scientific provenance reference](docs/meor_markers_reference.md) for the curated catalog and its limits.
+
+### Neighborhood visualization
+
+Visualization is optional: the core package does not install Matplotlib or a plotting backend. Install `genbank-parser[viz]` to enable static SVG, PNG, and PDF output. The default figure is a linear-unwrapped feature track, so neighborhoods crossing a circular origin remain continuous. Labels use `/gene`, then `/locus_tag`, then a shortened `/product`; the target CDS is highlighted without using color to encode strand.
+
+`dna_features_viewer` is the supported single-neighborhood backend in this release. Comparative multi-genome synteny and a possible pyGenomeViz backend are intentionally deferred until explicit alignment or orthology evidence can support links between tracks.
 
 ---
 

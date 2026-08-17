@@ -27,7 +27,7 @@ Parse, validate, and analyze GenBank flatfiles (`.gb`, `.gbk`, `.gbff`, `.txt`) 
 | `extract` | Tab-delimited annotation TSV export | `gbparse extract INPUT.gbff [output.tsv]` |
 | `search` | Search features by gene, product, KO, EC, Pfam | `gbparse search INPUT.gbff --gene ladA --format tsv` |
 | `locus` | Single-locus qualifier deep-dive | `gbparse locus INPUT.gbff LOCUS_TAG` |
-| `neighborhood` | Circular-aware flanking gene viewer (+/- N) | `gbparse neighborhood INPUT.gbff LOCUS_TAG [window]` |
+| `neighborhood` | Structured circular-aware flanking gene data and optional static figure | `gbparse neighborhood INPUT.gbff LOCUS_TAG [window] [--format json] [--visualize]` |
 | `region` | Sub-region extraction with valid local coordinates | `gbparse region INPUT.gbff --locus TAG --flank-genes 5 --output region.gbk` |
 | `fasta` | Export all CDS translations as protein FASTA | `gbparse fasta INPUT.gbff [proteins.faa]` |
 | `sequence` | Extract genome FASTA (.fna) & CDS (.ffn) | `gbparse sequence INPUT.gbff [--fna out.fna] [--ffn out.ffn]` |

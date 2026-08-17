@@ -117,6 +117,21 @@ def create_parser() -> argparse.ArgumentParser:
         "--format", choices=["text", "tsv", "json"], default="text"
     )
     p_neigh.add_argument("--output", help="Data output path (default: stdout)")
+    p_neigh.add_argument(
+        "--visualize",
+        action="store_true",
+        help="Render a static neighborhood figure (requires the 'viz' extra)",
+    )
+    p_neigh.add_argument(
+        "--viz-output",
+        help="Figure path (.svg, .png, or .pdf); implies --visualize",
+    )
+    p_neigh.add_argument(
+        "--label-mode",
+        choices=["auto", "gene", "locus_tag", "product", "none"],
+        default="auto",
+        help="Feature label source for visualization (default: auto)",
+    )
 
     # 7. region
     p_reg = subparsers.add_parser(
@@ -302,6 +317,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     elif cmd == "locus":
         inspect_locus(args.input, args.locus_tag)
     elif cmd == "neighborhood":
+        if (
+            args.output
+            and args.viz_output
+            and Path(args.output).resolve() == Path(args.viz_output).resolve()
+        ):
+            parser.error("Neighborhood data and figure outputs must use different paths")
         result = build_neighborhood(args.input, args.locus_tag, window=args.window)
         rendered = write_neighborhood(
             result,
@@ -310,6 +331,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         if args.output is None:
             print(rendered, end="")
+        if args.visualize or args.viz_output:
+            from .visualization.neighborhood import (
+                VisualizationDependencyError,
+                render_neighborhood,
+            )
+
+            try:
+                render_neighborhood(
+                    result,
+                    args.viz_output,
+                    label_mode=args.label_mode,
+                )
+            except (VisualizationDependencyError, ValueError) as exc:
+                parser.error(str(exc))
     elif cmd == "region":
         extract_region(
             args.input,
