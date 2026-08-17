@@ -22,7 +22,7 @@ from .metadata import extract_metadata
 from .meor import analyze_meor
 from .meor.database import load_meor_database
 from .meor.report import serialize_report
-from .neighborhood import extract_neighborhood
+from .neighborhood import build_neighborhood, write_neighborhood
 from .phylo import extract_phylogenomic_markers
 from .query import search_features
 from .region import extract_region
@@ -109,10 +109,14 @@ def create_parser() -> argparse.ArgumentParser:
     p_neigh.add_argument(
         "window",
         nargs="?",
-        type=int,
+        type=_nonnegative_int,
         default=5,
         help="Window size (+/- N genes, default: 5)",
     )
+    p_neigh.add_argument(
+        "--format", choices=["text", "tsv", "json"], default="text"
+    )
+    p_neigh.add_argument("--output", help="Data output path (default: stdout)")
 
     # 7. region
     p_reg = subparsers.add_parser(
@@ -298,7 +302,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     elif cmd == "locus":
         inspect_locus(args.input, args.locus_tag)
     elif cmd == "neighborhood":
-        extract_neighborhood(args.input, args.locus_tag, window=args.window)
+        result = build_neighborhood(args.input, args.locus_tag, window=args.window)
+        rendered = write_neighborhood(
+            result,
+            format_type=args.format,
+            output_path=args.output,
+        )
+        if args.output is None:
+            print(rendered, end="")
     elif cmd == "region":
         extract_region(
             args.input,

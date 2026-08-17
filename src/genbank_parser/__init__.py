@@ -6,6 +6,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 from .io import extract_xrefs, get_notes, get_qual, parse_features, read_genbank
 from .model import GenBankDocument, GenBankFeature, GenBankRecord
+from .neighborhood import NeighborhoodResult, build_neighborhood
 
 try:
     __version__ = version("genbank-parser")
@@ -18,8 +19,10 @@ __all__ = [
     "GenBankDocument",
     "GenBankFeature",
     "GenBankRecord",
+    "NeighborhoodResult",
     "__version__",
     "extract_xrefs",
+    "build_neighborhood",
     "get_notes",
     "get_qual",
     "parse_features",

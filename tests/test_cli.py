@@ -47,6 +47,32 @@ def test_cli_subcommands_dispatch(simple_cds_gbff: Path, tmp_path: Path) -> None
     assert gff_out.exists()
 
 
+def test_neighborhood_cli_machine_outputs(simple_cds_gbff: Path, tmp_path: Path, capsys) -> None:
+    assert main([
+        "neighborhood",
+        str(simple_cds_gbff),
+        "TEST_001",
+        "1",
+        "--format",
+        "json",
+    ]) == 0
+    assert capsys.readouterr().out.startswith('{\n  "schema_version"')
+
+    output = tmp_path / "neighborhood.tsv"
+    assert main([
+        "neighborhood",
+        str(simple_cds_gbff),
+        "TEST_001",
+        "1",
+        "--format",
+        "tsv",
+        "--output",
+        str(output),
+    ]) == 0
+    assert capsys.readouterr().out == ""
+    assert output.read_text(encoding="utf-8").startswith("record\torder\t")
+
+
 def test_meor_cli_formats_output_and_validation(tmp_path: Path, capsys) -> None:
     fixture = Path("tests/fixtures/meor_parity.gb")
     assert main(["meor", str(fixture)]) == 0
