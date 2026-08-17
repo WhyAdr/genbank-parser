@@ -14,13 +14,29 @@ def find_operon_pairs(
     features: list[GenBankFeature],
     max_gap: int = 150,
     min_gap: int = -50,
+    *,
+    circular: bool = False,
+    record_length: int | None = None,
 ) -> list[tuple[GenBankFeature, GenBankFeature, int]]:
     """Return adjacent, same-strand CDS pairs within the requested gap."""
+    if max_gap < min_gap:
+        raise ValueError("max_gap must be greater than or equal to min_gap")
+    if circular and (record_length is None or record_length <= 0):
+        raise ValueError("record_length must be positive for circular pairing")
+
     cdss = sorted((f for f in features if f.type == "CDS"), key=lambda f: f.start)
     pairs: list[tuple[GenBankFeature, GenBankFeature, int]] = []
-    for first, second in pairwise(cdss):
+    adjacent = list(pairwise(cdss))
+    if circular and len(cdss) > 1:
+        adjacent.append((cdss[-1], cdss[0]))
+
+    for first, second in adjacent:
         if first.strand == second.strand and first.strand in (1, -1):
-            gap = second.start - first.end - 1
+            if circular and second.feature_index == cdss[0].feature_index:
+                assert record_length is not None
+                gap = second.start + record_length - first.end - 1
+            else:
+                gap = second.start - first.end - 1
             if min_gap <= gap <= max_gap:
                 pairs.append((first, second, gap))
     return pairs
@@ -44,7 +60,13 @@ def operon_candidates(
     print("-" * 110)
 
     for rec in doc.records:
-        rec_pairs = find_operon_pairs(rec.features, max_gap=max_gap, min_gap=min_gap)
+        rec_pairs = find_operon_pairs(
+            rec.features,
+            max_gap=max_gap,
+            min_gap=min_gap,
+            circular=rec.topology == "circular",
+            record_length=rec.length,
+        )
         all_pairs.extend(rec_pairs)
 
         for a, b, gap in rec_pairs:
