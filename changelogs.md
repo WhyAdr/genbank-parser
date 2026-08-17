@@ -4,6 +4,18 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.5.0] - 2026-08-17
+
+### Structured neighborhoods and optional visualization
+
+- Added the pure `build_neighborhood()` API and schema-versioned text, TSV, and JSON outputs while retaining the printing compatibility wrapper.
+- Hardened circular selection so oversized windows never duplicate a physical CDS; added origin-spanning compound-CDS unwrapping and circular last-to-first operon links.
+- Added the optional `viz` extra and lazy dna_features_viewer renderer for headless SVG, PNG, and PDF output. The core wheel remains free of plotting dependencies.
+- Added canonical mobilome/xenobiotics annotation-rule coloring, overlapping non-CDS context, and tested same-strand proximity overlays with evidence-calibrated legend wording.
+- Added wheel-level visualization CI, a Python 3.10-3.13 core matrix, and parser-valid circular/context fixtures.
+- Removed stale root ruleset copies and `requirements.txt`; `pyproject.toml` and packaged `src/genbank_parser/rulesets/` resources are authoritative.
+- Deferred pyGenomeViz and comparative synteny until explicit alignment or orthology evidence is available.
+
 ## [0.4.1] - 2026-08-10
 
 ### MEOR identifier and reproducibility hardening
@@ -82,7 +94,7 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
   - Extract genomic sub-regions around locus tags with `--flank-genes`; Patch 2 makes returned feature coordinates local and retains `--rebase` as a compatibility flag.
 - **Annotation Diff (`gbparse diff` / `src/genbank_parser/diff.py`)**:
   - Compare two annotation versions of the same genome (Bakta vs Prokka vs RefSeq), identifying identity-aware additions/removals, boundary shifts, product/gene renames, and KO/EC differences.
-- **Declarative Rulesets (`rulesets/*.yaml`)**:
+- **Declarative Rulesets (`src/genbank_parser/rulesets/*.yaml`)**:
   - Externalized mobilome and xenobiotic degradation discovery rules into YAML format.
 
 ---

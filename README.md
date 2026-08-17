@@ -21,7 +21,7 @@ A Biopython-powered genome-annotation query engine, validation suite, and CLI to
 
 ## Installation & Setup
 
-Requires Python 3.10+ and `biopython>=1.80`.
+Requires Python 3.10+, `biopython>=1.80`, and `pyyaml>=6.0`.
 
 ```bash
 # Clone the repository
