@@ -41,6 +41,11 @@ def context_neighborhood_gbff() -> Path:
 
 
 @pytest.fixture
+def circular_compound_gbff() -> Path:
+    return FIXTURES_DIR / "circular_compound.gb"
+
+
+@pytest.fixture
 def real_c14_gbff() -> Path:
     p = Path(__file__).resolve().parent.parent / "C14-NMZ.gbff"
     return p if p.exists() else None

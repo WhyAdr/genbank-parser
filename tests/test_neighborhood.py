@@ -181,3 +181,16 @@ def test_canonical_rules_context_features_and_operon_links(
     payload = result.to_dict()
     assert payload["ruleset"] == "mobilome"
     assert payload["features"][1]["rule_matches"][0]["rule"] == "transposase"
+
+
+def test_origin_spanning_compound_cds_is_unwrapped_to_biological_span(
+    circular_compound_gbff,
+) -> None:
+    result = build_neighborhood(circular_compound_gbff, "WRAP_001", 1)
+    assert result.wraps_origin
+    assert [item.local_start for item in result.features] == sorted(
+        item.local_start for item in result.features
+    )
+    target = result.target
+    assert target.local_end - target.local_start + 1 == target.feature.length == 60
+    assert sum(item.is_target for item in result.features) == 1

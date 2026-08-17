@@ -7,6 +7,7 @@ from importlib.metadata import PackageNotFoundError, version
 from .io import extract_xrefs, get_notes, get_qual, parse_features, read_genbank
 from .model import GenBankDocument, GenBankFeature, GenBankRecord
 from .neighborhood import NeighborhoodResult, build_neighborhood
+from .operons import OperonCluster, OperonPair, OperonResult, build_operon_result
 
 try:
     __version__ = version("genbank-parser")
@@ -20,9 +21,13 @@ __all__ = [
     "GenBankFeature",
     "GenBankRecord",
     "NeighborhoodResult",
+    "OperonCluster",
+    "OperonPair",
+    "OperonResult",
     "__version__",
     "extract_xrefs",
     "build_neighborhood",
+    "build_operon_result",
     "get_notes",
     "get_qual",
     "parse_features",

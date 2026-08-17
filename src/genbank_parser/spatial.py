@@ -23,6 +23,24 @@ class FeatureWindow:
     wraps_origin: bool
 
 
+def feature_display_bounds(
+    feature: GenBankFeature,
+    *,
+    circular: bool,
+    record_length: int,
+) -> tuple[int, int]:
+    """Return one unwrapped span, including compound features crossing origin."""
+    if circular and feature.is_compound:
+        segments = feature.join_segments
+        touches_start = any(start == 1 for start, _ in segments)
+        touches_end = any(end == record_length for _, end in segments)
+        if touches_start and touches_end:
+            high_start = max(start for start, _ in segments)
+            low_end = min(end for _, end in segments)
+            return high_start, low_end + record_length
+    return feature.start, feature.end
+
+
 def resolve_target(
     document: GenBankDocument,
     target: str,

@@ -5,7 +5,7 @@ from __future__ import annotations
 from Bio.SeqFeature import FeatureLocation
 
 from genbank_parser.model import GenBankFeature
-from genbank_parser.operons import find_operon_pairs
+from genbank_parser.operons import build_operon_result, find_operon_pairs
 
 
 def _cds(index: int, start: int, end: int, strand: int = 1) -> GenBankFeature:
@@ -52,3 +52,43 @@ def test_single_cds_is_not_paired_with_itself() -> None:
     assert not find_operon_pairs(
         [feature], circular=True, record_length=1000
     )
+
+
+def test_structured_three_gene_cluster_and_break() -> None:
+    features = [
+        _cds(1, 1, 100),
+        _cds(2, 120, 200),
+        _cds(3, 220, 300),
+        _cds(4, 600, 700),
+    ]
+    result = build_operon_result(features, max_gap=50)
+    assert len(result.pairs) == 2
+    assert len(result.clusters) == 1
+    assert [feature.feature_index for feature in result.clusters[0].features] == [
+        1,
+        2,
+        3,
+    ]
+    assert result.clusters[0].gaps == (19, 19)
+
+
+def test_structured_circular_cluster_orders_across_origin() -> None:
+    features = [
+        _cds(1, 20, 80),
+        _cds(2, 100, 160),
+        _cds(3, 900, 960),
+    ]
+    result = build_operon_result(
+        features,
+        min_gap=0,
+        max_gap=59,
+        circular=True,
+        record_length=1000,
+    )
+    assert len(result.clusters) == 1
+    assert [feature.feature_index for feature in result.clusters[0].features] == [
+        3,
+        1,
+        2,
+    ]
+    assert result.clusters[0].gaps == (59, 19)

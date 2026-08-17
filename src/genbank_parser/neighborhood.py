@@ -13,8 +13,8 @@ from collections.abc import Sequence
 from .discover import RuleMatch, load_ruleset, match_feature_rules
 from .io import read_genbank
 from .model import GenBankFeature
-from .operons import find_operon_pairs
-from .spatial import resolve_target, select_cds_window
+from .operons import build_operon_result
+from .spatial import feature_display_bounds, resolve_target, select_cds_window
 
 SCHEMA_VERSION = "gbparse.neighborhood.v1"
 TSV_COLUMNS = (
@@ -151,11 +151,16 @@ def _local_coordinates(
     shift = 0
     previous_start: int | None = None
     for feature in features:
-        start = feature.start + shift
+        raw_start, raw_end = feature_display_bounds(
+            feature,
+            circular=circular,
+            record_length=record_length,
+        )
+        start = raw_start + shift
         if circular and previous_start is not None and start < previous_start:
             shift += record_length
-            start = feature.start + shift
-        end = feature.end + shift
+            start = raw_start + shift
+        end = raw_end + shift
         if end < start:
             end += record_length
         unwrapped.append((start, end))
@@ -241,16 +246,21 @@ def build_neighborhood(
     links: tuple[NeighborhoodOperonLink, ...] = ()
     neighbor_indices: dict[int, set[int]] = {}
     if show_operons:
-        pairs = find_operon_pairs(
+        operon_result = build_operon_result(
             record.features,
             max_gap=operon_gap,
             circular=record.topology == "circular",
             record_length=record.length,
         )
         links = tuple(
-            NeighborhoodOperonLink(a.feature_index, b.feature_index, gap)
-            for a, b, gap in pairs
-            if a.feature_index in selected_indices and b.feature_index in selected_indices
+            NeighborhoodOperonLink(
+                pair.first.feature_index,
+                pair.second.feature_index,
+                pair.gap,
+            )
+            for pair in operon_result.pairs
+            if pair.first.feature_index in selected_indices
+            and pair.second.feature_index in selected_indices
         )
         for link in links:
             neighbor_indices.setdefault(link.first_feature_index, set()).add(

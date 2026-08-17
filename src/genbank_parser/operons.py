@@ -3,11 +3,39 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 from itertools import pairwise
 from pathlib import Path
 
 from .io import read_genbank
 from .model import GenBankFeature
+
+
+@dataclass(frozen=True)
+class OperonPair:
+    """One adjacent same-strand CDS pair within the requested gap bounds."""
+
+    first: GenBankFeature
+    second: GenBankFeature
+    gap: int
+
+
+@dataclass(frozen=True)
+class OperonCluster:
+    """A connected chain of at least three candidate CDSs."""
+
+    record_id: str
+    strand: int
+    features: tuple[GenBankFeature, ...]
+    gaps: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class OperonResult:
+    """Structured operon-pair and cluster analysis."""
+
+    pairs: tuple[OperonPair, ...]
+    clusters: tuple[OperonCluster, ...]
 
 
 def find_operon_pairs(
@@ -42,6 +70,91 @@ def find_operon_pairs(
     return pairs
 
 
+def build_operon_result(
+    features: list[GenBankFeature],
+    max_gap: int = 150,
+    min_gap: int = -50,
+    *,
+    circular: bool = False,
+    record_length: int | None = None,
+) -> OperonResult:
+    """Return structured candidate pairs and connected three-CDS clusters."""
+    raw_pairs = find_operon_pairs(
+        features,
+        max_gap=max_gap,
+        min_gap=min_gap,
+        circular=circular,
+        record_length=record_length,
+    )
+    pairs = tuple(OperonPair(first, second, gap) for first, second, gap in raw_pairs)
+    if not pairs:
+        return OperonResult((), ())
+
+    feature_by_index = {
+        feature.feature_index: feature
+        for pair in pairs
+        for feature in (pair.first, pair.second)
+    }
+    outgoing = {pair.first.feature_index: pair for pair in pairs}
+    incoming = {pair.second.feature_index for pair in pairs}
+    undirected: dict[int, set[int]] = {}
+    for pair in pairs:
+        undirected.setdefault(pair.first.feature_index, set()).add(
+            pair.second.feature_index
+        )
+        undirected.setdefault(pair.second.feature_index, set()).add(
+            pair.first.feature_index
+        )
+
+    clusters: list[OperonCluster] = []
+    visited: set[int] = set()
+    for seed in sorted(undirected, key=lambda index: feature_by_index[index].start):
+        if seed in visited:
+            continue
+        component: set[int] = set()
+        stack = [seed]
+        while stack:
+            index = stack.pop()
+            if index in component:
+                continue
+            component.add(index)
+            stack.extend(undirected.get(index, ()))
+        visited.update(component)
+        if len(component) < 3:
+            continue
+
+        starts = [index for index in component if index not in incoming]
+        current = min(
+            starts or list(component),
+            key=lambda index: feature_by_index[index].start,
+        )
+        ordered_indices: list[int] = []
+        gaps: list[int] = []
+        while current not in ordered_indices and current in component:
+            ordered_indices.append(current)
+            pair = outgoing.get(current)
+            if pair is None or pair.second.feature_index not in component:
+                break
+            gaps.append(pair.gap)
+            current = pair.second.feature_index
+        for index in sorted(
+            component - set(ordered_indices),
+            key=lambda item: feature_by_index[item].start,
+        ):
+            ordered_indices.append(index)
+
+        ordered_features = tuple(feature_by_index[index] for index in ordered_indices)
+        clusters.append(
+            OperonCluster(
+                record_id=ordered_features[0].record_id,
+                strand=ordered_features[0].strand or 0,
+                features=ordered_features,
+                gaps=tuple(gaps[: len(ordered_features) - 1]),
+            )
+        )
+    return OperonResult(pairs, tuple(clusters))
+
+
 def operon_candidates(
     filepath: str | Path,
     max_gap: int = 150,
@@ -60,13 +173,16 @@ def operon_candidates(
     print("-" * 110)
 
     for rec in doc.records:
-        rec_pairs = find_operon_pairs(
+        rec_result = build_operon_result(
             rec.features,
             max_gap=max_gap,
             min_gap=min_gap,
             circular=rec.topology == "circular",
             record_length=rec.length,
         )
+        rec_pairs = [
+            (pair.first, pair.second, pair.gap) for pair in rec_result.pairs
+        ]
         all_pairs.extend(rec_pairs)
 
         for a, b, gap in rec_pairs:
@@ -80,18 +196,7 @@ def operon_candidates(
                 f"  {ta:18s}  {ga:6s}  ->  {tb:18s}  {gb:6s}  {gap:>4d}bp  {a.strand_symbol:>3s}    {pa} | {pb}"
             )
 
-        # Tight clusters (>= 3 consecutive co-directional genes)
-        if rec_pairs:
-            current_cluster: list[GenBankFeature] = [rec_pairs[0][0], rec_pairs[0][1]]
-            for a, b, _ in rec_pairs[1:]:
-                if current_cluster[-1].feature_index == a.feature_index:
-                    current_cluster.append(b)
-                else:
-                    if len(current_cluster) >= 3:
-                        all_clusters.append(current_cluster)
-                    current_cluster = [a, b]
-            if len(current_cluster) >= 3:
-                all_clusters.append(current_cluster)
+        all_clusters.extend([list(cluster.features) for cluster in rec_result.clusters])
 
     print(f"\nTotal candidate pairs: {len(all_pairs)}")
 

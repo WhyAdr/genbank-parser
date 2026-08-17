@@ -62,6 +62,19 @@ def test_circular_region_wraps_origin(multi_record_circular_gbff: Path) -> None:
     )
 
 
+def test_compound_origin_target_uses_shared_gene_window(
+    circular_compound_gbff: Path,
+) -> None:
+    region = extract_region(
+        circular_compound_gbff,
+        locus_tag="WRAP_001",
+        flank_genes=1,
+    )
+    assert len(region.seq) == 242
+    assert region.annotations["parent_record"] == "CIRC_JOIN"
+    assert all(int(feature.location.end) <= len(region.seq) for feature in region.features)
+
+
 def test_legacy_dict_preserves_unknown_strand_states() -> None:
     for strand, symbol in ((0, "?"), (None, ".")):
         feature = GenBankFeature(

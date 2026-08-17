@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import math
-import sys
 from pathlib import Path
 
 from Bio import SeqIO
@@ -13,7 +12,14 @@ from Bio.SeqFeature import CompoundLocation, FeatureLocation, SeqFeature
 from Bio.SeqRecord import SeqRecord
 
 from .io import read_genbank
-from .model import GenBankFeature
+from .model import GenBankFeature, GenBankRecord
+from .spatial import (
+    NonCDSTargetError,
+    TargetNotFoundError,
+    feature_display_bounds,
+    resolve_target,
+    select_cds_window,
+)
 
 
 def _combine_location(
@@ -110,35 +116,26 @@ def _circular_location(
 
 
 def _resolve_gene_window(
-    rec_features: list[GenBankFeature],
+    record: GenBankRecord,
     target: GenBankFeature,
     flank_genes: int,
-    circular: bool,
-    record_length: int,
 ) -> tuple[int, int]:
     """Return an unwrapped feature window around a resolved CDS."""
-    cdss = sorted((f for f in rec_features if f.type == "CDS"), key=lambda f: f.start)
-    if target.type != "CDS" or not cdss:
-        raise ValueError("Resolved target is not a CDS in a record with CDS features")
-    try:
-        index = [f.feature_index for f in cdss].index(target.feature_index)
-    except ValueError:
-        raise ValueError("Resolved target is not present in CDS ordering") from None
-
-    if flank_genes <= 0:
-        return target.start, target.end
-
-    if not circular:
-        left = cdss[max(0, index - flank_genes)]
-        right = cdss[min(len(cdss) - 1, index + flank_genes)]
-        return left.start, right.end
-
-    left = cdss[(index - flank_genes) % len(cdss)]
-    right = cdss[(index + flank_genes) % len(cdss)]
-    end = right.end
-    if end < left.start:
-        end += record_length
-    return left.start, end
+    selected = select_cds_window(record, target, flank_genes)
+    circular = record.topology == "circular"
+    start, _ = feature_display_bounds(
+        selected.features[0],
+        circular=circular,
+        record_length=record.length,
+    )
+    _, end = feature_display_bounds(
+        selected.features[-1],
+        circular=circular,
+        record_length=record.length,
+    )
+    if circular and end < start:
+        end += record.length
+    return start, end
 
 
 def extract_region(
@@ -167,30 +164,12 @@ def extract_region(
     raw_end: int
 
     if locus_tag:
-        match = doc.find_locus(locus_tag)
-        if match is None:
-            # A gene-name lookup follows the same CDS preference as locus tags.
-            for rec in doc.records:
-                gene_matches = [
-                    f
-                    for f in rec.features
-                    if f.gene and f.gene.casefold() == locus_tag.casefold()
-                ]
-                feat = next((f for f in gene_matches if f.type == "CDS"), None)
-                if feat is not None:
-                    match = (rec, feat)
-                    break
-        if match is None:
-            print(
-                f"ERROR: Locus tag '{locus_tag}' not found in {filepath}",
-                file=sys.stderr,
-            )
-            raise ValueError(f"Locus tag '{locus_tag}' not found")
-        target_rec, feat = match
+        try:
+            target_rec, feat = resolve_target(doc, locus_tag)
+        except (TargetNotFoundError, NonCDSTargetError) as exc:
+            raise ValueError(str(exc)) from exc
         circular = target_rec.topology == "circular"
-        raw_start, raw_end = _resolve_gene_window(
-            target_rec.features, feat, flank_genes, circular, target_rec.length
-        )
+        raw_start, raw_end = _resolve_gene_window(target_rec, feat, flank_genes)
     elif record_id:
         target_rec = doc.get_record(record_id)
         if target_rec is None:

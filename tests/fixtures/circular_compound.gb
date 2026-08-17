@@ -1,0 +1,29 @@
+LOCUS       CIRC_JOIN                 300 bp    DNA     circular BCT 17-AUG-2026
+DEFINITION  Synthetic origin-spanning compound CDS.
+ACCESSION   CIRC_JOIN
+VERSION     CIRC_JOIN
+FEATURES             Location/Qualifiers
+     source          1..300
+                     /organism="Synthetic circular bacterium"
+     CDS             join(271..300,1..30)
+                     /locus_tag="WRAP_001"
+                     /gene="wrapA"
+                     /product="origin-spanning protein"
+                     /translation="KKKKKKKKKKKKKKKKKKKK"
+     CDS             80..121
+                     /locus_tag="WRAP_002"
+                     /gene="nextA"
+                     /product="downstream protein"
+                     /translation="KKKKKKKKKKKKKK"
+     CDS             180..221
+                     /locus_tag="WRAP_003"
+                     /gene="prevA"
+                     /product="upstream protein"
+                     /translation="KKKKKKKKKKKKKK"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      121 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      181 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      241 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//
