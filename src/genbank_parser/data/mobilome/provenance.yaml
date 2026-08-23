@@ -1,10 +1,10 @@
 schema_version: 1
-provenance_version: "1.0.1"
+provenance_version: "1.1.0"
 
 sources:
   - id: blower-2012-toxin
     type: primary_article
-    title: Identification and classification of bacterial Type III toxin-antitoxin systems
+    title: Identification and classification of bacterial Type III toxin-antitoxin systems encoded in chromosomal and plasmid genomes
     year: 2012
     doi: 10.1093/nar/gks231
     pmid: "22434880"
@@ -16,14 +16,14 @@ sources:
       - Annotation correspondence does not establish activity in a new genome.
   - id: yao-2020-hepn-mnt
     type: primary_article
-    title: HEPN/MNT toxin-antitoxin neutralization by polyadenylylation
+    title: "Novel polyadenylylation-dependent neutralization mechanism of the HEPN/MNT toxin/antitoxin system"
     year: 2020
     doi: 10.1093/nar/gkaa855
     pmid: "33045733"
     pmcid: PMC7641770
     url: https://pmc.ncbi.nlm.nih.gov/articles/PMC7641770/
     supports:
-      - In the studied system MntA transfers three AMP moieties from ATP to HepT Tyr104.
+      - In the studied system MntA transfers three AMP moieties from ATP to HepT Tyr104 in the RX4HXY motif.
     limitations:
       - The biochemical result must not be generalized to every HEPN/MNT annotation.
   - id: smillie-2010-mobility
@@ -31,6 +31,7 @@ sources:
     title: Mobility of Plasmids
     year: 2010
     doi: 10.1128/MMBR.00020-10
+    pmid: "20805406"
     pmcid: PMC2937521
     url: https://pmc.ncbi.nlm.nih.gov/articles/PMC2937521/
     supports:
@@ -39,21 +40,24 @@ sources:
       - Annotation co-occurrence does not establish transfer or co-transfer.
   - id: robertson-2018-mob-suite
     type: primary_article
-    title: Comprehensive assessment of plasmid prevalence and diversity in the complete genome collection
+    title: "MOB-suite: software tools for clustering, reconstruction and typing of plasmids from draft assemblies"
     year: 2018
     doi: 10.1099/mgen.0.000206
+    pmid: "30052170"
     pmcid: PMC6159552
     url: https://pmc.ncbi.nlm.nih.gov/articles/PMC6159552/
     supports:
       - MOB-suite plasmid typing and mobility results depend on versioned databases and operating thresholds.
     limitations:
       - Database composition, taxonomic coverage, and thresholds affect external plasmid-typing interpretation.
-  - id: anjum-2014-pxo1
+  - id: akhtar-2012-pxo1
     type: primary_article
-    title: Functional analysis of pXO1 plasmid replication
-    year: 2014
+    title: "Two independent replicons can support replication of the anthrax toxin-encoding plasmid pXO1 of Bacillus anthracis"
+    year: 2012
     doi: 10.1016/j.plasmid.2011.12.012
-    url: https://pubmed.ncbi.nlm.nih.gov/22230551/
+    pmid: "22239982"
+    pmcid: PMC4186245
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC4186245/
     supports:
       - pXO annotations alone do not specify a single replication mechanism.
     limitations:
@@ -63,12 +67,101 @@ sources:
     title: Communication between viruses guides lysis-lysogeny decisions
     year: 2017
     doi: 10.1038/nature21049
+    pmid: "28099413"
     pmcid: PMC5378303
     url: https://pmc.ncbi.nlm.nih.gov/articles/PMC5378303/
     supports:
       - AimR, AimP, and AimX participate in the described phage correspondence.
     limitations:
       - One annotation does not establish communication activity in a new genome.
+  - id: bouet-2019-partition
+    type: primary_article
+    title: "Plasmid Localization and Partition in Enterobacteriaceae"
+    year: 2019
+    doi: 10.1128/ecosalplus.esp-0003-2019
+    pmid: "31187729"
+    url: https://journals.asm.org/doi/10.1128/ecosalplus.esp-0003-2019
+    supports:
+      - Plasmid partition (Par) systems are actively driven maintenance systems with ParA/ParB-type and tubulin-type components.
+    limitations:
+      - The review emphasizes Enterobacteriaceae; partition component naming elsewhere varies.
+  - id: carattoli-2014-plasmidfinder
+    type: primary_article
+    title: "In silico detection and typing of plasmids using PlasmidFinder and plasmid multilocus sequence typing"
+    year: 2014
+    doi: 10.1128/AAC.02412-14
+    pmid: "24777092"
+    url: https://journals.asm.org/doi/10.1128/aac.02412-14
+    supports:
+      - Replicon-based plasmid typing depends on a curated database with declared thresholds.
+    limitations:
+      - Replicon typing coverage is database- and lineage-dependent.
+  - id: chen-2005-vfdb
+    type: primary_article
+    title: "VFDB: a reference database for bacterial virulence factors"
+    year: 2005
+    doi: 10.1093/nar/gki008
+    pmid: "15608208"
+    url: https://academic.oup.com/nar/article/33/suppl_1/D325/2505203
+    supports:
+      - Virulence-factor determination is a curated-database comparison, not a product-text result.
+    limitations:
+      - Database releases supersede this original description; version provenance is required.
+  - id: christie-2025-t4ss
+    type: primary_article
+    title: "Type IV secretion systems: reconciling diversity through a unified nomenclature"
+    year: 2025
+    doi: 10.1093/femsre/fuaf069
+    pmid: "41474020"
+    url: https://academic.oup.com/femsre/article/doi/10.1093/femsre/fuaf069/8407627
+    supports:
+      - Mating-pair-formation (MPF) and Dtr component names follow a proposed unified nomenclature for type IV secretion systems.
+    limitations:
+      - A unified component name does not indicate a complete or active secretion system.
+  - id: feldgarden-2021-amrfinderplus
+    type: primary_article
+    title: "AMRFinderPlus and the Reference Gene Catalog facilitate examination of the genomic links among antimicrobial resistance, stress response, and virulence"
+    year: 2021
+    doi: 10.1038/s41598-021-91456-0
+    pmid: "34135355"
+    url: https://www.nature.com/articles/s41598-021-91456-0
+    supports:
+      - Structured antimicrobial-resistance annotation requires a curated reference gene catalog with method and threshold provenance.
+    limitations:
+      - A reference-catalog hit is not a resistance phenotype measurement.
+  - id: garcillan-barcia-2009-relaxases
+    type: primary_article
+    title: "The diversity of conjugative relaxases and its application in plasmid classification"
+    year: 2009
+    doi: 10.1111/j.1574-6976.2009.00168.x
+    pmid: "19396961"
+    url: https://academic.oup.com/femsre/article/33/3/657/591359
+    supports:
+      - Relaxase (MOB) gene families underpin plasmid mobility classification; names such as mobA, mobC, and mobF denote relaxases.
+    limitations:
+      - A relaxase gene-name match alone is not a family assignment or phylogenetic result.
+  - id: makarova-2020-crispr
+    type: primary_article
+    title: "Evolutionary classification of CRISPR-Cas systems: a burst of class 2 and derived variants"
+    year: 2020
+    doi: 10.1038/s41579-019-0299-x
+    pmid: "31857715"
+    url: https://www.nature.com/articles/s41579-019-0299-x
+    supports:
+      - Cas genes follow an evolutionary classification into classes, types, and subtypes.
+    limitations:
+      - A cas gene-name match does not establish a complete or active CRISPR-Cas locus.
+  - id: siguier-2006-isfinder
+    type: primary_article
+    title: "ISfinder: the reference centre for bacterial insertion sequences"
+    year: 2006
+    doi: 10.1093/nar/gkj014
+    pmid: "16381877"
+    url: https://academic.oup.com/nar/article/34/suppl_1/D32/1132247
+    supports:
+      - Insertion sequences carry standardized family nomenclature in a dedicated reference center.
+    limitations:
+      - An IS-like annotation is not a family assignment without sequence comparison.
   - id: bakta-origin-docs
     type: official_documentation
     title: Bakta documentation

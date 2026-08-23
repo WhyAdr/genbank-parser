@@ -4,6 +4,21 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.6.2] - 2026-08-23
+
+### Mobilome source-science audit
+
+- Corrected primary-article titles and the pXO1 provenance attribution, and
+  added verified PMIDs for the existing mobility and arbitrium sources.
+- Added primary literature anchors for relaxases, type IV secretion
+  nomenclature, plasmid partition, CRISPR-Cas classification, insertion
+  sequences, AMRFinderPlus, and VFDB.
+- Bumped the mobilome catalog, provenance, and inference resources to 1.1.0;
+  regenerated JSON, TSV, and text goldens and added citation-integrity tests.
+- Kept the catalog annotation-supported and bounded: source evidence does not
+  establish transfer, mechanism, phenotype, ancestry, or activity in a new
+  genome.
+
 ## [0.6.1] - 2026-08-23
 
 ### Mobilome hardening

@@ -1,5 +1,5 @@
 schema_version: 1
-catalog_version: "1.0.1"
+catalog_version: "1.1.0"
 
 facets:
   - id: replication_origin
@@ -152,7 +152,7 @@ markers:
         strength: 2
     requires_non_pseudo: true
     requires_complete: true
-    sources: [smillie-2010-mobility]
+    sources: [garcillan-barcia-2009-relaxases, smillie-2010-mobility]
     interpretation: Retains a relaxase annotation candidate.
     limitations:
       - Annotation does not demonstrate nicking or transfer.
@@ -175,7 +175,7 @@ markers:
         strength: 2
     requires_non_pseudo: true
     requires_complete: true
-    sources: [smillie-2010-mobility]
+    sources: [christie-2025-t4ss, smillie-2010-mobility]
     interpretation: Retains a Type IV coupling-protein annotation candidate.
     limitations:
       - Annotation does not establish a complete transfer apparatus.
@@ -199,7 +199,7 @@ markers:
         strength: 2
     requires_non_pseudo: true
     requires_complete: true
-    sources: [smillie-2010-mobility]
+    sources: [christie-2025-t4ss, smillie-2010-mobility]
     interpretation: Retains a mating-pair-formation annotation component.
     limitations:
       - Multiple annotated components do not establish expression or transfer.
@@ -320,7 +320,7 @@ markers:
         strength: 1
     requires_non_pseudo: false
     requires_complete: false
-    sources: [local-annotation-candidate-policy]
+    sources: [bouet-2019-partition, local-annotation-candidate-policy]
     interpretation: Retains partition or plasmid-maintenance annotation evidence.
     limitations:
       - Observation does not establish stable inheritance.
@@ -344,7 +344,7 @@ markers:
         strength: 1
     requires_non_pseudo: false
     requires_complete: false
-    sources: [local-annotation-candidate-policy]
+    sources: [local-annotation-candidate-policy, siguier-2006-isfinder]
     interpretation: Retains recombination or integration annotation evidence.
     limitations:
       - Observation does not establish an element boundary or activity.
@@ -434,7 +434,7 @@ markers:
         strength: 2
     requires_non_pseudo: true
     requires_complete: true
-    sources: [bakta-origin-docs]
+    sources: [bakta-origin-docs, makarova-2020-crispr]
     interpretation: Retains a Cas annotation candidate.
     limitations:
       - Annotation does not establish a complete or active CRISPR system.
@@ -452,7 +452,7 @@ markers:
         strength: 1
     requires_non_pseudo: false
     requires_complete: false
-    sources: [anjum-2014-pxo1, local-disabled-aggregate-policy]
+    sources: [akhtar-2012-pxo1, local-disabled-aggregate-policy]
     interpretation: Retains a bounded pXO-numbered product annotation observation.
     limitations:
       - Observation is not a homology result, ancestry assignment, or mechanism call.
@@ -470,7 +470,7 @@ markers:
         strength: 1
     requires_non_pseudo: false
     requires_complete: false
-    sources: [local-annotation-candidate-policy]
+    sources: [feldgarden-2021-amrfinderplus, local-annotation-candidate-policy]
     interpretation: Retains phage packaging annotation evidence.
     limitations:
       - Observation does not establish a complete phage module.
@@ -488,7 +488,7 @@ markers:
         strength: 1
     requires_non_pseudo: false
     requires_complete: false
-    sources: [local-annotation-candidate-policy]
+    sources: [chen-2005-vfdb, local-annotation-candidate-policy]
     interpretation: Retains phage structural annotation evidence.
     limitations:
       - Observation does not establish a complete phage module.

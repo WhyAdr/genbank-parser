@@ -1,5 +1,5 @@
 schema_version: 1
-inference_version: "1.0.0"
+inference_version: "1.1.0"
 
 components:
   replication_candidate:
@@ -99,7 +99,7 @@ disabled_aggregate_rules:
       - Gap and interruption policy.
       - Committed positive and unrelated negative controls.
       - Sequence-homology provenance and reviewed operating threshold.
-    sources: [anjum-2014-pxo1, local-disabled-aggregate-policy]
+    sources: [akhtar-2012-pxo1, local-disabled-aggregate-policy]
   - id: phage_module_bearing_plasmid_candidate
     reason: No v1 distinct-module operating threshold has been validated.
     evidence_retained_as:

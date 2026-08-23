@@ -26,9 +26,9 @@ def test_packaged_database_is_versioned_hashed_and_schema_valid() -> None:
     )
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
-    assert database.catalog_version == "1.0.1"
-    assert database.inference_version == "1.0.0"
-    assert database.provenance_version == "1.0.1"
+    assert database.catalog_version == "1.1.0"
+    assert database.inference_version == "1.1.0"
+    assert database.provenance_version == "1.1.0"
     assert database.database_source == "packaged"
     assert database.source_paths == ()
     assert [resource.name for resource in database.resources] == [
@@ -39,6 +39,38 @@ def test_packaged_database_is_versioned_hashed_and_schema_valid() -> None:
     ]
     assert all(len(resource.sha256) == 64 for resource in database.resources)
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+
+
+def test_provenance_sources_use_verified_citations() -> None:
+    database = load_mobilome_database()
+    by_id = {source.id: source for source in database.provenance_sources}
+
+    assert "anjum-2014-pxo1" not in by_id
+    akhtar = by_id["akhtar-2012-pxo1"]
+    assert akhtar.payload["year"] == 2012
+    assert akhtar.payload["title"].startswith("Two independent replicons")
+    assert (
+        "MOB-suite: software tools"
+        in by_id["robertson-2018-mob-suite"].payload["title"]
+    )
+    assert (
+        by_id["yao-2020-hepn-mnt"]
+        .payload["title"]
+        .startswith("Novel polyadenylylation")
+    )
+    assert (
+        by_id["blower-2012-toxin"]
+        .payload["title"]
+        .endswith("encoded in chromosomal and plasmid genomes")
+    )
+    for anchor in (
+        "garcillan-barcia-2009-relaxases",
+        "christie-2025-t4ss",
+        "makarova-2020-crispr",
+        "siguier-2006-isfinder",
+        "bouet-2019-partition",
+    ):
+        assert anchor in by_id
 
 
 def test_complete_custom_database_is_loaded_as_one_resource_set(tmp_path: Path) -> None:

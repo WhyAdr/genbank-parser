@@ -3,8 +3,8 @@
   "tool": "gbparse",
   "analysis": "mobilome",
   "tool_version": "0.6.0",
-  "catalog_version": "1.0.1",
-  "inference_version": "1.0.0",
+  "catalog_version": "1.1.0",
+  "inference_version": "1.1.0",
   "input": {
     "file": "mobilome_evidence.gb",
     "sha256": "34d9908260fc17c0a199c17c4494d608b99219bfaa2411983ad45f77d86957fc"
@@ -18,15 +18,15 @@
     "resources": [
       {
         "name": "markers.yaml",
-        "sha256": "9c0ac26b79a9eb793a638e04667a35289b0fce80d63c8c6f855be578c9b37e2f"
+        "sha256": "b017e60208434fbf6022828dc3d364aa267c871163e11afb038f30bf13909b1f"
       },
       {
         "name": "provenance.yaml",
-        "sha256": "6873483a2524aa86e3e273f23418bd46a0906a225d0bd2c5c1263b030d8717f4"
+        "sha256": "7d90191f1365f57a96b3d9cc44fe5fa3f5f63603ca5342b9b194c4b1627cd306"
       },
       {
         "name": "inference.yaml",
-        "sha256": "886dd68d8ea3a8f921337bbd90b86f28491ff2b26c987aea3acaeba269b3a004"
+        "sha256": "2fa78fb19a0d5769a0e06a78b7fa5b5a43653430b44d6793fadefbd3943e7a67"
       },
       {
         "name": "report.schema.json",
@@ -297,6 +297,7 @@
               "strength": 2,
               "eligible": true,
               "source_ids": [
+                "garcillan-barcia-2009-relaxases",
                 "smillie-2010-mobility"
               ]
             },
@@ -310,6 +311,7 @@
               "strength": 2,
               "eligible": true,
               "source_ids": [
+                "garcillan-barcia-2009-relaxases",
                 "smillie-2010-mobility"
               ]
             }
@@ -785,6 +787,7 @@
               "strength": 2,
               "eligible": false,
               "source_ids": [
+                "garcillan-barcia-2009-relaxases",
                 "smillie-2010-mobility"
               ]
             }
@@ -961,7 +964,8 @@
               "strength": 2,
               "eligible": true,
               "source_ids": [
-                "bakta-origin-docs"
+                "bakta-origin-docs",
+                "makarova-2020-crispr"
               ]
             },
             {
@@ -974,7 +978,8 @@
               "strength": 2,
               "eligible": true,
               "source_ids": [
-                "bakta-origin-docs"
+                "bakta-origin-docs",
+                "makarova-2020-crispr"
               ]
             }
           ],
@@ -1179,7 +1184,7 @@
         "Sequence-homology provenance and reviewed operating threshold."
       ],
       "source_ids": [
-        "anjum-2014-pxo1",
+        "akhtar-2012-pxo1",
         "local-disabled-aggregate-policy"
       ]
     }
