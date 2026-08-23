@@ -18,10 +18,12 @@ from .fasta import export_protein_fasta
 from .functional import analyze_functional
 from .gff import convert_to_gff3
 from .locus import inspect_locus
-from .metadata import extract_metadata
 from .meor import analyze_meor
 from .meor.database import load_meor_database
 from .meor.report import serialize_report
+from .metadata import extract_metadata
+from .mobilome import MobilomeError, analyze_mobilome, load_mobilome_database
+from .mobilome.report import write_mobilome_report
 from .neighborhood import build_neighborhood, write_neighborhood
 from .phylo import extract_phylogenomic_markers
 from .query import search_features
@@ -313,6 +315,29 @@ def create_parser() -> argparse.ArgumentParser:
     p_meor.add_argument("--markers", help="Experimental custom marker YAML")
     p_meor.add_argument("--pathways", help="Experimental custom pathway YAML")
 
+    # 20. mobilome
+    p_mobilome = subparsers.add_parser(
+        "mobilome",
+        help="Build an annotation-supported replicon and mobilome evidence report",
+    )
+    p_mobilome.add_argument("input", help="Input GenBank file")
+    p_mobilome.add_argument(
+        "--format", choices=["text", "json", "tsv"], default="text"
+    )
+    p_mobilome.add_argument(
+        "--include",
+        choices=["all", "chromosome", "plasmid", "unknown"],
+        default="all",
+    )
+    p_mobilome.add_argument(
+        "--min-evidence", type=int, choices=[1, 2, 3], default=1
+    )
+    p_mobilome.add_argument(
+        "--database-dir",
+        help="Experimental directory containing a complete mobilome database",
+    )
+    p_mobilome.add_argument("--output", help="Output path (default: stdout)")
+
     return parser
 
 
@@ -471,6 +496,26 @@ def main(argv: Sequence[str] | None = None) -> int:
                 parser.error("--output must not overwrite the input GenBank file")
             Path(args.output).write_text(rendered, encoding="utf-8", newline="")
         else:
+            sys.stdout.write(rendered)
+    elif cmd == "mobilome":
+        try:
+            database = load_mobilome_database(args.database_dir)
+            report = analyze_mobilome(
+                args.input,
+                include=args.include,
+                min_evidence=args.min_evidence,
+                database=database,
+            )
+            rendered = write_mobilome_report(
+                report,
+                source_path=args.input,
+                database_paths=database.source_paths,
+                format_type=args.format,
+                output_path=args.output,
+            )
+        except MobilomeError as exc:
+            parser.error(str(exc))
+        if args.output is None:
             sys.stdout.write(rendered)
 
     return 0
