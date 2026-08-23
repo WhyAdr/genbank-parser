@@ -12,6 +12,7 @@ from .models import (
     MobilomeDatabase,
     MobilomeHit,
     MobilomeHypothesis,
+    RepliconAssessment,
     RepliconInventory,
 )
 
@@ -331,4 +332,65 @@ def infer_replicon_hypotheses(
     )
 
 
-__all__ = ["infer_replicon_hypotheses"]
+def infer_cross_record_hypotheses(
+    assessments: Sequence[RepliconAssessment],
+    database: MobilomeDatabase,
+) -> tuple[MobilomeHypothesis, ...]:
+    """Evaluate the single v1 helper-dependent mobility rule across records."""
+
+    rule = database.inference_rule_map.get("possible_helper_dependent_mobilization")
+    if rule is None:
+        return ()
+    hypotheses: list[MobilomeHypothesis] = []
+    for target in assessments:
+        target_support, _ = _rule_component_support(
+            target.hits, rule, database, role="target_record"
+        )
+        if target_support is None:
+            continue
+        for helper in assessments:
+            if helper.inventory.record_index == target.inventory.record_index:
+                continue
+            helper_support, _ = _rule_component_support(
+                helper.hits, rule, database, role="distinct_helper_record"
+            )
+            if helper_support is None:
+                continue
+            hypotheses.append(
+                MobilomeHypothesis(
+                    hypothesis_id=(
+                        f"h:{rule.id}:{target.inventory.record_index}:"
+                        f"{helper.inventory.record_index}"
+                    ),
+                    rule_id=rule.id,
+                    kind=rule.kind,
+                    status=rule.status,
+                    summary=rule.wording,
+                    participants=(
+                        _participant(target.inventory, "target"),
+                        _participant(helper.inventory, "helper"),
+                    ),
+                    supporting_hit_ids=tuple(
+                        sorted(
+                            {hit.hit_id for hit in (*target_support, *helper_support)}
+                        )
+                    ),
+                    missing_components=(),
+                    conflicting_hit_ids=(),
+                    limitations=rule.limitations,
+                    source_ids=tuple(sorted(rule.sources)),
+                )
+            )
+    return tuple(
+        sorted(
+            hypotheses,
+            key=lambda item: (
+                item.participants[0].record_index,
+                item.rule_id,
+                item.hypothesis_id,
+            ),
+        )
+    )
+
+
+__all__ = ["infer_cross_record_hypotheses", "infer_replicon_hypotheses"]

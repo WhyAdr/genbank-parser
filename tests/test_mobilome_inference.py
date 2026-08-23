@@ -4,7 +4,11 @@ from pathlib import Path
 
 from genbank_parser import read_genbank
 from genbank_parser.mobilome.database import load_mobilome_database
-from genbank_parser.mobilome.inference import infer_replicon_hypotheses
+from genbank_parser.mobilome.inference import (
+    infer_cross_record_hypotheses,
+    infer_replicon_hypotheses,
+)
+from genbank_parser.mobilome.models import RepliconAssessment
 from genbank_parser.mobilome.replicons import inventory_replicons
 from genbank_parser.mobilome.scanner import scan_mobilome_features
 
@@ -46,3 +50,35 @@ def test_toxin_antitoxin_pairs_are_cautious_record_local_observations() -> None:
     assert all(
         forbidden not in "\n".join(summaries).casefold() for forbidden in FORBIDDEN
     )
+
+
+def test_cross_record_helper_hypothesis_is_tentative_and_structured() -> None:
+    document = read_genbank(Path("tests/fixtures/mobilome_inference.gb"))
+    database = load_mobilome_database()
+    inventory = inventory_replicons(document)
+    hits = scan_mobilome_features(document.all_features, database)
+    assessments = tuple(
+        RepliconAssessment(
+            inventory=item,
+            hits=tuple(
+                hit for hit in hits if hit.feature.record_index == item.record_index
+            ),
+            hypotheses=(),
+        )
+        for item in inventory
+    )
+
+    hypotheses = infer_cross_record_hypotheses(assessments, database)
+
+    assert len(hypotheses) == 1
+    hypothesis = hypotheses[0]
+    assert hypothesis.summary == "Possible helper-dependent mobilization"
+    assert [participant.role for participant in hypothesis.participants] == [
+        "target",
+        "helper",
+    ]
+    assert (
+        hypothesis.participants[0].record_index
+        != hypothesis.participants[1].record_index
+    )
+    assert "Co-transfer of both records is not implied." in hypothesis.limitations
