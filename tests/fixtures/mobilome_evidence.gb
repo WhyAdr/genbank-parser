@@ -1,0 +1,79 @@
+LOCUS       MOB_EVIDENCE             600 bp    DNA     circular BCT 22-AUG-2026
+DEFINITION  Synthetic typed evidence fixture for mobilome analysis.
+ACCESSION   MOB_EVIDENCE
+VERSION     MOB_EVIDENCE.1
+FEATURES             Location/Qualifiers
+     source          1..600
+                     /organism="Synthetic bacterium"
+                     /plasmid="pEVIDENCE"
+     rep_origin      10..25
+                     /note="generic origin annotation"
+     regulatory      40..55
+                     /regulatory_class="oriT"
+     CDS             70..120
+                     /locus_tag="MOB_0001"
+                     /gene="mobA"
+                     /product="relaxase"
+                     /translation="MMMMMMMMMMMMMMMM"
+     CDS             130..180
+                     /locus_tag="MOB_0002"
+                     /gene="toxN"
+                     /product="ToxN-family toxin"
+                     /translation="MMMMMMMMMMMMMMMM"
+     ncRNA           190..220
+                     /locus_tag="MOB_0003"
+                     /gene="toxI"
+                     /product="ToxI RNA antitoxin"
+     CDS             230..270
+                     /locus_tag="MOB_0004"
+                     /gene="hepT"
+                     /product="HepT-family toxin"
+                     /translation="MMMMMMMMMMMMM"
+     CDS             280..320
+                     /locus_tag="MOB_0005"
+                     /gene="mntA"
+                     /product="MntA-family antitoxin"
+                     /translation="MMMMMMMMMMMMM"
+     CDS             330..380
+                     /locus_tag="MOB_0006"
+                     /gene="repA"
+                     /pseudo
+                     /product="replication initiation protein"
+     CDS             390..440
+                     /locus_tag="MOB_0007"
+                     /gene="repB"
+                     /pseudogene="unitary"
+                     /product="replication initiation protein"
+     pseudogene      450..475
+                     /locus_tag="MOB_0008"
+                     /gene="repS"
+                     /product="replication initiation protein"
+     CDS             <480..520
+                     /locus_tag="MOB_0009"
+                     /gene="repFR"
+                     /product="replication-relaxation relaxase fusion"
+                     /translation="MMMMMMMMMMMMM"
+     repeat_region    530..550
+                     /rpt_type="CRISPR"
+                     /note="CRISPR repeat array"
+     CDS             join(571..600,1..30)
+                     /locus_tag="MOB_0010"
+                     /gene="cas9"
+                     /product="CRISPR-associated protein Cas9"
+                     /translation="MMMMMMMMMMMMMMMMMMMM"
+     CDS             60..65
+                     /locus_tag="MOB_0011"
+                     /product="Zot-like protein"
+                     /translation="MM"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      121 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      181 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      241 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      301 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      361 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      421 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      481 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      541 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//

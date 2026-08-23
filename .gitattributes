@@ -1,0 +1,4 @@
+src/genbank_parser/data/mobilome/*.yaml text eol=lf
+src/genbank_parser/data/mobilome/*.json text eol=lf
+tests/fixtures/mobilome_*.gb text eol=lf
+tests/golden/mobilome_v1.* text eol=lf

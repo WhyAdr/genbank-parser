@@ -1,0 +1,112 @@
+LOCUS       MOB_CHR                  120 bp    DNA     circular BCT 22-AUG-2026
+DEFINITION  Synthetic source-declared chromosome.
+ACCESSION   MOB_CHR
+VERSION     MOB_CHR.1
+FEATURES             Location/Qualifiers
+     source          1..120
+                     /organism="Synthetic bacterium"
+                     /chromosome="main"
+     rep_origin      5..18
+                     /note="generic replication origin"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       MOB_PLASMID              120 bp    DNA     circular BCT 22-AUG-2026
+DEFINITION  Synthetic source-declared circular plasmid.
+ACCESSION   MOB_PLASMID
+VERSION     MOB_PLASMID.1
+FEATURES             Location/Qualifiers
+     source          1..120
+                     /organism="Synthetic bacterium"
+                     /plasmid="pMOB"
+     regulatory      20..35
+                     /regulatory_class="oriT"
+     oriT            40..50
+                     /note="explicit origin of transfer"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       MOB_TENT                 120 bp    DNA     linear   BCT 22-AUG-2026
+DEFINITION  Synthetic plasmid sequence declared only in this description.
+ACCESSION   MOB_TENT
+VERSION     MOB_TENT.1
+FEATURES             Location/Qualifiers
+     source          1..120
+                     /organism="Synthetic bacterium"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       MOB_UNKNOWN              120 bp    DNA     circular BCT 22-AUG-2026
+DEFINITION  Synthetic undeclared circular contig.
+ACCESSION   MOB_UNKNOWN
+VERSION     MOB_UNKNOWN.1
+FEATURES             Location/Qualifiers
+     source          1..120
+                     /organism="Synthetic bacterium"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       MOB_LINEAR               120 bp    DNA     linear   BCT 22-AUG-2026
+DEFINITION  Synthetic source-declared linear plasmid.
+ACCESSION   MOB_LINEAR
+VERSION     MOB_LINEAR.1
+FEATURES             Location/Qualifiers
+     source          1..120
+                     /organism="Synthetic bacterium"
+                     /plasmid="pLINEAR"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       MOB_CONFLICT             120 bp    DNA     linear   BCT 22-AUG-2026
+DEFINITION  Synthetic conflicting record declarations.
+ACCESSION   MOB_CONFLICT
+VERSION     MOB_CONFLICT.1
+FEATURES             Location/Qualifiers
+     source          1..120
+                     /organism="Synthetic bacterium"
+                     /plasmid="pCONFLICT"
+                     /chromosome="also-main"
+     source          1..120
+                     /organism="Synthetic bacterium"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       MOB_EMPTY                120 bp    DNA             BCT 22-AUG-2026
+DEFINITION  Synthetic record with missing topology and no features.
+ACCESSION   MOB_EMPTY
+VERSION     MOB_EMPTY.1
+FEATURES             Location/Qualifiers
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       MOB_DUPA                 120 bp    DNA     linear   BCT 22-AUG-2026
+DEFINITION  Synthetic duplicate identifier one.
+ACCESSION   MOB_DUP
+VERSION     MOB_DUP.1
+FEATURES             Location/Qualifiers
+     source          1..120
+                     /organism="Synthetic bacterium"
+                     /plasmid="pDUP"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       MOB_DUPB                 120 bp    DNA     linear   BCT 22-AUG-2026
+DEFINITION  Synthetic duplicate identifier two.
+ACCESSION   MOB_DUP
+VERSION     MOB_DUP.1
+FEATURES             Location/Qualifiers
+     source          1..120
+                     /organism="Synthetic bacterium"
+                     /plasmid="pDUP2"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//

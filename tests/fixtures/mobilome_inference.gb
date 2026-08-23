@@ -1,0 +1,81 @@
+LOCUS       MOB_TARGET               500 bp    DNA     circular BCT 22-AUG-2026
+DEFINITION  Synthetic target record for helper-dependent assessment.
+ACCESSION   MOB_TARGET
+VERSION     MOB_TARGET.1
+FEATURES             Location/Qualifiers
+     source          1..500
+                     /organism="Synthetic bacterium"
+                     /plasmid="pTARGET"
+     regulatory      20..35
+                     /regulatory_class="oriT"
+     CDS             60..110
+                     /locus_tag="TARGET_001"
+                     /gene="mobA"
+                     /product="relaxase"
+                     /translation="MMMMMMMMMMMMMMMM"
+     CDS             140..180
+                     /locus_tag="TARGET_002"
+                     /product="pXO1-01 hypothetical protein"
+                     /translation="MMMMMMMMMMMMM"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      121 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      181 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      241 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      301 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      361 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      421 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      481 aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       MOB_HELPER               500 bp    DNA     linear   BCT 22-AUG-2026
+DEFINITION  Synthetic helper machinery record.
+ACCESSION   MOB_HELPER
+VERSION     MOB_HELPER.1
+FEATURES             Location/Qualifiers
+     source          1..500
+                     /organism="Synthetic bacterium"
+                     /chromosome="main"
+     CDS             50..100
+                     /locus_tag="HELPER_001"
+                     /gene="traD"
+                     /product="type IV coupling protein"
+                     /translation="MMMMMMMMMMMMMMMM"
+     CDS             120..170
+                     /locus_tag="HELPER_002"
+                     /gene="traA"
+                     /product="conjugal transfer protein"
+                     /translation="MMMMMMMMMMMMMMMM"
+     CDS             190..240
+                     /locus_tag="HELPER_003"
+                     /gene="traB"
+                     /product="type IV secretion system protein"
+                     /translation="MMMMMMMMMMMMMMMM"
+     CDS             260..300
+                     /locus_tag="HELPER_004"
+                     /product="beta-lactamase related domain protein"
+                     /translation="MMMMMMMMMMMMM"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      121 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      181 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      241 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      301 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      361 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      421 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      481 aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       MOB_EMPTY                200 bp    DNA     circular BCT 22-AUG-2026
+DEFINITION  Synthetic undeclared record with no mobilome markers.
+ACCESSION   MOB_EMPTY
+VERSION     MOB_EMPTY.1
+FEATURES             Location/Qualifiers
+     source          1..200
+                     /organism="Synthetic bacterium"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      121 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+      181 aaaaaaaaaa aaaaaaaaaa
+//
