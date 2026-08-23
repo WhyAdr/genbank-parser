@@ -50,3 +50,17 @@ def test_threshold_changes_eligibility_without_erasing_raw_hits() -> None:
     assert sum(hit.eligible_for_inference for hit in low) > sum(
         hit.eligible_for_inference for hit in high
     )
+
+
+def test_annotation_candidates_preserve_provenance_without_aggregate_calls() -> None:
+    document = read_genbank(Path("tests/fixtures/mobilome_evidence.gb"))
+    database = load_mobilome_database()
+    hits = scan_mobilome_features(document.all_features, database)
+    by_marker = {hit.marker_id: hit for hit in hits}
+
+    zot = by_marker["zot_like_candidate"]
+    assert zot.facets == ("phage_regulation", "vf_candidate")
+    assert all(reason.source_ids for reason in zot.reasons)
+    assert not {item.rule_id for item in database.disabled_aggregate_rules} & set(
+        database.inference_rule_map
+    )

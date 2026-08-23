@@ -66,3 +66,15 @@ def test_database_rejects_incomplete_or_invalid_custom_resources(
     markers_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     with pytest.raises(MobilomeDatabaseError, match="strength"):
         load_mobilome_database(tmp_path)
+
+
+def test_aggregate_candidate_claims_are_explicitly_disabled() -> None:
+    database = load_mobilome_database()
+    disabled = {item.rule_id for item in database.disabled_aggregate_rules}
+    executable = set(database.inference_rule_map)
+
+    assert disabled == {
+        "phage_module_bearing_plasmid_candidate",
+        "pxo_like_annotation_pattern_candidate",
+    }
+    assert not disabled & executable
