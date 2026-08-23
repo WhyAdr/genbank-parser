@@ -1,5 +1,5 @@
 schema_version: 1
-provenance_version: "1.0.0"
+provenance_version: "1.0.1"
 
 sources:
   - id: blower-2012-toxin
@@ -68,7 +68,7 @@ sources:
     supports:
       - AimR, AimP, and AimX participate in the described phage correspondence.
     limitations:
-      - One annotation does not prove active communication in a new genome.
+      - One annotation does not establish communication activity in a new genome.
   - id: bakta-origin-docs
     type: official_documentation
     title: Bakta documentation

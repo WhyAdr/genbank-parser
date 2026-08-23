@@ -8,15 +8,22 @@ from pathlib import Path
 
 import pytest
 import yaml
+from Bio.Seq import Seq
+from Bio.SeqFeature import FeatureLocation
 
 from genbank_parser import read_genbank
 from genbank_parser.cli import main
 from genbank_parser.mobilome import analyze_mobilome, load_mobilome_database
-from genbank_parser.mobilome.inference import record_inference_limitations
+from genbank_parser.mobilome.inference import (
+    infer_cross_record_hypotheses,
+    infer_replicon_hypotheses,
+    record_inference_limitations,
+)
 from genbank_parser.mobilome.models import (
     MobilomeDatabaseError,
     MobilomeInputError,
     MobilomeOutputError,
+    RepliconAssessment,
 )
 from genbank_parser.mobilome.replicons import inventory_replicons
 from genbank_parser.mobilome.report import (
@@ -25,7 +32,7 @@ from genbank_parser.mobilome.report import (
     write_mobilome_report,
 )
 from genbank_parser.mobilome.scanner import scan_mobilome_features
-from genbank_parser.model import GenBankFeature
+from genbank_parser.model import GenBankDocument, GenBankFeature, GenBankRecord
 
 FORBIDDEN_CLAIMS = (
     "obligate co-mobilisation",
@@ -153,6 +160,41 @@ def _hypotheses(report):
     )
 
 
+def _synthetic_features(
+    specs: tuple[tuple[str, int, int, dict[str, list[str]]], ...],
+    *,
+    topology: str = "linear",
+    length: int = 10_000,
+):
+    features = [
+        GenBankFeature(
+            record_id="synthetic.1",
+            record_index=1,
+            feature_index=index,
+            type=feature_type,
+            location=FeatureLocation(start - 1, end, strand=1),
+            qualifiers=qualifiers,
+            record_length=length,
+            topology=topology,
+        )
+        for index, (feature_type, start, end, qualifiers) in enumerate(specs, 1)
+    ]
+    record = GenBankRecord(
+        id="synthetic.1",
+        name="synthetic",
+        description="Synthetic direct mobilome contract record.",
+        seq=Seq("A" * length),
+        length=length,
+        topology=topology,
+        features=features,
+    )
+    document = GenBankDocument(path=Path("synthetic.gb"), records=[record])
+    inventory = inventory_replicons(document)[0]
+    database = load_mobilome_database()
+    hits = scan_mobilome_features(features, database)
+    return inventory, hits, database
+
+
 def test_empty_and_malformed_inputs_fail_as_mobilome_errors(tmp_path: Path) -> None:
     empty = tmp_path / "empty.gb"
     empty.write_text("", encoding="utf-8")
@@ -180,12 +222,12 @@ def test_forbidden_claims_are_absent_from_all_outputs_and_catalog_wording() -> N
                 serialize_mobilome_report(report, "tsv"),
             )
         ).casefold()
-        assert not any(claim in rendered for claim in FORBIDDEN_CLAIMS)
+    assert not any(claim in rendered for claim in FORBIDDEN_CLAIMS)
 
     data_dir = resources.files("genbank_parser").joinpath("data", "mobilome")
     catalog_text = "\n".join(
         yaml.safe_dump(yaml.safe_load(data_dir.joinpath(name).read_text()))
-        for name in ("markers.yaml", "inference.yaml")
+        for name in ("markers.yaml", "provenance.yaml", "inference.yaml")
     ).casefold()
     assert not any(claim in catalog_text for claim in FORBIDDEN_CLAIMS)
 
@@ -314,6 +356,154 @@ def test_replication_and_pxo_observations_do_not_select_a_mechanism(
     )
 
 
+@pytest.mark.parametrize("topology", ["linear", "circular"])
+@pytest.mark.parametrize("gap, expected", [(1999, True), (2000, True), (2001, False)])
+def test_toxin_antitoxin_gap_boundary_is_inclusive(
+    topology: str, gap: int, expected: bool
+) -> None:
+    inventory, hits, database = _synthetic_features(
+        (
+            ("CDS", 100, 110, {"gene": ["toxN"], "product": ["ToxN-family toxin"]}),
+            (
+                "ncRNA",
+                111 + gap,
+                121 + gap,
+                {"gene": ["toxI"], "product": ["ToxI RNA antitoxin"]},
+            ),
+        ),
+        topology=topology,
+    )
+    hypotheses = infer_replicon_hypotheses(inventory, hits, database)
+
+    assert any(item.kind == "toxin_antitoxin" for item in hypotheses) is expected
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        (("CDS", 100, 110, {"gene": ["toxN"], "product": ["ToxN-family toxin"]}),),
+        (
+            (
+                "ncRNA",
+                100,
+                110,
+                {"gene": ["toxI"], "product": ["ToxI RNA antitoxin"]},
+            ),
+        ),
+    ],
+)
+def test_lone_toxin_or_antitoxin_is_observation_only(spec) -> None:
+    inventory, hits, database = _synthetic_features(spec)
+
+    assert hits
+    assert not any(
+        item.kind == "toxin_antitoxin"
+        for item in infer_replicon_hypotheses(inventory, hits, database)
+    )
+
+
+def test_mobility_component_subsets_report_exact_missing_facets() -> None:
+    cases = {
+        "relaxase_only": (
+            (("CDS", 100, 140, {"gene": ["mobA"], "product": ["relaxase"]}),),
+            "mobilizable_core_annotation_candidate",
+            ("mobility_orit",),
+        ),
+        "t4cp_only": (
+            (
+                (
+                    "CDS",
+                    100,
+                    140,
+                    {"gene": ["traD"], "product": ["type IV coupling protein"]},
+                ),
+            ),
+            "helper_machinery_annotation_candidate",
+            ("mobility_mpf",),
+        ),
+        "single_mpf": (
+            (
+                (
+                    "CDS",
+                    100,
+                    140,
+                    {"gene": ["traA"], "product": ["conjugal transfer protein"]},
+                ),
+            ),
+            "helper_machinery_annotation_candidate",
+            ("mobility_mpf", "mobility_t4cp"),
+        ),
+        "t4cp_plus_one_mpf": (
+            (
+                (
+                    "CDS",
+                    100,
+                    140,
+                    {"gene": ["traD"], "product": ["type IV coupling protein"]},
+                ),
+                (
+                    "CDS",
+                    200,
+                    240,
+                    {"gene": ["traA"], "product": ["conjugal transfer protein"]},
+                ),
+            ),
+            "helper_machinery_annotation_candidate",
+            ("mobility_mpf",),
+        ),
+    }
+    for specs, rule_id, missing in cases.values():
+        inventory, hits, database = _synthetic_features(specs)
+        hypotheses = infer_replicon_hypotheses(inventory, hits, database)
+        helper = next(item for item in hypotheses if item.rule_id == rule_id)
+        assert helper.status == "insufficient"
+        assert helper.missing_components == missing
+
+
+def test_complete_mobilizable_core_and_same_record_helper_do_not_cross_pair() -> None:
+    specs = (
+        ("regulatory", 100, 110, {"regulatory_class": ["oriT"]}),
+        ("CDS", 200, 240, {"gene": ["mobA"], "product": ["relaxase"]}),
+        (
+            "CDS",
+            300,
+            340,
+            {"gene": ["traD"], "product": ["type IV coupling protein"]},
+        ),
+        (
+            "CDS",
+            400,
+            440,
+            {"gene": ["traA"], "product": ["conjugal transfer protein"]},
+        ),
+        (
+            "CDS",
+            500,
+            540,
+            {"gene": ["traB"], "product": ["type IV secretion system protein"]},
+        ),
+    )
+    inventory, hits, database = _synthetic_features(specs)
+    local = infer_replicon_hypotheses(inventory, hits, database)
+    assessment = RepliconAssessment(
+        inventory=inventory,
+        hits=hits,
+        hypotheses=local,
+    )
+
+    assert any(
+        item.rule_id == "mobilizable_core_annotation_candidate"
+        and item.status == "tentative"
+        for item in local
+    )
+    assert any(
+        item.rule_id == "helper_machinery_annotation_candidate"
+        and item.status == "tentative"
+        for item in local
+    )
+    assert not infer_cross_record_hypotheses((assessment,), database)
+
+
 def test_unlocatable_toxin_antitoxin_pair_emits_a_record_limitation() -> None:
     inventory = inventory_replicons(
         read_genbank(Path("tests/fixtures/mobilome_evidence.gb"))
@@ -382,6 +572,20 @@ def test_cli_matrix_covers_include_database_and_input_errors(
         == 0
     )
     capsys.readouterr()
+
+    (database_dir / "inference.yaml").unlink()
+    with pytest.raises(SystemExit):
+        main(["mobilome", str(fixture), "--database-dir", str(database_dir)])
+    missing_database_error = capsys.readouterr().err
+    assert "exactly" in missing_database_error
+    assert "Traceback" not in missing_database_error
+
+    with pytest.raises(SystemExit) as invalid_threshold:
+        main(["mobilome", str(fixture), "--min-evidence", "4"])
+    threshold_error = capsys.readouterr().err
+    assert invalid_threshold.value.code == 2
+    assert "invalid choice" in threshold_error
+    assert "Traceback" not in threshold_error
 
     for input_path in (tmp_path / "empty.gb", tmp_path / "malformed.gb"):
         input_path.write_text(

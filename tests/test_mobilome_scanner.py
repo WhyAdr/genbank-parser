@@ -1,9 +1,11 @@
 """Field-aware, multi-label evidence-scanner regressions."""
 
+from dataclasses import replace
 from pathlib import Path
 
 from genbank_parser import read_genbank
 from genbank_parser.mobilome import load_mobilome_database
+from genbank_parser.mobilome.models import MarkerMatcher, MobilomeMarker
 from genbank_parser.mobilome.scanner import _match_value, scan_mobilome_features
 from genbank_parser.model import GenBankFeature
 
@@ -123,3 +125,67 @@ def test_multi_value_qualifiers_remain_traceable_without_inference_inflation() -
     assert len({reason.reason_id for reason in toxn.reasons}) == len(toxn.reasons)
     assert toxn.feature.start is None
     assert toxn.feature.end is None
+
+
+def test_scanner_keeps_dbxref_product_and_field_scoped_reasons_distinct() -> None:
+    database = load_mobilome_database()
+    marker = MobilomeMarker(
+        id="scanner_contract_marker",
+        label="Scanner contract marker",
+        facets=("amr_candidate",),
+        feature_types=("CDS",),
+        matchers=(
+            MarkerMatcher(
+                field="db_xref",
+                mode="regex",
+                patterns=(r"AMRFinder",),
+                negative_patterns=(),
+                strength=2,
+            ),
+            MarkerMatcher(
+                field="product",
+                mode="regex",
+                patterns=(r"efflux pump", r"multidrug"),
+                negative_patterns=(),
+                strength=1,
+            ),
+            MarkerMatcher(
+                field="gene",
+                mode="casefold_exact",
+                patterns=("shared",),
+                negative_patterns=(),
+                strength=2,
+            ),
+        ),
+        requires_non_pseudo=False,
+        requires_complete=False,
+        sources=("scanner-test",),
+        interpretation="Test-only marker.",
+        limitations=("Test-only evidence.",),
+    )
+    database = replace(database, markers=database.markers + (marker,))
+    feature = GenBankFeature(
+        record_id="synthetic",
+        record_index=1,
+        feature_index=1,
+        type="CDS",
+        location=None,
+        qualifiers={
+            "gene": ["shared"],
+            "product": ["shared efflux pump multidrug"],
+            "db_xref": ["AMRFinder:shared"],
+        },
+        record_length=100,
+    )
+
+    hit = next(
+        item
+        for item in scan_mobilome_features([feature], database)
+        if item.marker_id == "scanner_contract_marker"
+    )
+
+    assert {reason.field for reason in hit.reasons} == {"db_xref", "product", "gene"}
+    assert len([reason for reason in hit.reasons if reason.field == "product"]) == 2
+    assert len({reason.reason_id for reason in hit.reasons}) == len(hit.reasons)
+    assert hit.max_strength == 2
+    assert hit.eligible_for_inference

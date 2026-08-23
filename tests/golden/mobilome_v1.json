@@ -3,7 +3,7 @@
   "tool": "gbparse",
   "analysis": "mobilome",
   "tool_version": "0.6.0",
-  "catalog_version": "1.0.0",
+  "catalog_version": "1.0.1",
   "inference_version": "1.0.0",
   "input": {
     "file": "mobilome_evidence.gb",
@@ -18,11 +18,11 @@
     "resources": [
       {
         "name": "markers.yaml",
-        "sha256": "0fa4e8c4580e291eb0775202a343d45006b755f68693cbb662ec4876f331aebf"
+        "sha256": "9c0ac26b79a9eb793a638e04667a35289b0fce80d63c8c6f855be578c9b37e2f"
       },
       {
         "name": "provenance.yaml",
-        "sha256": "c7eaba5c68d2b0bf4a3f45e8f2a0d769c9359833c702674835434ade28f20021"
+        "sha256": "6873483a2524aa86e3e273f23418bd46a0906a225d0bd2c5c1263b030d8717f4"
       },
       {
         "name": "inference.yaml",

@@ -2,7 +2,7 @@ Mobilome evidence report
 Input and provenance
   Input: mobilome_evidence.gb
   SHA-256: 34d9908260fc17c0a199c17c4494d608b99219bfaa2411983ad45f77d86957fc
-  Catalog/inference: 1.0.0 / 1.0.0
+  Catalog/inference: 1.0.1 / 1.0.0
 Record inventory
   [1] MOB_EVIDENCE.1 | plasmid (supported) | circular | 600 bp | 9 CDS
 Replicon assessments

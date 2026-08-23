@@ -1,6 +1,8 @@
 """Tests for fail-closed mobilome evidence-resource loading."""
 
 import json
+from collections.abc import Callable
+from copy import deepcopy
 from importlib import resources
 from pathlib import Path
 
@@ -24,8 +26,9 @@ def test_packaged_database_is_versioned_hashed_and_schema_valid() -> None:
     )
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
-    assert database.catalog_version == "1.0.0"
+    assert database.catalog_version == "1.0.1"
     assert database.inference_version == "1.0.0"
+    assert database.provenance_version == "1.0.1"
     assert database.database_source == "packaged"
     assert database.source_paths == ()
     assert [resource.name for resource in database.resources] == [
@@ -78,3 +81,139 @@ def test_aggregate_candidate_claims_are_explicitly_disabled() -> None:
         "pxo_like_annotation_pattern_candidate",
     }
     assert not disabled & executable
+
+
+def _mutated_database(
+    tmp_path: Path,
+    resource_name: str,
+    mutate: Callable[[dict], None],
+) -> None:
+    _copy_custom_database(tmp_path)
+    path = tmp_path / resource_name
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    mutate(payload)
+    path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    ("resource_name", "mutate", "message"),
+    [
+        (
+            "markers.yaml",
+            lambda p: p["facets"].append(deepcopy(p["facets"][0])),
+            "Duplicate facet IDs",
+        ),
+        (
+            "markers.yaml",
+            lambda p: p["markers"].append(deepcopy(p["markers"][0])),
+            "Duplicate marker IDs",
+        ),
+        (
+            "provenance.yaml",
+            lambda p: p["sources"].append(deepcopy(p["sources"][0])),
+            "Duplicate provenance source IDs",
+        ),
+        (
+            "inference.yaml",
+            lambda p: p["rules"].append(deepcopy(p["rules"][0])),
+            "Duplicate inference rule IDs",
+        ),
+        (
+            "markers.yaml",
+            lambda p: p["markers"][0]["facets"].append("missing_facet"),
+            "unknown facets",
+        ),
+        (
+            "inference.yaml",
+            lambda p: next(
+                rule for rule in p["rules"] if rule.get("required_marker_ids")
+            )["required_marker_ids"].append("missing_marker"),
+            "unknown markers",
+        ),
+        (
+            "inference.yaml",
+            lambda p: p["rules"][0]["required_components"]["subject_record"].append(
+                "missing_component"
+            ),
+            "unknown components",
+        ),
+        (
+            "provenance.yaml",
+            lambda p: p["sources"][-1]["rule_ids"].append("missing_rule"),
+            "unknown rules",
+        ),
+        (
+            "markers.yaml",
+            lambda p: p["markers"][0]["matchers"][0].update(
+                {"mode": "regex", "patterns": ["["]}
+            ),
+            "Invalid regex",
+        ),
+        (
+            "markers.yaml",
+            lambda p: p["markers"][0]["matchers"][0].update({"strength": 0}),
+            "positive integer",
+        ),
+        (
+            "markers.yaml",
+            lambda p: next(
+                marker for marker in p["markers"] if marker["id"] == "crispr_array"
+            )["matchers"][1].update({"strength": 2}),
+            "evidence ceiling",
+        ),
+        (
+            "markers.yaml",
+            lambda p: p["markers"][0]["matchers"][0].update({"patterns": []}),
+            "must not be empty",
+        ),
+        (
+            "markers.yaml",
+            lambda p: p["markers"][0].update({"matchers": []}),
+            "non-empty list",
+        ),
+        (
+            "markers.yaml",
+            lambda p: p["markers"][0].update({"limitations": []}),
+            "must not be empty",
+        ),
+        (
+            "provenance.yaml",
+            lambda p: p["sources"][-1].pop("rationale"),
+            "rationale",
+        ),
+        (
+            "provenance.yaml",
+            lambda p: p.update({"provenance_version": "2.0.0"}),
+            "major versions",
+        ),
+    ],
+)
+def test_database_rejects_fail_closed_matrix(
+    tmp_path: Path,
+    resource_name: str,
+    mutate: Callable[[dict], None],
+    message: str,
+) -> None:
+    _mutated_database(tmp_path, resource_name, mutate)
+
+    with pytest.raises(MobilomeDatabaseError, match=message):
+        load_mobilome_database(tmp_path)
+
+
+def test_database_rejects_duplicate_component_mapping_key(tmp_path: Path) -> None:
+    _copy_custom_database(tmp_path)
+    path = tmp_path / "inference.yaml"
+    raw = path.read_text(encoding="utf-8")
+    raw = raw.replace("  mobilizable_core:\n", "  replication_candidate:\n", 1)
+    path.write_text(raw, encoding="utf-8")
+
+    with pytest.raises(MobilomeDatabaseError, match="duplicate key"):
+        load_mobilome_database(tmp_path)
+
+
+def test_database_rejects_custom_directory_missing_one_resource(tmp_path: Path) -> None:
+    _copy_custom_database(tmp_path)
+    (tmp_path / "inference.yaml").unlink()
+
+    with pytest.raises(MobilomeDatabaseError, match="exactly"):
+        load_mobilome_database(tmp_path)

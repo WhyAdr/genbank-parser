@@ -44,3 +44,8 @@ ragged rows.
 The catalog intentionally has no TPR-specific marker in v1. Generic RepA/RepB,
 replication-relaxation, and pXO annotations therefore remain observations and
 do not select theta, rolling-circle, or another replication mechanism.
+
+The v1 schema currently carries record-level spatial-inference limitations in
+the classification limitation list. A future `gbparse.mobilome.v2` contract
+should provide a separate inventory-level `spatial_limitations` field rather
+than mixing classification and pairing caveats.

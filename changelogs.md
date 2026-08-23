@@ -4,6 +4,20 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.6.1] - 2026-08-23
+
+### Mobilome hardening
+
+- Bumped the mobilome catalog and provenance resources to 1.0.1 after the
+  patch-0.1 wording correction and MOB-suite provenance addition.
+- Extended forbidden-claim enforcement through provenance resources and added
+  database, CLI, toxin-antitoxin boundary, mobility-subset, and field-scoped
+  scanner regressions.
+- Recorded the patch-0.1 sequencing caveat: Phase 1 front-loaded the final
+  catalog/provenance/inference content, Phase 5 pinned a hand-constructed
+  empty-report golden, and the Phase 8 release included `report.py` and two
+  test-file edits outside its nominal staging scope.
+
 ## [0.6.0] - 2026-08-23
 
 ### Typed mobilome evidence analysis

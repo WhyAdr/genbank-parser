@@ -1,5 +1,5 @@
 schema_version: 1
-catalog_version: "1.0.0"
+catalog_version: "1.0.1"
 
 facets:
   - id: replication_origin
