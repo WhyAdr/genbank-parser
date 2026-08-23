@@ -1,0 +1,158 @@
+schema_version: 1
+inference_version: "1.0.0"
+
+components:
+  replication_candidate:
+    operator: any
+    facets: [replication_initiation, replication_origin]
+  mobilizable_core:
+    operator: all
+    facets: [mobility_orit, mobility_relaxase]
+    min_distinct_features:
+      mobility_orit: 1
+      mobility_relaxase: 1
+  helper_machinery:
+    operator: all
+    facets: [mobility_t4cp, mobility_mpf]
+    min_distinct_features:
+      mobility_t4cp: 1
+      mobility_mpf: 2
+
+rules:
+  - id: replication_annotation_candidate
+    kind: replication
+    required_components:
+      subject_record: [replication_candidate]
+    status: tentative
+    wording: Replication annotation candidate with unresolved mechanism
+    limitations:
+      - Annotation does not identify a replication mechanism or autonomy.
+    sources: [local-annotation-candidate-policy]
+  - id: mobilizable_core_annotation_candidate
+    kind: mobility
+    required_components:
+      subject_record: [mobilizable_core]
+    distinct_features: true
+    status: tentative
+    wording: Mobilizable-core annotation candidate
+    limitations:
+      - A cognate relaxase-oriT relationship is untested.
+      - Expression and transfer are untested.
+    sources: [smillie-2010-mobility]
+  - id: helper_machinery_annotation_candidate
+    kind: mobility
+    required_components:
+      subject_record: [helper_machinery]
+    distinct_features: true
+    status: tentative
+    wording: Conjugation-machinery annotation candidate
+    limitations:
+      - Multiple components do not establish a complete or expressed transfer system.
+    sources: [smillie-2010-mobility]
+  - id: possible_helper_dependent_mobilization
+    kind: mobility
+    required_components:
+      target_record: [mobilizable_core]
+      distinct_helper_record: [helper_machinery]
+    distinct_features: true
+    status: tentative
+    wording: Possible helper-dependent mobilization
+    limitations:
+      - Compatibility is untested.
+      - A cognate relaxase-oriT relationship is untested.
+      - Record taxonomic and same-cell co-affiliation are untested.
+      - Expression and transfer are untested.
+      - Co-transfer of both records is not implied.
+    sources: [smillie-2010-mobility]
+  - id: type_iii_toxin_antitoxin_pair_candidate
+    kind: toxin_antitoxin
+    required_marker_ids: [toxn, toxi]
+    same_record: true
+    distinct_features: true
+    max_circular_gap_bp: 2000
+    status: tentative
+    wording: Type III ToxIN annotation-pair candidate
+    limitations:
+      - Proximity is a versioned engineering heuristic, not proof of an operon.
+      - Expression and toxin-antitoxin activity are untested.
+    sources: [blower-2012-toxin]
+  - id: hepn_mnt_annotation_pair_candidate
+    kind: toxin_antitoxin
+    required_marker_ids: [hept, mnta]
+    same_record: true
+    distinct_features: true
+    max_circular_gap_bp: 2000
+    status: tentative
+    wording: HEPN/MNT annotation-pair candidate
+    limitations:
+      - Proximity is a versioned engineering heuristic, not proof of an operon.
+      - The cited biochemical correspondence is not generalized beyond annotation.
+    sources: [yao-2020-hepn-mnt]
+
+disabled_aggregate_rules:
+  - id: pxo_like_annotation_pattern_candidate
+    reason: No v1 ordinal, synteny, and null-model contract has been validated.
+    evidence_retained_as: [pxo_numbered_product_annotation]
+    enablement_requirements:
+      - Curated marker-group and ordinal metadata.
+      - Exact forward, reverse, and circular-rotation synteny semantics.
+      - Gap and interruption policy.
+      - Committed positive and unrelated negative controls.
+      - Sequence-homology provenance and reviewed operating threshold.
+    sources: [anjum-2014-pxo1, local-disabled-aggregate-policy]
+  - id: phage_module_bearing_plasmid_candidate
+    reason: No v1 distinct-module operating threshold has been validated.
+    evidence_retained_as:
+      - phage_integration
+      - phage_packaging
+      - phage_structure
+      - phage_lysis
+      - phage_replication
+      - phage_regulation
+    enablement_requirements:
+      - Committed positive and unrelated negative controls.
+      - Versioned minimum distinct-module policy.
+      - Source-declared plasmid and eligible replication evidence.
+    sources: [local-disabled-aggregate-policy]
+
+handoffs:
+  - id: plasmid_typing
+    tool: MOB-suite or PlasmidFinder
+    purpose: Plasmid typing and mobility comparison
+    reason: External typing is outside this annotation-only analysis.
+    required_input: [assembly or contig sequence]
+    required_provenance_fields: [tool_version, database_release, identity_threshold, coverage_threshold, taxonomic_scope]
+    limitations:
+      - A future tool result remains dependent on database composition and thresholds.
+  - id: amr_annotation
+    tool: AMRFinderPlus
+    purpose: Structured antimicrobial-resistance annotation
+    reason: Generic product text is retained only as an annotation candidate.
+    required_input: [protein or nucleotide sequence]
+    required_provenance_fields: [tool_version, database_version, organism_option, method, thresholds]
+    limitations:
+      - A tool annotation is not a phenotype measurement.
+  - id: vf_annotation
+    tool: VFDB or curated virulence workflow
+    purpose: Virulence-associated comparison
+    reason: Product text is retained only as an annotation candidate.
+    required_input: [protein or nucleotide sequence]
+    required_provenance_fields: [database_release, search_method, thresholds, coverage, interpretation_limits]
+    limitations:
+      - A similarity result is not virulence phenotype evidence.
+  - id: element_boundary
+    tool: Prophage or ICE caller
+    purpose: Dedicated element-boundary analysis
+    reason: Component annotations do not establish element boundaries.
+    required_input: [assembly sequence and annotation]
+    required_provenance_fields: [tool_version, database_version, caller_thresholds, boundary_uncertainty]
+    limitations:
+      - Predicted boundaries require method-specific review.
+  - id: mechanism_evidence
+    tool: HMM, domain, or sequence workflow
+    purpose: Mechanism-specific evidence
+    reason: Generic Rep and pXO labels cannot identify a replication mechanism.
+    required_input: [protein sequence]
+    required_provenance_fields: [model_accession, model_version, cutoffs, alignment_coverage]
+    limitations:
+      - Domain evidence still requires a reviewed mechanism rule.

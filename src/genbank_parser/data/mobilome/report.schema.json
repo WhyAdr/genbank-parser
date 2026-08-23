@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gbparse.dev/schema/mobilome/v1",
+  "title": "gbparse mobilome evidence report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "tool", "analysis", "tool_version", "catalog_version", "inference_version", "input", "parameters", "provenance", "summary", "inventory", "replicons", "cross_record_hypotheses", "disabled_aggregate_rules", "handoffs", "limitations"],
+  "properties": {
+    "schema_version": {"const": "gbparse.mobilome.v1"},
+    "tool": {"const": "gbparse"},
+    "analysis": {"const": "mobilome"},
+    "tool_version": {"type": "string", "minLength": 1},
+    "catalog_version": {"type": "string", "minLength": 1},
+    "inference_version": {"type": "string", "minLength": 1},
+    "input": {"$ref": "#/$defs/input"},
+    "parameters": {"$ref": "#/$defs/parameters"},
+    "provenance": {"$ref": "#/$defs/provenance"},
+    "summary": {"$ref": "#/$defs/summary"},
+    "inventory": {"type": "array", "items": {"$ref": "#/$defs/inventory"}},
+    "replicons": {"type": "array", "items": {"$ref": "#/$defs/replicon"}},
+    "cross_record_hypotheses": {"type": "array", "items": {"$ref": "#/$defs/hypothesis"}},
+    "disabled_aggregate_rules": {"type": "array", "items": {"$ref": "#/$defs/disabledRule"}},
+    "handoffs": {"type": "array", "items": {"$ref": "#/$defs/handoff"}},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "nullableString": {"type": ["string", "null"]},
+    "stringArray": {"type": "array", "items": {"type": "string"}},
+    "input": {
+      "type": "object", "additionalProperties": false,
+      "required": ["file", "sha256"],
+      "properties": {"file": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+    },
+    "parameters": {
+      "type": "object", "additionalProperties": false,
+      "required": ["include", "min_evidence", "database_source"],
+      "properties": {
+        "include": {"enum": ["all", "chromosome", "plasmid", "unknown"]},
+        "min_evidence": {"type": "integer", "minimum": 1, "maximum": 3},
+        "database_source": {"enum": ["packaged", "custom"]}
+      }
+    },
+    "resource": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "sha256"],
+      "properties": {"name": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+    },
+    "annotationPipeline": {
+      "type": "object", "additionalProperties": false,
+      "required": ["record_indices", "name", "version", "database_version", "evidence_fields"],
+      "properties": {
+        "record_indices": {"type": "array", "items": {"type": "integer", "minimum": 1}},
+        "name": {"$ref": "#/$defs/nullableString"},
+        "version": {"$ref": "#/$defs/nullableString"},
+        "database_version": {"$ref": "#/$defs/nullableString"},
+        "evidence_fields": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["resources", "annotation_pipelines"],
+      "properties": {
+        "resources": {"type": "array", "items": {"$ref": "#/$defs/resource"}},
+        "annotation_pipelines": {"type": "array", "items": {"$ref": "#/$defs/annotationPipeline"}}
+      }
+    },
+    "summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["records_scanned", "records_reported", "raw_hits", "eligible_hits", "raw_reasons", "eligible_reasons", "hypotheses"],
+      "properties": {
+        "records_scanned": {"type": "integer", "minimum": 0},
+        "records_reported": {"type": "integer", "minimum": 0},
+        "raw_hits": {"type": "integer", "minimum": 0},
+        "eligible_hits": {"type": "integer", "minimum": 0},
+        "raw_reasons": {"type": "integer", "minimum": 0},
+        "eligible_reasons": {"type": "integer", "minimum": 0},
+        "hypotheses": {"type": "integer", "minimum": 0}
+      }
+    },
+    "recordEvidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rule_id", "source", "field", "value", "matched_text", "pattern", "source_feature_index", "interpreted_as", "strength", "source_ids"],
+      "properties": {
+        "rule_id": {"type": "string"},
+        "source": {"enum": ["source_qualifier", "record_annotation", "record_description", "record_name"]},
+        "field": {"type": "string"}, "value": {"type": "string"}, "matched_text": {"type": "string"}, "pattern": {"type": "string"},
+        "source_feature_index": {"type": ["integer", "null"]},
+        "interpreted_as": {"enum": ["chromosome", "plasmid", "unknown"]},
+        "strength": {"type": "integer", "minimum": 1, "maximum": 3},
+        "source_ids": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "classification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["label", "status", "supporting_evidence", "conflicting_evidence", "limitations"],
+      "properties": {
+        "label": {"enum": ["chromosome", "plasmid", "unknown"]},
+        "status": {"enum": ["supported", "tentative", "insufficient", "conflicting"]},
+        "supporting_evidence": {"type": "array", "items": {"$ref": "#/$defs/recordEvidence"}},
+        "conflicting_evidence": {"type": "array", "items": {"$ref": "#/$defs/recordEvidence"}},
+        "limitations": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "sourceQualifier": {
+      "type": "object", "additionalProperties": false,
+      "required": ["key", "values"],
+      "properties": {"key": {"type": "string"}, "values": {"$ref": "#/$defs/stringArray"}}
+    },
+    "inventory": {
+      "type": "object", "additionalProperties": false,
+      "required": ["record_index", "record_id", "name", "description", "length", "topology", "source_qualifiers", "classification", "feature_count", "cds_count", "pseudo_feature_count", "pseudo_cds_count", "pseudogene_feature_count"],
+      "properties": {
+        "record_index": {"type": "integer", "minimum": 1}, "record_id": {"type": "string"}, "name": {"type": "string"}, "description": {"type": "string"}, "length": {"type": "integer", "minimum": 0},
+        "topology": {"enum": ["circular", "linear", "unknown"]},
+        "source_qualifiers": {"type": "array", "items": {"$ref": "#/$defs/sourceQualifier"}},
+        "classification": {"$ref": "#/$defs/classification"},
+        "feature_count": {"type": "integer", "minimum": 0}, "cds_count": {"type": "integer", "minimum": 0}, "pseudo_feature_count": {"type": "integer", "minimum": 0}, "pseudo_cds_count": {"type": "integer", "minimum": 0}, "pseudogene_feature_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "feature": {
+      "type": "object", "additionalProperties": false,
+      "required": ["record_index", "record_id", "feature_index", "feature_type", "locus_tag", "gene", "product", "start", "end", "strand", "segments", "location_operator", "biological_length", "wraps_origin", "partial", "pseudo"],
+      "properties": {
+        "record_index": {"type": "integer", "minimum": 1}, "record_id": {"type": "string"}, "feature_index": {"type": "integer", "minimum": 1}, "feature_type": {"type": "string"},
+        "locus_tag": {"$ref": "#/$defs/nullableString"}, "gene": {"$ref": "#/$defs/nullableString"}, "product": {"$ref": "#/$defs/nullableString"},
+        "start": {"type": ["integer", "null"], "minimum": 1}, "end": {"type": ["integer", "null"], "minimum": 1}, "strand": {"enum": [-1, 0, 1, null]},
+        "segments": {"type": "array", "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer", "minimum": 1}}},
+        "location_operator": {"$ref": "#/$defs/nullableString"}, "biological_length": {"type": ["integer", "null"], "minimum": 0},
+        "wraps_origin": {"type": "boolean"}, "partial": {"type": "boolean"}, "pseudo": {"type": "boolean"}
+      }
+    },
+    "reason": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reason_id", "field", "match_mode", "matched_value", "matched_text", "pattern", "strength", "eligible", "source_ids"],
+      "properties": {
+        "reason_id": {"type": "string"}, "field": {"type": "string"}, "match_mode": {"enum": ["exact", "casefold_exact", "regex"]}, "matched_value": {"type": "string"}, "matched_text": {"type": "string"}, "pattern": {"type": "string"}, "strength": {"type": "integer", "minimum": 1, "maximum": 3}, "eligible": {"type": "boolean"}, "source_ids": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "hit": {
+      "type": "object", "additionalProperties": false,
+      "required": ["hit_id", "marker_id", "marker_label", "facets", "feature", "reasons", "max_strength", "eligible_for_inference"],
+      "properties": {
+        "hit_id": {"type": "string"}, "marker_id": {"type": "string"}, "marker_label": {"type": "string"}, "facets": {"$ref": "#/$defs/stringArray"}, "feature": {"$ref": "#/$defs/feature"}, "reasons": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/reason"}}, "max_strength": {"type": "integer", "minimum": 1, "maximum": 3}, "eligible_for_inference": {"type": "boolean"}
+      }
+    },
+    "participant": {
+      "type": "object", "additionalProperties": false,
+      "required": ["role", "record_index", "record_id"],
+      "properties": {"role": {"enum": ["subject", "target", "helper"]}, "record_index": {"type": "integer", "minimum": 1}, "record_id": {"type": "string"}}
+    },
+    "hypothesis": {
+      "type": "object", "additionalProperties": false,
+      "required": ["hypothesis_id", "rule_id", "kind", "status", "summary", "participants", "supporting_hit_ids", "missing_components", "conflicting_hit_ids", "limitations", "source_ids"],
+      "properties": {
+        "hypothesis_id": {"type": "string"}, "rule_id": {"type": "string"}, "kind": {"type": "string"}, "status": {"enum": ["supported", "tentative", "insufficient", "conflicting"]}, "summary": {"type": "string"}, "participants": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/participant"}}, "supporting_hit_ids": {"$ref": "#/$defs/stringArray"}, "missing_components": {"$ref": "#/$defs/stringArray"}, "conflicting_hit_ids": {"$ref": "#/$defs/stringArray"}, "limitations": {"$ref": "#/$defs/stringArray"}, "source_ids": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "replicon": {
+      "type": "object", "additionalProperties": false,
+      "required": ["inventory", "hits", "hypotheses"],
+      "properties": {"inventory": {"$ref": "#/$defs/inventory"}, "hits": {"type": "array", "items": {"$ref": "#/$defs/hit"}}, "hypotheses": {"type": "array", "items": {"$ref": "#/$defs/hypothesis"}}}
+    },
+    "disabledRule": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rule_id", "reason", "evidence_retained_as", "enablement_requirements", "source_ids"],
+      "properties": {"rule_id": {"type": "string"}, "reason": {"type": "string"}, "evidence_retained_as": {"$ref": "#/$defs/stringArray"}, "enablement_requirements": {"$ref": "#/$defs/stringArray", "minItems": 1}, "source_ids": {"$ref": "#/$defs/stringArray"}}
+    },
+    "handoff": {
+      "type": "object", "additionalProperties": false,
+      "required": ["handoff_id", "tool", "purpose", "status", "reason", "required_input", "required_provenance_fields", "limitations"],
+      "properties": {"handoff_id": {"type": "string"}, "tool": {"type": "string"}, "purpose": {"type": "string"}, "status": {"const": "not_run"}, "reason": {"type": "string"}, "required_input": {"$ref": "#/$defs/stringArray"}, "required_provenance_fields": {"$ref": "#/$defs/stringArray"}, "limitations": {"$ref": "#/$defs/stringArray"}}
+    }
+  }
+}

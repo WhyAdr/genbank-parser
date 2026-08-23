@@ -1,0 +1,122 @@
+schema_version: 1
+provenance_version: "1.0.0"
+
+sources:
+  - id: blower-2012-toxin
+    type: primary_article
+    title: Identification and classification of bacterial Type III toxin-antitoxin systems
+    year: 2012
+    doi: 10.1093/nar/gks231
+    pmid: "22434880"
+    pmcid: PMC3401426
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC3401426/
+    supports:
+      - ToxI is the RNA antitoxin in the Type III ToxIN system.
+    limitations:
+      - Annotation correspondence does not establish activity in a new genome.
+  - id: yao-2020-hepn-mnt
+    type: primary_article
+    title: HEPN/MNT toxin-antitoxin neutralization by polyadenylylation
+    year: 2020
+    doi: 10.1093/nar/gkaa855
+    pmid: "33045733"
+    pmcid: PMC7641770
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC7641770/
+    supports:
+      - In the studied system MntA transfers three AMP moieties from ATP to HepT Tyr104.
+    limitations:
+      - The biochemical result must not be generalized to every HEPN/MNT annotation.
+  - id: smillie-2010-mobility
+    type: primary_article
+    title: Mobility of Plasmids
+    year: 2010
+    doi: 10.1128/MMBR.00020-10
+    pmcid: PMC2937521
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC2937521/
+    supports:
+      - Mobilizable plasmids may use helper mating-pair-formation machinery.
+    limitations:
+      - Annotation co-occurrence does not establish transfer or co-transfer.
+  - id: anjum-2014-pxo1
+    type: primary_article
+    title: Functional analysis of pXO1 plasmid replication
+    year: 2014
+    doi: 10.1016/j.plasmid.2011.12.012
+    url: https://pubmed.ncbi.nlm.nih.gov/22230551/
+    supports:
+      - pXO annotations alone do not specify a single replication mechanism.
+    limitations:
+      - Product labels are not a sequence-homology or ancestry result.
+  - id: erez-2017-arbitrium
+    type: primary_article
+    title: Communication between viruses guides lysis-lysogeny decisions
+    year: 2017
+    doi: 10.1038/nature21049
+    pmcid: PMC5378303
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC5378303/
+    supports:
+      - AimR, AimP, and AimX participate in the described phage correspondence.
+    limitations:
+      - One annotation does not prove active communication in a new genome.
+  - id: bakta-origin-docs
+    type: official_documentation
+    title: Bakta documentation
+    url: https://bakta.readthedocs.io/en/latest/
+    accessed: "2026-08-22"
+    supports:
+      - Bakta capabilities and output representation are version-sensitive.
+    limitations:
+      - Observed typed input features take precedence over general tool claims.
+  - id: insdc-feature-table
+    type: official_documentation
+    title: INSDC feature table definitions
+    url: https://www.ncbi.nlm.nih.gov/genbank/feature_table/
+    accessed: "2026-08-22"
+    supports:
+      - Controlled source qualifiers and feature keys are submitted annotation evidence.
+    limitations:
+      - A qualifier is not independent biological validation.
+  - id: local-record-classification-policy
+    type: local_rule
+    rule_ids:
+      - source_plasmid_qualifier
+      - source_chromosome_qualifier
+      - bounded_description_plasmid_token
+      - bounded_description_chromosome_token
+      - bounded_name_plasmid_token
+      - bounded_name_chromosome_token
+    rationale: Preserve controlled declarations and label bounded free-text clues as tentative.
+    adjudicator: genbank-parser maintainers
+    date: "2026-08-22"
+    negative_controls:
+      - plasmid-like protein
+      - chromosome partition protein
+    limitations:
+      - Name and description tokens are annotation clues, not replicon prediction.
+  - id: local-annotation-candidate-policy
+    type: local_rule
+    rule_ids:
+      - replication_annotation_candidate
+      - mobilizable_core_annotation_candidate
+      - helper_machinery_annotation_candidate
+    rationale: Preserve bounded annotation observations while avoiding phenotype and identity claims.
+    adjudicator: genbank-parser maintainers
+    date: "2026-08-22"
+    negative_controls:
+      - generic product labels
+      - pseudogenized candidates
+    limitations:
+      - Annotation candidates do not demonstrate function or transfer.
+  - id: local-disabled-aggregate-policy
+    type: local_rule
+    rule_ids:
+      - pxo_like_annotation_pattern_candidate
+      - phage_module_bearing_plasmid_candidate
+    rationale: Retain component observations while disabling unvalidated aggregate classifiers.
+    adjudicator: genbank-parser maintainers
+    date: "2026-08-22"
+    negative_controls:
+      - repeated product labels on one feature
+      - unrelated records with isolated phage annotations
+    limitations:
+      - Enablement requires separately reviewed positive and negative controls.

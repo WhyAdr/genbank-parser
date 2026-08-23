@@ -20,6 +20,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     "pytest>=8.0",
+    "jsonschema>=4.23,<5",
 ]
 viz = [
     "dna-features-viewer>=3.1.5,<4",
@@ -33,7 +34,12 @@ gbparse = "genbank_parser.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-genbank_parser = ["rulesets/*.yaml", "data/meor/*.yaml"]
+genbank_parser = [
+    "rulesets/*.yaml",
+    "data/meor/*.yaml",
+    "data/mobilome/*.yaml",
+    "data/mobilome/*.json",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

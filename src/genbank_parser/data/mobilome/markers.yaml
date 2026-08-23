@@ -1,0 +1,609 @@
+schema_version: 1
+catalog_version: "1.0.0"
+
+facets:
+  - id: replication_origin
+    title: Annotated replication-origin evidence
+  - id: replication_initiation
+    title: Replication-initiation protein evidence
+  - id: mobility_orit
+    title: Origin-of-transfer evidence
+  - id: mobility_relaxase
+    title: Relaxase evidence
+  - id: mobility_t4cp
+    title: Type IV coupling-protein evidence
+  - id: mobility_mpf
+    title: Mating-pair-formation evidence
+  - id: ta_toxin
+    title: Toxin-antitoxin toxin evidence
+  - id: ta_antitoxin
+    title: Toxin-antitoxin antitoxin evidence
+  - id: partition_maintenance
+    title: Partition or plasmid-maintenance annotation evidence
+  - id: recombination
+    title: Recombination or integration annotation evidence
+  - id: transposition
+    title: Transposition annotation evidence
+  - id: phage_integration
+    title: Phage integration or excision annotation evidence
+  - id: phage_packaging
+    title: Phage packaging annotation evidence
+  - id: phage_structure
+    title: Phage structural annotation evidence
+  - id: phage_lysis
+    title: Phage lysis annotation evidence
+  - id: phage_replication
+    title: Phage replication annotation evidence
+  - id: phage_regulation
+    title: Phage regulation or communication annotation evidence
+  - id: crispr_array
+    title: CRISPR repeat-array annotation evidence
+  - id: crispr_cas
+    title: Cas annotation evidence
+  - id: amr_candidate
+    title: Antimicrobial-resistance annotation candidate
+  - id: vf_candidate
+    title: Virulence-associated annotation candidate
+  - id: pxo_numbered_annotation
+    title: pXO-numbered product annotation observation
+
+markers:
+  - id: explicit_origin_of_transfer
+    label: Explicitly annotated origin of transfer
+    facets: [mobility_orit]
+    feature_types: [oriT, regulatory]
+    matchers:
+      - field: feature_type
+        mode: casefold_exact
+        patterns: [oriT]
+        negative_patterns: []
+        strength: 3
+      - field: regulatory_class
+        mode: casefold_exact
+        patterns: [oriT]
+        negative_patterns: []
+        strength: 3
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [bakta-origin-docs, insdc-feature-table]
+    interpretation: Supports the presence of an explicitly annotated oriT feature.
+    limitations:
+      - Annotation does not prove a cognate relaxase relationship.
+      - Annotation does not demonstrate transfer.
+
+  - id: generic_replication_origin
+    label: Generic annotated replication origin
+    facets: [replication_origin]
+    feature_types: [rep_origin]
+    matchers:
+      - field: feature_type
+        mode: casefold_exact
+        patterns: [rep_origin]
+        negative_patterns: []
+        strength: 3
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [insdc-feature-table]
+    interpretation: Supports a generic annotated replication-origin feature.
+    limitations:
+      - Does not distinguish oriC from oriV unless an explicit qualifier does so.
+
+  - id: explicit_origin_of_replication
+    label: Explicitly annotated plasmid replication origin
+    facets: [replication_origin]
+    feature_types: [oriV, regulatory, rep_origin]
+    matchers:
+      - field: feature_type
+        mode: casefold_exact
+        patterns: [oriV]
+        negative_patterns: []
+        strength: 3
+      - field: regulatory_class
+        mode: casefold_exact
+        patterns: [oriV, plasmid_replication_origin]
+        negative_patterns: []
+        strength: 3
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [bakta-origin-docs, insdc-feature-table]
+    interpretation: Supports an explicitly annotated plasmid replication-origin feature.
+    limitations:
+      - Annotation alone does not establish replication mechanism or autonomy.
+
+  - id: replication_initiation_candidate
+    label: Replication-initiation annotation candidate
+    facets: [replication_initiation]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [repA, repB, repS, repF, repFR]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:replication initiator|replication initiation|replication protein|replicase|replication-relaxation)\\b"
+        negative_patterns:
+          - "(?i)\\btranscriptional repressor\\b"
+        strength: 1
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [local-annotation-candidate-policy]
+    interpretation: Retains a replication-initiation annotation candidate.
+    limitations:
+      - Does not identify a replication mechanism or incompatibility group.
+
+  - id: relaxase_candidate
+    label: Relaxase annotation candidate
+    facets: [mobility_relaxase]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [mobA, mobC, mobF, traI, virD2]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:relaxase|mobility protein)\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [smillie-2010-mobility]
+    interpretation: Retains a relaxase annotation candidate.
+    limitations:
+      - Annotation does not demonstrate nicking or transfer.
+
+  - id: t4cp_candidate
+    label: Type IV coupling-protein annotation candidate
+    facets: [mobility_t4cp]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [traD, traG, virD4, tcpA]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:type IV coupling protein|coupling protein Tra[DG]|VirD4)\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [smillie-2010-mobility]
+    interpretation: Retains a Type IV coupling-protein annotation candidate.
+    limitations:
+      - Annotation does not establish a complete transfer apparatus.
+
+  - id: mpf_component
+    label: Mating-pair-formation annotation component
+    facets: [mobility_mpf]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: regex
+        patterns:
+          - "(?i)^tra(?:A|B|C|E|F|K|L|N|U|W)$"
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:mating pair formation|conjugal transfer protein|type IV secretion system protein)\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [smillie-2010-mobility]
+    interpretation: Retains a mating-pair-formation annotation component.
+    limitations:
+      - Multiple annotated components do not establish expression or transfer.
+
+  - id: toxn
+    label: ToxN-family toxin annotation
+    facets: [ta_toxin]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [toxN]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bToxN(?:-family)?\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [blower-2012-toxin]
+    interpretation: Supports a ToxN-family toxin annotation.
+    limitations:
+      - Annotation does not establish toxin activity.
+
+  - id: toxi
+    label: ToxI RNA antitoxin annotation
+    facets: [ta_antitoxin]
+    feature_types: [ncRNA, misc_RNA, repeat_region, regulatory, CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [toxI]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bToxI(?: RNA)?(?: antitoxin)?\\b"
+        negative_patterns: []
+        strength: 2
+      - field: note
+        mode: regex
+        patterns:
+          - "(?i)\\bToxI\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [blower-2012-toxin]
+    interpretation: Supports a ToxI RNA antitoxin annotation.
+    limitations:
+      - ToxI correspondence does not establish Type III system activity.
+
+  - id: hept
+    label: HepT-family toxin annotation
+    facets: [ta_toxin]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [hepT]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bHepT(?:-family)?\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [yao-2020-hepn-mnt]
+    interpretation: Supports a HepT-family toxin annotation.
+    limitations:
+      - Annotation does not establish toxin activity.
+
+  - id: mnta
+    label: MntA-family antitoxin annotation
+    facets: [ta_antitoxin]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [mntA]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bMntA(?:-family)?\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [yao-2020-hepn-mnt]
+    interpretation: Supports an MntA-family antitoxin annotation.
+    limitations:
+      - The cited chemistry is not generalized to every annotation match.
+
+  - id: partition_maintenance_candidate
+    label: Partition or maintenance annotation candidate
+    facets: [partition_maintenance]
+    feature_types: [CDS, pseudogene, mobile_element]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [parA, parB, tubZ, tubR, copG, copA, copB]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:partition(?:ing)? protein|plasmid maintenance|copy number control|CopG family)\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [local-annotation-candidate-policy]
+    interpretation: Retains partition or plasmid-maintenance annotation evidence.
+    limitations:
+      - Observation does not establish stable inheritance.
+
+  - id: recombination_candidate
+    label: Recombination or integration annotation candidate
+    facets: [recombination]
+    feature_types: [CDS, pseudogene, mobile_element, misc_feature]
+    matchers:
+      - field: mobile_element_type
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:integron|integrative|recombinase)\\b"
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:integrase|recombinase|resolvase|invertase)\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [local-annotation-candidate-policy]
+    interpretation: Retains recombination or integration annotation evidence.
+    limitations:
+      - Observation does not establish an element boundary or activity.
+
+  - id: phage_integration_candidate
+    label: Phage integration or excision annotation candidate
+    facets: [recombination, phage_integration]
+    feature_types: [CDS, pseudogene, mobile_element, misc_feature]
+    matchers:
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:phage|prophage).{0,40}\\b(?:integrase|excisionase)\\b"
+          - "(?i)\\b(?:integrase|excisionase).{0,40}\\b(?:phage|prophage)\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [local-annotation-candidate-policy]
+    interpretation: Retains a phage integration or excision annotation candidate.
+    limitations:
+      - Does not establish prophage boundaries or phagemid identity.
+
+  - id: transposition_candidate
+    label: Transposition annotation candidate
+    facets: [transposition]
+    feature_types: [CDS, pseudogene, mobile_element, misc_feature]
+    matchers:
+      - field: mobile_element_type
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:insertion sequence|transposon|IS\\d+)\\b"
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:transposase|insertion sequence)\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [local-annotation-candidate-policy]
+    interpretation: Retains transposition annotation evidence.
+    limitations:
+      - Observation does not establish transposition activity.
+
+  - id: crispr_array
+    label: CRISPR repeat-array annotation
+    facets: [crispr_array]
+    feature_types: [repeat_region, misc_feature, regulatory]
+    matchers:
+      - field: rpt_type
+        mode: casefold_exact
+        patterns: [CRISPR]
+        negative_patterns: []
+        strength: 3
+      - field: note
+        mode: regex
+        patterns:
+          - "(?i)\\bCRISPR(?: repeat(?: region| array)?)?\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [bakta-origin-docs, insdc-feature-table]
+    interpretation: Supports an explicitly annotated CRISPR repeat-array feature.
+    limitations:
+      - Annotation does not establish active immunity or target specificity.
+
+  - id: crispr_cas
+    label: Cas annotation candidate
+    facets: [crispr_cas]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: regex
+        patterns:
+          - "(?i)^cas(?:1|2|3|4|5|6|7|8|9|10|12|13|14|A|B|C|D|E|F)$"
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:CRISPR-associated|Cas(?:1|2|3|4|5|6|7|8|9|10|12|13|14))\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [bakta-origin-docs]
+    interpretation: Retains a Cas annotation candidate.
+    limitations:
+      - Annotation does not establish a complete or active CRISPR system.
+
+  - id: pxo_numbered_product_annotation
+    label: pXO-numbered product annotation
+    facets: [pxo_numbered_annotation]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bpXO[12]-\\d+\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [anjum-2014-pxo1, local-disabled-aggregate-policy]
+    interpretation: Retains a bounded pXO-numbered product annotation observation.
+    limitations:
+      - Observation is not a homology result, ancestry assignment, or mechanism call.
+
+  - id: phage_packaging_candidate
+    label: Phage packaging annotation candidate
+    facets: [phage_packaging]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:terminase|portal protein)\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [local-annotation-candidate-policy]
+    interpretation: Retains phage packaging annotation evidence.
+    limitations:
+      - Observation does not establish a complete phage module.
+
+  - id: phage_structure_candidate
+    label: Phage structural annotation candidate
+    facets: [phage_structure]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:capsid|tail (?:protein|fiber|fibre|spike|sheath)|baseplate)\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [local-annotation-candidate-policy]
+    interpretation: Retains phage structural annotation evidence.
+    limitations:
+      - Observation does not establish a complete phage module.
+
+  - id: phage_lysis_candidate
+    label: Phage lysis annotation candidate
+    facets: [phage_lysis]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:holin|endolysin|lysin)\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [local-annotation-candidate-policy]
+    interpretation: Retains phage lysis annotation evidence.
+    limitations:
+      - Observation does not establish lysis activity.
+
+  - id: phage_replication_candidate
+    label: Phage replication annotation candidate
+    facets: [phage_replication]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bphage replication(?: protein)?\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [local-annotation-candidate-policy]
+    interpretation: Retains phage replication annotation evidence.
+    limitations:
+      - Observation does not establish phage replication.
+
+  - id: aimr_like_candidate
+    label: AimR, AimP, or AimX annotation candidate
+    facets: [phage_regulation]
+    feature_types: [CDS, pseudogene, regulatory, misc_RNA]
+    matchers:
+      - field: gene
+        mode: regex
+        patterns:
+          - "(?i)^aim[RPX]$"
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bAim[RPX](?:-like| family| peptide| receptor)?\\b"
+          - "(?i)\\b(?:arbitrium|lysis[- ]lysogeny pheromone)\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [erez-2017-arbitrium]
+    interpretation: Retains a phage communication-system annotation candidate.
+    limitations:
+      - Annotation does not establish active communication or host response.
+
+  - id: zot_like_candidate
+    label: Zot-like annotation candidate
+    facets: [phage_regulation, vf_candidate]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:zona occludens toxin|Zot)(?:-like)?\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [local-annotation-candidate-policy]
+    interpretation: Retains an ambiguous Zot-like product annotation candidate.
+    limitations:
+      - Product text alone does not establish a virulence factor or phenotype.
+
+  - id: generic_amr_candidate
+    label: Generic antimicrobial-resistance annotation candidate
+    facets: [amr_candidate]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:beta[- ]lactamase|antibiotic resistance|multidrug (?:efflux|transporter)|efflux pump|tetracycline resistance)\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [local-annotation-candidate-policy]
+    interpretation: Retains a generic antimicrobial-resistance annotation candidate.
+    limitations:
+      - Product text alone does not establish resistance phenotype or determinant status.
+
+  - id: generic_vf_candidate
+    label: Generic virulence-associated annotation candidate
+    facets: [vf_candidate]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:enterotoxin|hemolysin|haemolysin|insecticidal|cytolysin|anthrax toxin)\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: false
+    requires_complete: false
+    sources: [local-annotation-candidate-policy]
+    interpretation: Retains a generic virulence-associated annotation candidate.
+    limitations:
+      - Product text alone does not establish virulence phenotype.
