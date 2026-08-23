@@ -15,6 +15,7 @@ Parse, validate, and analyze GenBank flatfiles (`.gb`, `.gbk`, `.gbff`, `.txt`) 
 2. **One canonical parser, reused everywhere.** All commands import from `genbank_parser` (powered by `read_genbank` and `GenBankDocument`). Never reconstruct custom parsers.
 3. **Compact structured output only.** Tools emit diagnostic summaries, tabular TSVs, or schema-versioned JSON.
 4. **MEOR genomic potential is not phenotype.** `gbparse meor` detects annotation-supported candidates. Do not present hits as proof of expression, enzyme activity, hydrocarbon turnover, biosurfactant production, or field-scale oil recovery.
+5. **Mobilome evidence is not transfer or identity.** `gbparse mobilome` retains annotation-supported record, feature, and component evidence; do not turn it into claims of plasmid autonomy, mechanism, transfer, co-transfer, expression, phenotype, AMR, virulence, ancestry, or phagemid identity.
 
 ---
 
@@ -41,6 +42,7 @@ Parse, validate, and analyze GenBank flatfiles (`.gb`, `.gbk`, `.gbff`, `.txt`) 
 | `gff` | Standard GFF3 export (with CDS phase & regions) | `gbparse gff INPUT.gbff [output.gff3] [--include-fasta]` |
 | `batch-summary` | Bakta multi-isolate comparison tables | `gbparse batch-summary ./isolates/ --csv summary.csv` |
 | `meor` | MEOR, hydrocarbon-degradation, biosurfactant and bio-emulsifier genomic-potential analysis | `gbparse meor INPUT.gbff --min-weight 2 --format json` |
+| `mobilome` | Replicon-centric, annotation-supported mobilome evidence report | `gbparse mobilome INPUT.gbff --format json --min-evidence 2` |
 
 ---
 
@@ -66,6 +68,14 @@ if match:
     print("KEGG KOs:", xrefs['kegg_kos'])
 ```
 
+Mobilome analysis deliberately uses a separate subpackage:
+
+```python
+from genbank_parser.mobilome import analyze_mobilome
+
+report = analyze_mobilome("genome.gbff", include="all", min_evidence=2)
+```
+
 ---
 
 ## Biological Semantics Handled
@@ -78,3 +88,4 @@ if match:
 - **Semantic Cross-References**: Maps INSDC and Bakta `/db_xref`, `/note`, and `/EC_number` to typed identifiers (`go_terms`, `cog_ids`, `kegg_kos`, `pfam`, `rfam`, `ec_numbers`).
 - **Source-Aware MEOR Evidence**: Active structured KO, fully specified structured EC, and gene evidence is Weight 3; product evidence is Weight 2; free-text `/note` evidence is Weight 1. Wildcard ECs and note-only identifiers are never promoted to structured evidence.
 - **MEOR Scope**: Pathway completeness is genome-level annotation completeness, while clusters require distinct physical genes on the same contig and known common strand with at most N intervening bases. Neither is sequence-family confirmation or phenotype.
+- **Mobilome Scope**: Record classification reflects declared source/record metadata, not topology or marker prediction. JSON and TSV retain all evidence reasons and disabled aggregate policies; only configured, cautious hypotheses use eligible non-pseudo/complete components. External typing, AMR, virulence, and boundary callers are reported as not-run handoffs with required provenance.

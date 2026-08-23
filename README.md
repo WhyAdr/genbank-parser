@@ -16,6 +16,7 @@ A Biopython-powered genome-annotation query engine, validation suite, and CLI to
 - **QC & Semantic Validation**: Verifies translation integrity against genetic codes (`transl_table`) and `codon_start` offsets, with structured severity findings (`ERROR`, `WARNING`, `INFO`) and pseudogene tolerance.
 - **Unified CLI**: Provides `gbparse` subcommands for feature search, valid local sub-region extraction, annotation diffing, genetic-code-aware codon usage, annotation-based candidate phylogenetic markers, CRISPR/Cas annotation scanning, and declarative discovery.
 - **MEOR Evidence Engine**: Scans 48 curated markers across 9 hydrocarbon-degradation, biosurfactant, and bio-emulsifier categories; evaluates 7 genome-level pathway models; and reports same-contig, known-strand candidate clusters with at most N intervening bases.
+- **Mobilome Evidence Engine**: Inventories every parsed record and retains field-level mobilome evidence, replicon declarations, cautious component hypotheses, catalog provenance, and explicit external-analysis handoffs in text, JSON, or normalized TSV.
 
 ---
 
@@ -104,6 +105,9 @@ gbparse batch-summary ./isolates/ --csv summary.csv
 
 # 19. Scan MEOR and petroleum-microbiology genomic potential
 gbparse meor input.gbff --min-weight 2 --format json --output meor.json
+
+# 20. Build a replicon-centric mobilome evidence report
+gbparse mobilome input.gbff --format json --min-evidence 2 --output mobilome.json
 ```
 
 ### MEOR confidence and interpretation
@@ -117,6 +121,18 @@ gbparse meor input.gbff --min-weight 2 --format json --output meor.json
 Wildcard ECs are contextual catalog metadata and never produce Weight-3 evidence.
 
 Marker hits indicate **annotation-supported genomic encoding potential**. They do not prove transcription, enzyme activity, hydrocarbon turnover, biosurfactant production, or field-scale enhanced oil recovery. See the [MEOR marker and scientific provenance reference](docs/meor_markers_reference.md) for the curated catalog and its limits.
+
+### Mobilome evidence and interpretation
+
+`gbparse discover --ruleset mobilome` remains the compact annotation-island scanner. `gbparse mobilome` is different: it inventories chromosomes, declared plasmids, and unresolved records; keeps each matching field/value/pattern; and emits a schema-versioned, replicon-centric report.
+
+```bash
+gbparse mobilome input.gbff --format text
+gbparse mobilome input.gbff --include plasmid --min-evidence 2 --format tsv --output mobilome.tsv
+gbparse mobilome input.gbff --database-dir ./reviewed-mobilome-catalog --format json
+```
+
+`--include` changes detailed presentation only: every parsed record remains in inventory and cross-record scanning. `--min-evidence` changes eligibility for configured hypotheses but retains lower-tier observations in JSON and TSV. The report treats generic Rep, pXO-numbered, phage-related, AMR-like, and virulence-associated annotations as bounded observations or candidates. It does not establish replication mechanism, plasmid ancestry, phenotype, transfer, co-transfer, expression, antimicrobial resistance, virulence, or phagemid identity. See the [mobilome evidence reference](docs/mobilome_evidence_reference.md) for catalog sources, thresholds, and external-tool handoffs.
 
 ### Neighborhood visualization
 
@@ -167,6 +183,15 @@ from genbank_parser.meor import analyze_meor
 
 report = analyze_meor("input.gbff", min_weight=2, max_gap=200)
 print(report.total_hits, report.pathways)
+```
+
+Mobilome analysis is available from its intentionally separate public subpackage:
+
+```python
+from genbank_parser.mobilome import analyze_mobilome
+
+report = analyze_mobilome("input.gbff", include="all", min_evidence=2)
+print(report.inventory, report.cross_record_hypotheses)
 ```
 
 ---
