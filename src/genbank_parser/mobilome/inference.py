@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from ..spatial import circular_feature_distance_bp, intervening_gap_bp
 from .models import (
     HypothesisParticipant,
     InferenceComponent,
@@ -231,6 +232,73 @@ def _infer_component_rule(
     )
 
 
+def _distance_between_hits(
+    first: MobilomeHit,
+    second: MobilomeHit,
+    inventory: RepliconInventory,
+) -> int | None:
+    if not first.feature.segments or not second.feature.segments:
+        return None
+    try:
+        if inventory.topology == "circular":
+            return circular_feature_distance_bp(
+                first.feature.segments,
+                second.feature.segments,
+                record_length=inventory.length,
+            )
+        return intervening_gap_bp(first.feature.segments, second.feature.segments)
+    except ValueError:
+        return None
+
+
+def _infer_toxin_antitoxin_pairs(
+    inventory: RepliconInventory,
+    hits: Sequence[MobilomeHit],
+    database: MobilomeDatabase,
+) -> tuple[MobilomeHypothesis, ...]:
+    hypotheses: list[MobilomeHypothesis] = []
+    for rule in database.inference_rules:
+        if rule.kind != "toxin_antitoxin" or len(rule.required_marker_ids) != 2:
+            continue
+        first_marker, second_marker = rule.required_marker_ids
+        first_hits = [
+            hit for hit in _functional_hits(hits) if hit.marker_id == first_marker
+        ]
+        second_hits = [
+            hit for hit in _functional_hits(hits) if hit.marker_id == second_marker
+        ]
+        for first in first_hits:
+            for second in second_hits:
+                if rule.distinct_features and _feature_key(first) == _feature_key(
+                    second
+                ):
+                    continue
+                gap = _distance_between_hits(first, second, inventory)
+                if (
+                    gap is None
+                    or rule.max_circular_gap_bp is None
+                    or gap > rule.max_circular_gap_bp
+                ):
+                    continue
+                hypotheses.append(
+                    _hypothesis(
+                        hypothesis_id=(
+                            f"h:{rule.id}:{inventory.record_index}:"
+                            f"{min(first.feature.feature_index, second.feature.feature_index)}:"
+                            f"{max(first.feature.feature_index, second.feature.feature_index)}"
+                        ),
+                        rule=rule,
+                        inventory=inventory,
+                        supporting=(first, second),
+                        limitations=tuple(rule.limitations)
+                        + (
+                            f"Configured maximum circular gap: {rule.max_circular_gap_bp} bp; observed gap: {gap} bp.",
+                        ),
+                    )
+                )
+    return tuple(hypotheses)
+
+
 def infer_replicon_hypotheses(
     replicon: RepliconInventory,
     hits: Sequence[MobilomeHit],
@@ -250,6 +318,7 @@ def infer_replicon_hypotheses(
         hypothesis = _infer_component_rule(replicon, local_hits, database, rule_id)
         if hypothesis is not None:
             hypotheses.append(hypothesis)
+    hypotheses.extend(_infer_toxin_antitoxin_pairs(replicon, local_hits, database))
     return tuple(
         sorted(
             hypotheses,

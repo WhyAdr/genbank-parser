@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
+from itertools import pairwise
 
 from .model import GenBankDocument, GenBankFeature, GenBankRecord
 
@@ -21,6 +23,71 @@ class FeatureWindow:
 
     features: tuple[GenBankFeature, ...]
     wraps_origin: bool
+
+
+def _validated_segments(
+    segments: Sequence[tuple[int, int]],
+    *,
+    owner: str,
+) -> tuple[tuple[int, int], ...]:
+    if not segments:
+        raise ValueError(f"{owner} must contain at least one located segment")
+    normalized: list[tuple[int, int]] = []
+    for start, end in segments:
+        if isinstance(start, bool) or isinstance(end, bool) or start < 1 or end < start:
+            raise ValueError(f"{owner} has an invalid one-based inclusive segment")
+        normalized.append((start, end))
+    return tuple(normalized)
+
+
+def intervening_gap_bp(
+    left_segments: Sequence[tuple[int, int]],
+    right_segments: Sequence[tuple[int, int]],
+) -> int:
+    """Return the minimum non-negative linear gap strictly between segments.
+
+    Coordinates are one-based and inclusive.  Adjacent or overlapping segments
+    have a gap of zero.  Compound locations retain their individual segments,
+    so a broad min/max envelope cannot inflate a gap through an internal join.
+    """
+
+    left = _validated_segments(left_segments, owner="left_segments")
+    right = _validated_segments(right_segments, owner="right_segments")
+    gaps: list[int] = []
+    for left_start, left_end in left:
+        for right_start, right_end in right:
+            if left_end < right_start:
+                gaps.append(right_start - left_end - 1)
+            elif right_end < left_start:
+                gaps.append(left_start - right_end - 1)
+            else:
+                gaps.append(0)
+    return min(gaps)
+
+
+def circular_feature_distance_bp(
+    first_segments: Sequence[tuple[int, int]],
+    second_segments: Sequence[tuple[int, int]],
+    *,
+    record_length: int,
+) -> int:
+    """Return the minimum intervening gap in either direction on a circle."""
+
+    if isinstance(record_length, bool) or record_length <= 0:
+        raise ValueError("record_length must be a positive integer")
+    first = _validated_segments(first_segments, owner="first_segments")
+    second = _validated_segments(second_segments, owner="second_segments")
+    if any(end > record_length for _, end in (*first, *second)):
+        raise ValueError("segments must lie within record_length")
+    if intervening_gap_bp(first, second) == 0:
+        return 0
+    gaps: list[int] = []
+    for first_start, first_end in first:
+        for second_start, second_end in second:
+            clockwise = (second_start - first_end - 1) % record_length
+            anticlockwise = (first_start - second_end - 1) % record_length
+            gaps.extend((clockwise, anticlockwise))
+    return min(gaps)
 
 
 def feature_display_bounds(
@@ -112,7 +179,5 @@ def select_cds_window(
         (target_index + offset) % len(cdss)
         for offset in range(-left_count, right_count + 1)
     ]
-    wraps_origin = any(
-        current < previous for previous, current in zip(indices, indices[1:])
-    )
+    wraps_origin = any(current < previous for previous, current in pairwise(indices))
     return FeatureWindow(tuple(cdss[index] for index in indices), wraps_origin)
