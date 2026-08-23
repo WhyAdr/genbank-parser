@@ -1,16 +1,8 @@
-"""Cautious record-local inference before spatial and cross-record rules."""
+"""Cautious record-local and cross-record mobilome inference tests."""
 
 from pathlib import Path
 
-from genbank_parser import read_genbank
-from genbank_parser.mobilome.database import load_mobilome_database
-from genbank_parser.mobilome.inference import (
-    infer_cross_record_hypotheses,
-    infer_replicon_hypotheses,
-)
-from genbank_parser.mobilome.models import RepliconAssessment
-from genbank_parser.mobilome.replicons import inventory_replicons
-from genbank_parser.mobilome.scanner import scan_mobilome_features
+from genbank_parser.mobilome import analyze_mobilome
 
 FORBIDDEN = (
     "obligate co-transfer",
@@ -18,60 +10,15 @@ FORBIDDEN = (
     "satellite plasmid",
     "theta replication",
     "rolling-circle replication",
+    "confirmed phagemid",
 )
 
 
-def test_empty_record_gets_only_a_calibrated_replication_assessment() -> None:
-    document = read_genbank(Path("tests/fixtures/mobilome_inference.gb"))
-    database = load_mobilome_database()
-    inventory = inventory_replicons(document)
-    hits = scan_mobilome_features(document.all_features, database)
-
-    empty = inventory[2]
-    hypotheses = infer_replicon_hypotheses(empty, hits, database)
-
-    assert [item.summary for item in hypotheses] == [
-        "Replication evidence insufficient; mechanism unresolved"
-    ]
-    assert "satellite" not in hypotheses[0].summary.casefold()
-
-
-def test_toxin_antitoxin_pairs_are_cautious_record_local_observations() -> None:
-    document = read_genbank(Path("tests/fixtures/mobilome_evidence.gb"))
-    database = load_mobilome_database()
-    inventory = inventory_replicons(document)
-    hits = scan_mobilome_features(document.all_features, database)
-
-    hypotheses = infer_replicon_hypotheses(inventory[0], hits, database)
-    summaries = [item.summary for item in hypotheses]
-
-    assert "Type III ToxIN annotation-pair candidate" in summaries
-    assert "HEPN/MNT annotation-pair candidate" in summaries
-    assert all(
-        forbidden not in "\n".join(summaries).casefold() for forbidden in FORBIDDEN
-    )
-
-
 def test_cross_record_helper_hypothesis_is_tentative_and_structured() -> None:
-    document = read_genbank(Path("tests/fixtures/mobilome_inference.gb"))
-    database = load_mobilome_database()
-    inventory = inventory_replicons(document)
-    hits = scan_mobilome_features(document.all_features, database)
-    assessments = tuple(
-        RepliconAssessment(
-            inventory=item,
-            hits=tuple(
-                hit for hit in hits if hit.feature.record_index == item.record_index
-            ),
-            hypotheses=(),
-        )
-        for item in inventory
-    )
+    report = analyze_mobilome(Path("tests/fixtures/mobilome_inference.gb"))
 
-    hypotheses = infer_cross_record_hypotheses(assessments, database)
-
-    assert len(hypotheses) == 1
-    hypothesis = hypotheses[0]
+    assert len(report.cross_record_hypotheses) == 1
+    hypothesis = report.cross_record_hypotheses[0]
     assert hypothesis.summary == "Possible helper-dependent mobilization"
     assert [participant.role for participant in hypothesis.participants] == [
         "target",
@@ -82,3 +29,23 @@ def test_cross_record_helper_hypothesis_is_tentative_and_structured() -> None:
         != hypothesis.participants[1].record_index
     )
     assert "Co-transfer of both records is not implied." in hypothesis.limitations
+
+
+def test_toxin_antitoxin_pairs_and_empty_record_are_calibrated() -> None:
+    report = analyze_mobilome(Path("tests/fixtures/mobilome_evidence.gb"))
+    summaries = [item.summary for item in report.replicons[0].hypotheses]
+
+    assert "Type III ToxIN annotation-pair candidate" in summaries
+    assert "HEPN/MNT annotation-pair candidate" in summaries
+    assert all(
+        forbidden not in "\n".join(summaries).casefold() for forbidden in FORBIDDEN
+    )
+
+    empty = analyze_mobilome(
+        Path("tests/fixtures/mobilome_inference.gb")
+    ).scanned_replicons[2]
+    empty_summaries = [item.summary for item in empty.hypotheses]
+    assert empty_summaries == [
+        "Replication evidence insufficient; mechanism unresolved"
+    ]
+    assert "satellite" not in " ".join(empty_summaries).casefold()

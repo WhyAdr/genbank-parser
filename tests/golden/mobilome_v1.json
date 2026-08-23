@@ -2,12 +2,12 @@
   "schema_version": "gbparse.mobilome.v1",
   "tool": "gbparse",
   "analysis": "mobilome",
-  "tool_version": "0.5.0",
+  "tool_version": "0.6.0",
   "catalog_version": "1.0.0",
   "inference_version": "1.0.0",
   "input": {
-    "file": "fixture.gb",
-    "sha256": "e80b71cd14d3cbd65f4173abcbfcf01a545dbca32a72d575108b553a648cc96f"
+    "file": "mobilome_evidence.gb",
+    "sha256": "34d9908260fc17c0a199c17c4494d608b99219bfaa2411983ad45f77d86957fc"
   },
   "parameters": {
     "include": "all",
@@ -15,22 +15,1277 @@
     "database_source": "packaged"
   },
   "provenance": {
-    "resources": [],
-    "annotation_pipelines": []
+    "resources": [
+      {
+        "name": "markers.yaml",
+        "sha256": "6e9272bd7d36c3ffec2b3ecbd0064a3039445c7ce21ba11fa5a663212efdad52"
+      },
+      {
+        "name": "provenance.yaml",
+        "sha256": "9fd9cc3f243ccc2280ad7f3a571a948ebd1a5d74e0e987e8c17d22287a381b17"
+      },
+      {
+        "name": "inference.yaml",
+        "sha256": "886dd68d8ea3a8f921337bbd90b86f28491ff2b26c987aea3acaeba269b3a004"
+      },
+      {
+        "name": "report.schema.json",
+        "sha256": "8becc3cfb3d643fd5004d98f10d82f7677c1ce769dfa851b8913f24ffc32e92b"
+      }
+    ],
+    "annotation_pipelines": [
+      {
+        "record_indices": [
+          1
+        ],
+        "name": null,
+        "version": null,
+        "database_version": null,
+        "evidence_fields": [
+          "record_annotations"
+        ]
+      }
+    ]
   },
   "summary": {
-    "records_scanned": 0,
-    "records_reported": 0,
-    "raw_hits": 0,
-    "eligible_hits": 0,
-    "raw_reasons": 0,
-    "eligible_reasons": 0,
-    "hypotheses": 0
+    "records_scanned": 1,
+    "records_reported": 1,
+    "raw_hits": 15,
+    "eligible_hits": 10,
+    "raw_reasons": 26,
+    "eligible_reasons": 17,
+    "hypotheses": 4
   },
-  "inventory": [],
-  "replicons": [],
+  "inventory": [
+    {
+      "record_index": 1,
+      "record_id": "MOB_EVIDENCE.1",
+      "name": "MOB_EVIDENCE",
+      "description": "Synthetic typed evidence fixture for mobilome analysis",
+      "length": 600,
+      "topology": "circular",
+      "source_qualifiers": [
+        {
+          "key": "organism",
+          "values": [
+            "Synthetic bacterium"
+          ]
+        },
+        {
+          "key": "plasmid",
+          "values": [
+            "pEVIDENCE"
+          ]
+        }
+      ],
+      "classification": {
+        "label": "plasmid",
+        "status": "supported",
+        "supporting_evidence": [
+          {
+            "rule_id": "source_plasmid_qualifier",
+            "source": "source_qualifier",
+            "field": "plasmid",
+            "value": "pEVIDENCE",
+            "matched_text": "pEVIDENCE",
+            "pattern": "qualifier-present",
+            "source_feature_index": 1,
+            "interpreted_as": "plasmid",
+            "strength": 3,
+            "source_ids": [
+              "insdc-feature-table"
+            ]
+          }
+        ],
+        "conflicting_evidence": [],
+        "limitations": []
+      },
+      "feature_count": 15,
+      "cds_count": 9,
+      "pseudo_feature_count": 3,
+      "pseudo_cds_count": 2,
+      "pseudogene_feature_count": 1
+    }
+  ],
+  "replicons": [
+    {
+      "inventory": {
+        "record_index": 1,
+        "record_id": "MOB_EVIDENCE.1",
+        "name": "MOB_EVIDENCE",
+        "description": "Synthetic typed evidence fixture for mobilome analysis",
+        "length": 600,
+        "topology": "circular",
+        "source_qualifiers": [
+          {
+            "key": "organism",
+            "values": [
+              "Synthetic bacterium"
+            ]
+          },
+          {
+            "key": "plasmid",
+            "values": [
+              "pEVIDENCE"
+            ]
+          }
+        ],
+        "classification": {
+          "label": "plasmid",
+          "status": "supported",
+          "supporting_evidence": [
+            {
+              "rule_id": "source_plasmid_qualifier",
+              "source": "source_qualifier",
+              "field": "plasmid",
+              "value": "pEVIDENCE",
+              "matched_text": "pEVIDENCE",
+              "pattern": "qualifier-present",
+              "source_feature_index": 1,
+              "interpreted_as": "plasmid",
+              "strength": 3,
+              "source_ids": [
+                "insdc-feature-table"
+              ]
+            }
+          ],
+          "conflicting_evidence": [],
+          "limitations": []
+        },
+        "feature_count": 15,
+        "cds_count": 9,
+        "pseudo_feature_count": 3,
+        "pseudo_cds_count": 2,
+        "pseudogene_feature_count": 1
+      },
+      "hits": [
+        {
+          "hit_id": "r1:f2:mgeneric_replication_origin",
+          "marker_id": "generic_replication_origin",
+          "marker_label": "Generic annotated replication origin",
+          "facets": [
+            "replication_origin"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 2,
+            "feature_type": "rep_origin",
+            "locus_tag": null,
+            "gene": null,
+            "product": null,
+            "start": 10,
+            "end": 25,
+            "strand": 1,
+            "segments": [
+              [
+                10,
+                25
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 16,
+            "wraps_origin": false,
+            "partial": false,
+            "pseudo": false
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f2:mgeneric_replication_origin:feature_type:0:0",
+              "field": "feature_type",
+              "match_mode": "casefold_exact",
+              "matched_value": "rep_origin",
+              "matched_text": "rep_origin",
+              "pattern": "rep_origin",
+              "strength": 3,
+              "eligible": true,
+              "source_ids": [
+                "insdc-feature-table"
+              ]
+            }
+          ],
+          "max_strength": 3,
+          "eligible_for_inference": true
+        },
+        {
+          "hit_id": "r1:f3:mexplicit_origin_of_transfer",
+          "marker_id": "explicit_origin_of_transfer",
+          "marker_label": "Explicitly annotated origin of transfer",
+          "facets": [
+            "mobility_orit"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 3,
+            "feature_type": "regulatory",
+            "locus_tag": null,
+            "gene": null,
+            "product": null,
+            "start": 40,
+            "end": 55,
+            "strand": 1,
+            "segments": [
+              [
+                40,
+                55
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 16,
+            "wraps_origin": false,
+            "partial": false,
+            "pseudo": false
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f3:mexplicit_origin_of_transfer:regulatory_class:1:0",
+              "field": "regulatory_class",
+              "match_mode": "casefold_exact",
+              "matched_value": "oriT",
+              "matched_text": "oriT",
+              "pattern": "oriT",
+              "strength": 3,
+              "eligible": true,
+              "source_ids": [
+                "bakta-origin-docs",
+                "insdc-feature-table"
+              ]
+            }
+          ],
+          "max_strength": 3,
+          "eligible_for_inference": true
+        },
+        {
+          "hit_id": "r1:f4:mrelaxase_candidate",
+          "marker_id": "relaxase_candidate",
+          "marker_label": "Relaxase annotation candidate",
+          "facets": [
+            "mobility_relaxase"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 4,
+            "feature_type": "CDS",
+            "locus_tag": "MOB_0001",
+            "gene": "mobA",
+            "product": "relaxase",
+            "start": 70,
+            "end": 120,
+            "strand": 1,
+            "segments": [
+              [
+                70,
+                120
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 51,
+            "wraps_origin": false,
+            "partial": false,
+            "pseudo": false
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f4:mrelaxase_candidate:gene:0:0",
+              "field": "gene",
+              "match_mode": "casefold_exact",
+              "matched_value": "mobA",
+              "matched_text": "mobA",
+              "pattern": "mobA",
+              "strength": 2,
+              "eligible": true,
+              "source_ids": [
+                "smillie-2010-mobility"
+              ]
+            },
+            {
+              "reason_id": "r1:f4:mrelaxase_candidate:product:1:0",
+              "field": "product",
+              "match_mode": "regex",
+              "matched_value": "relaxase",
+              "matched_text": "relaxase",
+              "pattern": "(?i)\\b(?:relaxase|mobility protein)\\b",
+              "strength": 2,
+              "eligible": true,
+              "source_ids": [
+                "smillie-2010-mobility"
+              ]
+            }
+          ],
+          "max_strength": 2,
+          "eligible_for_inference": true
+        },
+        {
+          "hit_id": "r1:f5:mtoxn",
+          "marker_id": "toxn",
+          "marker_label": "ToxN-family toxin annotation",
+          "facets": [
+            "ta_toxin"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 5,
+            "feature_type": "CDS",
+            "locus_tag": "MOB_0002",
+            "gene": "toxN",
+            "product": "ToxN-family toxin",
+            "start": 130,
+            "end": 180,
+            "strand": 1,
+            "segments": [
+              [
+                130,
+                180
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 51,
+            "wraps_origin": false,
+            "partial": false,
+            "pseudo": false
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f5:mtoxn:gene:0:0",
+              "field": "gene",
+              "match_mode": "casefold_exact",
+              "matched_value": "toxN",
+              "matched_text": "toxN",
+              "pattern": "toxN",
+              "strength": 2,
+              "eligible": true,
+              "source_ids": [
+                "blower-2012-toxin"
+              ]
+            },
+            {
+              "reason_id": "r1:f5:mtoxn:product:1:0",
+              "field": "product",
+              "match_mode": "regex",
+              "matched_value": "ToxN-family toxin",
+              "matched_text": "ToxN-family",
+              "pattern": "(?i)\\bToxN(?:-family)?\\b",
+              "strength": 2,
+              "eligible": true,
+              "source_ids": [
+                "blower-2012-toxin"
+              ]
+            }
+          ],
+          "max_strength": 2,
+          "eligible_for_inference": true
+        },
+        {
+          "hit_id": "r1:f6:mtoxi",
+          "marker_id": "toxi",
+          "marker_label": "ToxI RNA antitoxin annotation",
+          "facets": [
+            "ta_antitoxin"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 6,
+            "feature_type": "ncRNA",
+            "locus_tag": "MOB_0003",
+            "gene": "toxI",
+            "product": "ToxI RNA antitoxin",
+            "start": 190,
+            "end": 220,
+            "strand": 1,
+            "segments": [
+              [
+                190,
+                220
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 31,
+            "wraps_origin": false,
+            "partial": false,
+            "pseudo": false
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f6:mtoxi:gene:0:0",
+              "field": "gene",
+              "match_mode": "casefold_exact",
+              "matched_value": "toxI",
+              "matched_text": "toxI",
+              "pattern": "toxI",
+              "strength": 2,
+              "eligible": true,
+              "source_ids": [
+                "blower-2012-toxin"
+              ]
+            },
+            {
+              "reason_id": "r1:f6:mtoxi:product:1:0",
+              "field": "product",
+              "match_mode": "regex",
+              "matched_value": "ToxI RNA antitoxin",
+              "matched_text": "ToxI RNA antitoxin",
+              "pattern": "(?i)\\bToxI(?: RNA)?(?: antitoxin)?\\b",
+              "strength": 2,
+              "eligible": true,
+              "source_ids": [
+                "blower-2012-toxin"
+              ]
+            }
+          ],
+          "max_strength": 2,
+          "eligible_for_inference": true
+        },
+        {
+          "hit_id": "r1:f7:mhept",
+          "marker_id": "hept",
+          "marker_label": "HepT-family toxin annotation",
+          "facets": [
+            "ta_toxin"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 7,
+            "feature_type": "CDS",
+            "locus_tag": "MOB_0004",
+            "gene": "hepT",
+            "product": "HepT-family toxin",
+            "start": 230,
+            "end": 270,
+            "strand": 1,
+            "segments": [
+              [
+                230,
+                270
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 41,
+            "wraps_origin": false,
+            "partial": false,
+            "pseudo": false
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f7:mhept:gene:0:0",
+              "field": "gene",
+              "match_mode": "casefold_exact",
+              "matched_value": "hepT",
+              "matched_text": "hepT",
+              "pattern": "hepT",
+              "strength": 2,
+              "eligible": true,
+              "source_ids": [
+                "yao-2020-hepn-mnt"
+              ]
+            },
+            {
+              "reason_id": "r1:f7:mhept:product:1:0",
+              "field": "product",
+              "match_mode": "regex",
+              "matched_value": "HepT-family toxin",
+              "matched_text": "HepT-family",
+              "pattern": "(?i)\\bHepT(?:-family)?\\b",
+              "strength": 2,
+              "eligible": true,
+              "source_ids": [
+                "yao-2020-hepn-mnt"
+              ]
+            }
+          ],
+          "max_strength": 2,
+          "eligible_for_inference": true
+        },
+        {
+          "hit_id": "r1:f8:mmnta",
+          "marker_id": "mnta",
+          "marker_label": "MntA-family antitoxin annotation",
+          "facets": [
+            "ta_antitoxin"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 8,
+            "feature_type": "CDS",
+            "locus_tag": "MOB_0005",
+            "gene": "mntA",
+            "product": "MntA-family antitoxin",
+            "start": 280,
+            "end": 320,
+            "strand": 1,
+            "segments": [
+              [
+                280,
+                320
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 41,
+            "wraps_origin": false,
+            "partial": false,
+            "pseudo": false
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f8:mmnta:gene:0:0",
+              "field": "gene",
+              "match_mode": "casefold_exact",
+              "matched_value": "mntA",
+              "matched_text": "mntA",
+              "pattern": "mntA",
+              "strength": 2,
+              "eligible": true,
+              "source_ids": [
+                "yao-2020-hepn-mnt"
+              ]
+            },
+            {
+              "reason_id": "r1:f8:mmnta:product:1:0",
+              "field": "product",
+              "match_mode": "regex",
+              "matched_value": "MntA-family antitoxin",
+              "matched_text": "MntA-family",
+              "pattern": "(?i)\\bMntA(?:-family)?\\b",
+              "strength": 2,
+              "eligible": true,
+              "source_ids": [
+                "yao-2020-hepn-mnt"
+              ]
+            }
+          ],
+          "max_strength": 2,
+          "eligible_for_inference": true
+        },
+        {
+          "hit_id": "r1:f9:mreplication_initiation_candidate",
+          "marker_id": "replication_initiation_candidate",
+          "marker_label": "Replication-initiation annotation candidate",
+          "facets": [
+            "replication_initiation"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 9,
+            "feature_type": "CDS",
+            "locus_tag": "MOB_0006",
+            "gene": "repA",
+            "product": "replication initiation protein",
+            "start": 330,
+            "end": 380,
+            "strand": 1,
+            "segments": [
+              [
+                330,
+                380
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 51,
+            "wraps_origin": false,
+            "partial": false,
+            "pseudo": true
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f9:mreplication_initiation_candidate:gene:0:0",
+              "field": "gene",
+              "match_mode": "casefold_exact",
+              "matched_value": "repA",
+              "matched_text": "repA",
+              "pattern": "repA",
+              "strength": 2,
+              "eligible": false,
+              "source_ids": [
+                "local-annotation-candidate-policy"
+              ]
+            },
+            {
+              "reason_id": "r1:f9:mreplication_initiation_candidate:product:1:0",
+              "field": "product",
+              "match_mode": "regex",
+              "matched_value": "replication initiation protein",
+              "matched_text": "replication initiation",
+              "pattern": "(?i)\\b(?:replication initiator|replication initiation|replication protein|replicase|replication-relaxation)\\b",
+              "strength": 1,
+              "eligible": false,
+              "source_ids": [
+                "local-annotation-candidate-policy"
+              ]
+            }
+          ],
+          "max_strength": 2,
+          "eligible_for_inference": false
+        },
+        {
+          "hit_id": "r1:f10:mreplication_initiation_candidate",
+          "marker_id": "replication_initiation_candidate",
+          "marker_label": "Replication-initiation annotation candidate",
+          "facets": [
+            "replication_initiation"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 10,
+            "feature_type": "CDS",
+            "locus_tag": "MOB_0007",
+            "gene": "repB",
+            "product": "replication initiation protein",
+            "start": 390,
+            "end": 440,
+            "strand": 1,
+            "segments": [
+              [
+                390,
+                440
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 51,
+            "wraps_origin": false,
+            "partial": false,
+            "pseudo": true
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f10:mreplication_initiation_candidate:gene:0:1",
+              "field": "gene",
+              "match_mode": "casefold_exact",
+              "matched_value": "repB",
+              "matched_text": "repB",
+              "pattern": "repB",
+              "strength": 2,
+              "eligible": false,
+              "source_ids": [
+                "local-annotation-candidate-policy"
+              ]
+            },
+            {
+              "reason_id": "r1:f10:mreplication_initiation_candidate:product:1:0",
+              "field": "product",
+              "match_mode": "regex",
+              "matched_value": "replication initiation protein",
+              "matched_text": "replication initiation",
+              "pattern": "(?i)\\b(?:replication initiator|replication initiation|replication protein|replicase|replication-relaxation)\\b",
+              "strength": 1,
+              "eligible": false,
+              "source_ids": [
+                "local-annotation-candidate-policy"
+              ]
+            }
+          ],
+          "max_strength": 2,
+          "eligible_for_inference": false
+        },
+        {
+          "hit_id": "r1:f11:mreplication_initiation_candidate",
+          "marker_id": "replication_initiation_candidate",
+          "marker_label": "Replication-initiation annotation candidate",
+          "facets": [
+            "replication_initiation"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 11,
+            "feature_type": "pseudogene",
+            "locus_tag": "MOB_0008",
+            "gene": "repS",
+            "product": "replication initiation protein",
+            "start": 450,
+            "end": 475,
+            "strand": 1,
+            "segments": [
+              [
+                450,
+                475
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 26,
+            "wraps_origin": false,
+            "partial": false,
+            "pseudo": true
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f11:mreplication_initiation_candidate:gene:0:2",
+              "field": "gene",
+              "match_mode": "casefold_exact",
+              "matched_value": "repS",
+              "matched_text": "repS",
+              "pattern": "repS",
+              "strength": 2,
+              "eligible": false,
+              "source_ids": [
+                "local-annotation-candidate-policy"
+              ]
+            },
+            {
+              "reason_id": "r1:f11:mreplication_initiation_candidate:product:1:0",
+              "field": "product",
+              "match_mode": "regex",
+              "matched_value": "replication initiation protein",
+              "matched_text": "replication initiation",
+              "pattern": "(?i)\\b(?:replication initiator|replication initiation|replication protein|replicase|replication-relaxation)\\b",
+              "strength": 1,
+              "eligible": false,
+              "source_ids": [
+                "local-annotation-candidate-policy"
+              ]
+            }
+          ],
+          "max_strength": 2,
+          "eligible_for_inference": false
+        },
+        {
+          "hit_id": "r1:f12:mrelaxase_candidate",
+          "marker_id": "relaxase_candidate",
+          "marker_label": "Relaxase annotation candidate",
+          "facets": [
+            "mobility_relaxase"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 12,
+            "feature_type": "CDS",
+            "locus_tag": "MOB_0009",
+            "gene": "repFR",
+            "product": "replication-relaxation relaxase fusion",
+            "start": 480,
+            "end": 520,
+            "strand": 1,
+            "segments": [
+              [
+                480,
+                520
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 41,
+            "wraps_origin": false,
+            "partial": true,
+            "pseudo": false
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f12:mrelaxase_candidate:product:1:0",
+              "field": "product",
+              "match_mode": "regex",
+              "matched_value": "replication-relaxation relaxase fusion",
+              "matched_text": "relaxase",
+              "pattern": "(?i)\\b(?:relaxase|mobility protein)\\b",
+              "strength": 2,
+              "eligible": false,
+              "source_ids": [
+                "smillie-2010-mobility"
+              ]
+            }
+          ],
+          "max_strength": 2,
+          "eligible_for_inference": false
+        },
+        {
+          "hit_id": "r1:f12:mreplication_initiation_candidate",
+          "marker_id": "replication_initiation_candidate",
+          "marker_label": "Replication-initiation annotation candidate",
+          "facets": [
+            "replication_initiation"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 12,
+            "feature_type": "CDS",
+            "locus_tag": "MOB_0009",
+            "gene": "repFR",
+            "product": "replication-relaxation relaxase fusion",
+            "start": 480,
+            "end": 520,
+            "strand": 1,
+            "segments": [
+              [
+                480,
+                520
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 41,
+            "wraps_origin": false,
+            "partial": true,
+            "pseudo": false
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f12:mreplication_initiation_candidate:gene:0:4",
+              "field": "gene",
+              "match_mode": "casefold_exact",
+              "matched_value": "repFR",
+              "matched_text": "repFR",
+              "pattern": "repFR",
+              "strength": 2,
+              "eligible": false,
+              "source_ids": [
+                "local-annotation-candidate-policy"
+              ]
+            },
+            {
+              "reason_id": "r1:f12:mreplication_initiation_candidate:product:1:0",
+              "field": "product",
+              "match_mode": "regex",
+              "matched_value": "replication-relaxation relaxase fusion",
+              "matched_text": "replication-relaxation",
+              "pattern": "(?i)\\b(?:replication initiator|replication initiation|replication protein|replicase|replication-relaxation)\\b",
+              "strength": 1,
+              "eligible": false,
+              "source_ids": [
+                "local-annotation-candidate-policy"
+              ]
+            }
+          ],
+          "max_strength": 2,
+          "eligible_for_inference": false
+        },
+        {
+          "hit_id": "r1:f13:mcrispr_array",
+          "marker_id": "crispr_array",
+          "marker_label": "CRISPR repeat-array annotation",
+          "facets": [
+            "crispr_array"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 13,
+            "feature_type": "repeat_region",
+            "locus_tag": null,
+            "gene": null,
+            "product": null,
+            "start": 530,
+            "end": 550,
+            "strand": 1,
+            "segments": [
+              [
+                530,
+                550
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 21,
+            "wraps_origin": false,
+            "partial": false,
+            "pseudo": false
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f13:mcrispr_array:note:1:0",
+              "field": "note",
+              "match_mode": "regex",
+              "matched_value": "CRISPR repeat array",
+              "matched_text": "CRISPR repeat array",
+              "pattern": "(?i)\\bCRISPR(?: repeat(?: region| array)?)?\\b",
+              "strength": 1,
+              "eligible": true,
+              "source_ids": [
+                "bakta-origin-docs",
+                "insdc-feature-table"
+              ]
+            },
+            {
+              "reason_id": "r1:f13:mcrispr_array:rpt_type:0:0",
+              "field": "rpt_type",
+              "match_mode": "casefold_exact",
+              "matched_value": "CRISPR",
+              "matched_text": "CRISPR",
+              "pattern": "CRISPR",
+              "strength": 3,
+              "eligible": true,
+              "source_ids": [
+                "bakta-origin-docs",
+                "insdc-feature-table"
+              ]
+            }
+          ],
+          "max_strength": 3,
+          "eligible_for_inference": true
+        },
+        {
+          "hit_id": "r1:f14:mcrispr_cas",
+          "marker_id": "crispr_cas",
+          "marker_label": "Cas annotation candidate",
+          "facets": [
+            "crispr_cas"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 14,
+            "feature_type": "CDS",
+            "locus_tag": "MOB_0010",
+            "gene": "cas9",
+            "product": "CRISPR-associated protein Cas9",
+            "start": 1,
+            "end": 600,
+            "strand": 1,
+            "segments": [
+              [
+                571,
+                600
+              ],
+              [
+                1,
+                30
+              ]
+            ],
+            "location_operator": "join",
+            "biological_length": 60,
+            "wraps_origin": true,
+            "partial": false,
+            "pseudo": false
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f14:mcrispr_cas:gene:0:0",
+              "field": "gene",
+              "match_mode": "regex",
+              "matched_value": "cas9",
+              "matched_text": "cas9",
+              "pattern": "(?i)^cas(?:1|2|3|4|5|6|7|8|9|10|12|13|14|A|B|C|D|E|F)$",
+              "strength": 2,
+              "eligible": true,
+              "source_ids": [
+                "bakta-origin-docs"
+              ]
+            },
+            {
+              "reason_id": "r1:f14:mcrispr_cas:product:1:0",
+              "field": "product",
+              "match_mode": "regex",
+              "matched_value": "CRISPR-associated protein Cas9",
+              "matched_text": "CRISPR-associated",
+              "pattern": "(?i)\\b(?:CRISPR-associated|Cas(?:1|2|3|4|5|6|7|8|9|10|12|13|14))\\b",
+              "strength": 2,
+              "eligible": true,
+              "source_ids": [
+                "bakta-origin-docs"
+              ]
+            }
+          ],
+          "max_strength": 2,
+          "eligible_for_inference": true
+        },
+        {
+          "hit_id": "r1:f15:mzot_like_candidate",
+          "marker_id": "zot_like_candidate",
+          "marker_label": "Zot-like annotation candidate",
+          "facets": [
+            "phage_regulation",
+            "vf_candidate"
+          ],
+          "feature": {
+            "record_index": 1,
+            "record_id": "MOB_EVIDENCE.1",
+            "feature_index": 15,
+            "feature_type": "CDS",
+            "locus_tag": "MOB_0011",
+            "gene": null,
+            "product": "Zot-like protein",
+            "start": 60,
+            "end": 65,
+            "strand": 1,
+            "segments": [
+              [
+                60,
+                65
+              ]
+            ],
+            "location_operator": null,
+            "biological_length": 6,
+            "wraps_origin": false,
+            "partial": false,
+            "pseudo": false
+          },
+          "reasons": [
+            {
+              "reason_id": "r1:f15:mzot_like_candidate:product:0:0",
+              "field": "product",
+              "match_mode": "regex",
+              "matched_value": "Zot-like protein",
+              "matched_text": "Zot-like",
+              "pattern": "(?i)\\b(?:zona occludens toxin|Zot)(?:-like)?\\b",
+              "strength": 1,
+              "eligible": true,
+              "source_ids": [
+                "local-annotation-candidate-policy"
+              ]
+            }
+          ],
+          "max_strength": 1,
+          "eligible_for_inference": true
+        }
+      ],
+      "hypotheses": [
+        {
+          "hypothesis_id": "h:hepn_mnt_annotation_pair_candidate:1:7:8",
+          "rule_id": "hepn_mnt_annotation_pair_candidate",
+          "kind": "toxin_antitoxin",
+          "status": "tentative",
+          "summary": "HEPN/MNT annotation-pair candidate",
+          "participants": [
+            {
+              "role": "subject",
+              "record_index": 1,
+              "record_id": "MOB_EVIDENCE.1"
+            }
+          ],
+          "supporting_hit_ids": [
+            "r1:f7:mhept",
+            "r1:f8:mmnta"
+          ],
+          "missing_components": [],
+          "conflicting_hit_ids": [],
+          "limitations": [
+            "Proximity is a versioned engineering heuristic, not proof of an operon.",
+            "The cited biochemical correspondence is not generalized beyond annotation.",
+            "Configured maximum circular gap: 2000 bp; observed gap: 9 bp."
+          ],
+          "source_ids": [
+            "yao-2020-hepn-mnt"
+          ]
+        },
+        {
+          "hypothesis_id": "h:mobilizable_core_annotation_candidate:1",
+          "rule_id": "mobilizable_core_annotation_candidate",
+          "kind": "mobility",
+          "status": "tentative",
+          "summary": "Mobilizable-core annotation candidate",
+          "participants": [
+            {
+              "role": "subject",
+              "record_index": 1,
+              "record_id": "MOB_EVIDENCE.1"
+            }
+          ],
+          "supporting_hit_ids": [
+            "r1:f3:mexplicit_origin_of_transfer",
+            "r1:f4:mrelaxase_candidate"
+          ],
+          "missing_components": [],
+          "conflicting_hit_ids": [],
+          "limitations": [
+            "A cognate relaxase-oriT relationship is untested.",
+            "Expression and transfer are untested."
+          ],
+          "source_ids": [
+            "smillie-2010-mobility"
+          ]
+        },
+        {
+          "hypothesis_id": "h:replication_annotation_candidate:1",
+          "rule_id": "replication_annotation_candidate",
+          "kind": "replication",
+          "status": "tentative",
+          "summary": "Replication annotation candidate with unresolved mechanism",
+          "participants": [
+            {
+              "role": "subject",
+              "record_index": 1,
+              "record_id": "MOB_EVIDENCE.1"
+            }
+          ],
+          "supporting_hit_ids": [
+            "r1:f2:mgeneric_replication_origin"
+          ],
+          "missing_components": [],
+          "conflicting_hit_ids": [],
+          "limitations": [
+            "Annotation does not identify a replication mechanism or autonomy."
+          ],
+          "source_ids": [
+            "local-annotation-candidate-policy"
+          ]
+        },
+        {
+          "hypothesis_id": "h:type_iii_toxin_antitoxin_pair_candidate:1:5:6",
+          "rule_id": "type_iii_toxin_antitoxin_pair_candidate",
+          "kind": "toxin_antitoxin",
+          "status": "tentative",
+          "summary": "Type III ToxIN annotation-pair candidate",
+          "participants": [
+            {
+              "role": "subject",
+              "record_index": 1,
+              "record_id": "MOB_EVIDENCE.1"
+            }
+          ],
+          "supporting_hit_ids": [
+            "r1:f5:mtoxn",
+            "r1:f6:mtoxi"
+          ],
+          "missing_components": [],
+          "conflicting_hit_ids": [],
+          "limitations": [
+            "Proximity is a versioned engineering heuristic, not proof of an operon.",
+            "Expression and toxin-antitoxin activity are untested.",
+            "Configured maximum circular gap: 2000 bp; observed gap: 9 bp."
+          ],
+          "source_ids": [
+            "blower-2012-toxin"
+          ]
+        }
+      ]
+    }
+  ],
   "cross_record_hypotheses": [],
-  "disabled_aggregate_rules": [],
-  "handoffs": [],
-  "limitations": []
+  "disabled_aggregate_rules": [
+    {
+      "rule_id": "phage_module_bearing_plasmid_candidate",
+      "reason": "No v1 distinct-module operating threshold has been validated.",
+      "evidence_retained_as": [
+        "phage_integration",
+        "phage_lysis",
+        "phage_packaging",
+        "phage_regulation",
+        "phage_replication",
+        "phage_structure"
+      ],
+      "enablement_requirements": [
+        "Committed positive and unrelated negative controls.",
+        "Versioned minimum distinct-module policy.",
+        "Source-declared plasmid and eligible replication evidence."
+      ],
+      "source_ids": [
+        "local-disabled-aggregate-policy"
+      ]
+    },
+    {
+      "rule_id": "pxo_like_annotation_pattern_candidate",
+      "reason": "No v1 ordinal, synteny, and null-model contract has been validated.",
+      "evidence_retained_as": [
+        "pxo_numbered_product_annotation"
+      ],
+      "enablement_requirements": [
+        "Curated marker-group and ordinal metadata.",
+        "Exact forward, reverse, and circular-rotation synteny semantics.",
+        "Gap and interruption policy.",
+        "Committed positive and unrelated negative controls.",
+        "Sequence-homology provenance and reviewed operating threshold."
+      ],
+      "source_ids": [
+        "anjum-2014-pxo1",
+        "local-disabled-aggregate-policy"
+      ]
+    }
+  ],
+  "handoffs": [
+    {
+      "handoff_id": "amr_annotation",
+      "tool": "AMRFinderPlus",
+      "purpose": "Structured antimicrobial-resistance annotation",
+      "status": "not_run",
+      "reason": "Generic product text is retained only as an annotation candidate.",
+      "required_input": [
+        "protein or nucleotide sequence"
+      ],
+      "required_provenance_fields": [
+        "tool_version",
+        "database_version",
+        "organism_option",
+        "method",
+        "thresholds"
+      ],
+      "limitations": [
+        "A tool annotation is not a phenotype measurement."
+      ]
+    },
+    {
+      "handoff_id": "element_boundary",
+      "tool": "Prophage or ICE caller",
+      "purpose": "Dedicated element-boundary analysis",
+      "status": "not_run",
+      "reason": "Component annotations do not establish element boundaries.",
+      "required_input": [
+        "assembly sequence and annotation"
+      ],
+      "required_provenance_fields": [
+        "tool_version",
+        "database_version",
+        "caller_thresholds",
+        "boundary_uncertainty"
+      ],
+      "limitations": [
+        "Predicted boundaries require method-specific review."
+      ]
+    },
+    {
+      "handoff_id": "mechanism_evidence",
+      "tool": "HMM, domain, or sequence workflow",
+      "purpose": "Mechanism-specific evidence",
+      "status": "not_run",
+      "reason": "Generic Rep and pXO labels cannot identify a replication mechanism.",
+      "required_input": [
+        "protein sequence"
+      ],
+      "required_provenance_fields": [
+        "model_accession",
+        "model_version",
+        "cutoffs",
+        "alignment_coverage"
+      ],
+      "limitations": [
+        "Domain evidence still requires a reviewed mechanism rule."
+      ]
+    },
+    {
+      "handoff_id": "plasmid_typing",
+      "tool": "MOB-suite or PlasmidFinder",
+      "purpose": "Plasmid typing and mobility comparison",
+      "status": "not_run",
+      "reason": "External typing is outside this annotation-only analysis.",
+      "required_input": [
+        "assembly or contig sequence"
+      ],
+      "required_provenance_fields": [
+        "tool_version",
+        "database_release",
+        "identity_threshold",
+        "coverage_threshold",
+        "taxonomic_scope"
+      ],
+      "limitations": [
+        "A future tool result remains dependent on database composition and thresholds."
+      ]
+    },
+    {
+      "handoff_id": "vf_annotation",
+      "tool": "VFDB or curated virulence workflow",
+      "purpose": "Virulence-associated comparison",
+      "status": "not_run",
+      "reason": "Product text is retained only as an annotation candidate.",
+      "required_input": [
+        "protein or nucleotide sequence"
+      ],
+      "required_provenance_fields": [
+        "database_release",
+        "search_method",
+        "thresholds",
+        "coverage",
+        "interpretation_limits"
+      ],
+      "limitations": [
+        "A similarity result is not virulence phenotype evidence."
+      ]
+    }
+  ],
+  "limitations": [
+    "This report summarizes input annotations and configured evidence; it does not establish phenotype, expression, transfer, replicon ancestry, replication mechanism, or element identity.",
+    "Absent annotations are not evidence that a biological function is absent."
+  ]
 }

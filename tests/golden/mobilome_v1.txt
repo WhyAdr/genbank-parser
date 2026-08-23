@@ -1,12 +1,45 @@
 Mobilome evidence report
 Input and provenance
-  Input: fixture.gb
-  SHA-256: e80b71cd14d3cbd65f4173abcbfcf01a545dbca32a72d575108b553a648cc96f
+  Input: mobilome_evidence.gb
+  SHA-256: 34d9908260fc17c0a199c17c4494d608b99219bfaa2411983ad45f77d86957fc
   Catalog/inference: 1.0.0 / 1.0.0
 Record inventory
+  [1] MOB_EVIDENCE.1 | plasmid (supported) | circular | 600 bp | 9 CDS
 Replicon assessments
+  [1] MOB_EVIDENCE.1
+    Observed eligible evidence
+      Generic annotated replication origin (generic_replication_origin) on feature 2
+      Explicitly annotated origin of transfer (explicit_origin_of_transfer) on feature 3
+      Relaxase annotation candidate (relaxase_candidate) on feature 4
+      ToxN-family toxin annotation (toxn) on feature 5
+      ToxI RNA antitoxin annotation (toxi) on feature 6
+      HepT-family toxin annotation (hept) on feature 7
+      MntA-family antitoxin annotation (mnta) on feature 8
+      CRISPR repeat-array annotation (crispr_array) on feature 13
+      Cas annotation candidate (crispr_cas) on feature 14
+      Zot-like annotation candidate (zot_like_candidate) on feature 15
+    Tentative hypotheses
+      HEPN/MNT annotation-pair candidate [hepn_mnt_annotation_pair_candidate]
+      Mobilizable-core annotation candidate [mobilizable_core_annotation_candidate]
+      Replication annotation candidate with unresolved mechanism [replication_annotation_candidate]
+      Type III ToxIN annotation-pair candidate [type_iii_toxin_antitoxin_pair_candidate]
+    Below-threshold observations
+      Replication-initiation annotation candidate (replication_initiation_candidate)
+      Replication-initiation annotation candidate (replication_initiation_candidate)
+      Replication-initiation annotation candidate (replication_initiation_candidate)
+      Relaxase annotation candidate (relaxase_candidate)
+      Replication-initiation annotation candidate (replication_initiation_candidate)
 Cross-record hypotheses
   None.
 Disabled aggregate rules and retained evidence
+  phage_module_bearing_plasmid_candidate: No v1 distinct-module operating threshold has been validated.
+  pxo_like_annotation_pattern_candidate: No v1 ordinal, synteny, and null-model contract has been validated.
 External handoffs not run
+  AMRFinderPlus: Structured antimicrobial-resistance annotation (not_run)
+  Prophage or ICE caller: Dedicated element-boundary analysis (not_run)
+  HMM, domain, or sequence workflow: Mechanism-specific evidence (not_run)
+  MOB-suite or PlasmidFinder: Plasmid typing and mobility comparison (not_run)
+  VFDB or curated virulence workflow: Virulence-associated comparison (not_run)
 Interpretation limits
+  - This report summarizes input annotations and configured evidence; it does not establish phenotype, expression, transfer, replicon ancestry, replication mechanism, or element identity.
+  - Absent annotations are not evidence that a biological function is absent.

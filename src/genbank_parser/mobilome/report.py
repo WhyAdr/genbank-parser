@@ -556,27 +556,42 @@ def _hypothesis_row(
     return row
 
 
+def _tsv_values(row: dict[str, object]) -> list[object]:
+    """Retain the stable header while avoiding insignificant trailing tabs."""
+
+    values = [row.get(column, "") for column in TSV_COLUMNS]
+    while values and values[-1] == "":
+        values.pop()
+    return values
+
+
 def render_tsv(report: MobilomeReport) -> str:
     validate_mobilome_report_semantics(report)
     output = io.StringIO(newline="")
-    writer = csv.DictWriter(
-        output, fieldnames=TSV_COLUMNS, delimiter="\t", lineterminator="\n"
-    )
-    writer.writeheader()
+    writer = csv.writer(output, delimiter="\t", lineterminator="\n")
+    writer.writerow(TSV_COLUMNS)
     for inventory in report.inventory:
-        writer.writerow(_inventory_row(inventory))
+        writer.writerow(_tsv_values(_inventory_row(inventory)))
     for assessment in report.replicons:
         for hit in assessment.hits:
             for reason in hit.reasons:
-                writer.writerow(_reason_row(assessment.inventory, hit, reason))
+                writer.writerow(
+                    _tsv_values(_reason_row(assessment.inventory, hit, reason))
+                )
         for hypothesis in assessment.hypotheses:
             writer.writerow(
-                _hypothesis_row(
-                    hypothesis, row_type="hypothesis", inventory=assessment.inventory
+                _tsv_values(
+                    _hypothesis_row(
+                        hypothesis,
+                        row_type="hypothesis",
+                        inventory=assessment.inventory,
+                    )
                 )
             )
     for hypothesis in report.cross_record_hypotheses:
-        writer.writerow(_hypothesis_row(hypothesis, row_type="cross_record_hypothesis"))
+        writer.writerow(
+            _tsv_values(_hypothesis_row(hypothesis, row_type="cross_record_hypothesis"))
+        )
     for rule in report.disabled_aggregate_rules:
         row = _blank_row("disabled_aggregate_rule")
         row.update(
@@ -592,7 +607,7 @@ def render_tsv(report: MobilomeReport) -> str:
                 "source_ids_json": _compact_json(rule.source_ids),
             }
         )
-        writer.writerow(row)
+        writer.writerow(_tsv_values(row))
     for handoff in report.handoffs:
         row = _blank_row("handoff")
         row.update(
@@ -610,7 +625,7 @@ def render_tsv(report: MobilomeReport) -> str:
                 ),
             }
         )
-        writer.writerow(row)
+        writer.writerow(_tsv_values(row))
     return output.getvalue()
 
 

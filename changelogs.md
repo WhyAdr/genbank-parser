@@ -4,6 +4,16 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.6.0] - 2026-08-23
+
+### Typed mobilome evidence analysis
+
+- Added native `gbparse mobilome` and `genbank_parser.mobilome`, reusing the canonical Biopython-backed `read_genbank()` parser for complete record inventory and typed feature identity.
+- Added versioned marker, provenance, inference, and JSON Schema resources with exact-byte hashes; custom catalogs are loaded as one validated resource set.
+- Added deterministic text, JSON, and normalized TSV reports, protected atomic output writing, record-level provenance, and explicit not-run handoffs for external typing workflows.
+- Kept `gbparse discover --ruleset mobilome` unchanged as the annotation-island scanner; the new command is a separate replicon-centric evidence assessment.
+- Added conservative component, toxin-antitoxin proximity, and cross-record helper-dependent hypotheses without mechanism, phenotype, transfer, ancestry, or element-identity conclusions.
+
 ## [0.5.0] - 2026-08-17
 
 ### Structured neighborhoods and optional visualization
