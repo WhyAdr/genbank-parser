@@ -1,0 +1,36 @@
+{
+  "schema_version": "gbparse.mobilome.v1",
+  "tool": "gbparse",
+  "analysis": "mobilome",
+  "tool_version": "0.5.0",
+  "catalog_version": "1.0.0",
+  "inference_version": "1.0.0",
+  "input": {
+    "file": "fixture.gb",
+    "sha256": "e80b71cd14d3cbd65f4173abcbfcf01a545dbca32a72d575108b553a648cc96f"
+  },
+  "parameters": {
+    "include": "all",
+    "min_evidence": 1,
+    "database_source": "packaged"
+  },
+  "provenance": {
+    "resources": [],
+    "annotation_pipelines": []
+  },
+  "summary": {
+    "records_scanned": 0,
+    "records_reported": 0,
+    "raw_hits": 0,
+    "eligible_hits": 0,
+    "raw_reasons": 0,
+    "eligible_reasons": 0,
+    "hypotheses": 0
+  },
+  "inventory": [],
+  "replicons": [],
+  "cross_record_hypotheses": [],
+  "disabled_aggregate_rules": [],
+  "handoffs": [],
+  "limitations": []
+}

@@ -1,0 +1,12 @@
+Mobilome evidence report
+Input and provenance
+  Input: fixture.gb
+  SHA-256: e80b71cd14d3cbd65f4173abcbfcf01a545dbca32a72d575108b553a648cc96f
+  Catalog/inference: 1.0.0 / 1.0.0
+Record inventory
+Replicon assessments
+Cross-record hypotheses
+  None.
+Disabled aggregate rules and retained evidence
+External handoffs not run
+Interpretation limits
