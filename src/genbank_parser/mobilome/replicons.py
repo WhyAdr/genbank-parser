@@ -20,6 +20,19 @@ _RECORD_TOKEN_PATTERNS = {
         r"(?<![A-Za-z0-9_-])chromosome(?![A-Za-z0-9_-])", re.IGNORECASE
     ),
 }
+_PRODUCT_LIKE_TOKEN_SUFFIX = re.compile(r"(?i)\b(?:protein|proteins)\b")
+
+
+def _record_token_match(value: str, pattern: re.Pattern[str]) -> re.Match[str] | None:
+    """Return a declaration token unless it is part of a product phrase."""
+
+    match = pattern.search(value or "")
+    if match is None:
+        return None
+    suffix = value[match.end() : match.end() + 64]
+    if _PRODUCT_LIKE_TOKEN_SUFFIX.search(suffix) is not None:
+        return None
+    return match
 
 
 def _source_qualifiers(record: GenBankRecord) -> tuple[SourceQualifier, ...]:
@@ -38,7 +51,12 @@ def _source_qualifiers(record: GenBankRecord) -> tuple[SourceQualifier, ...]:
 def collect_record_classification_evidence(
     record: GenBankRecord,
 ) -> tuple[RecordEvidence, ...]:
-    """Collect declarations without using topology, length, or marker content."""
+    """Collect declarations without using topology, length, or marker content.
+
+    ``record.annotations`` is retained as a defensive API path. Biopython's
+    GenBank reader normally exposes source ``/plasmid`` and ``/chromosome``
+    declarations on typed source features instead.
+    """
 
     evidence: list[RecordEvidence] = []
     for feature in record.features:
@@ -96,7 +114,7 @@ def collect_record_classification_evidence(
         ("record_description", "description", record.description),
     ):
         for label, pattern in _RECORD_TOKEN_PATTERNS.items():
-            match = pattern.search(value or "")
+            match = _record_token_match(value or "", pattern)
             if match is None:
                 continue
             rule_id = f"bounded_{field}_{label}_token"

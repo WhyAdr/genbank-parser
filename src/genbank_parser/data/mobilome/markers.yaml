@@ -552,7 +552,7 @@ markers:
     sources: [erez-2017-arbitrium]
     interpretation: Retains a phage communication-system annotation candidate.
     limitations:
-      - Annotation does not establish active communication or host response.
+      - Annotation does not establish communication activity or host response.
 
   - id: zot_like_candidate
     label: Zot-like annotation candidate

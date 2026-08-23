@@ -4,13 +4,19 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Mapping
+from dataclasses import replace
 from pathlib import Path
 
 from .. import __version__
 from ..io import read_genbank
 from ..model import GenBankDocument
 from .database import load_mobilome_database
-from .inference import infer_cross_record_hypotheses, infer_replicon_hypotheses
+from .inference import (
+    infer_cross_record_hypotheses,
+    infer_replicon_hypotheses,
+    record_inference_limitations,
+)
 from .models import (
     AnalysisParameters,
     AnnotationProvenance,
@@ -50,38 +56,76 @@ def _validate_include(include: str) -> None:
         )
 
 
+def _annotation_values(value: object) -> tuple[str, ...]:
+    """Flatten scalar, list, and structured-comment annotation values."""
+
+    if isinstance(value, Mapping):
+        values: list[str] = []
+        for key, nested in value.items():
+            values.append(str(key))
+            values.extend(_annotation_values(nested))
+        return tuple(values)
+    if isinstance(value, (list, tuple, set)):
+        values = []
+        for nested in value:
+            values.extend(_annotation_values(nested))
+        return tuple(values)
+    return (str(value),)
+
+
+def _normalize_version(value: str) -> str:
+    return re.sub(r"^v(?:ersion)?", "", value.strip(), flags=re.IGNORECASE)
+
+
 def _annotation_provenance(
     document: GenBankDocument,
 ) -> tuple[AnnotationProvenance, ...]:
     """Capture only input-declared annotation-pipeline context when available."""
 
     grouped: dict[tuple[str | None, str | None, str | None], list[int]] = {}
+    structured_indices: set[int] = set()
     for record_index, record in enumerate(document.records, 1):
         values = [
-            str(value)
-            for value in record.annotations.values()
-            if isinstance(value, str)
+            text
+            for key, value in record.annotations.items()
+            for text in ((str(key),) + _annotation_values(value))
         ]
         comments = "\n".join(values)
+        structured_comment = record.annotations.get("structured_comment")
+        if structured_comment is not None:
+            structured_indices.add(record_index)
         name: str | None = None
         version: str | None = None
         database_version: str | None = None
         if re.search(r"\bBakta\b", comments, re.IGNORECASE):
             name = "Bakta"
+            if isinstance(structured_comment, Mapping):
+                for section, fields in structured_comment.items():
+                    if "bakta" not in str(section).casefold() or not isinstance(
+                        fields, Mapping
+                    ):
+                        continue
+                    for field, raw_value in fields.items():
+                        value = str(raw_value)
+                        field_folded = str(field).casefold()
+                        if field_folded == "version":
+                            version = _normalize_version(value)
+                        elif field_folded in {"database", "database version"}:
+                            database_version = _normalize_version(value)
             version_match = re.search(
                 r"\bBakta\s+(?:v(?:ersion)?\s*)?([0-9][A-Za-z0-9._-]*)",
                 comments,
                 re.IGNORECASE,
             )
-            if version_match is not None:
-                version = version_match.group(1)
+            if version is None and version_match is not None:
+                version = _normalize_version(version_match.group(1))
             database_match = re.search(
                 r"\b(?:database|db)\s*(?:version)?\s*[:= ]\s*([A-Za-z0-9._-]+)",
                 comments,
                 re.IGNORECASE,
             )
-            if database_match is not None:
-                database_version = database_match.group(1)
+            if database_version is None and database_match is not None:
+                database_version = _normalize_version(database_match.group(1))
         key = (name, version, database_version)
         grouped.setdefault(key, []).append(record_index)
     return tuple(
@@ -90,7 +134,12 @@ def _annotation_provenance(
             name=name,
             version=version,
             database_version=database_version,
-            evidence_fields=("record_annotations",),
+            evidence_fields=("record_annotations",)
+            + (
+                ("structured_comment",)
+                if any(index in structured_indices for index in record_indices)
+                else ()
+            ),
         )
         for (name, version, database_version), record_indices in sorted(
             grouped.items(), key=lambda item: item[1]
@@ -141,6 +190,15 @@ def analyze_mobilome(
         record_hits = tuple(
             hit for hit in hits if hit.feature.record_index == member.record_index
         )
+        limitations = record_inference_limitations(member, record_hits, active_database)
+        if limitations:
+            member = replace(
+                member,
+                classification=replace(
+                    member.classification,
+                    limitations=member.classification.limitations + limitations,
+                ),
+            )
         all_assessments.append(
             RepliconAssessment(
                 inventory=member,
@@ -150,6 +208,7 @@ def analyze_mobilome(
                 ),
             )
         )
+    inventory = tuple(assessment.inventory for assessment in all_assessments)
     scanned_replicons = tuple(all_assessments)
     cross_record_hypotheses = infer_cross_record_hypotheses(
         scanned_replicons, active_database

@@ -29,14 +29,14 @@ FORBIDDEN_CLAIMS = (
 def test_mobilome_inventory_fixture_preserves_record_identity() -> None:
     document = read_genbank(Path("tests/fixtures/mobilome_inventory.gb"))
 
-    assert len(document.records) == 9
-    assert len(document.all_features) == 12
+    assert len(document.records) == 11
+    assert len(document.all_features) == 14
     duplicate_ids = [
         record.id for record in document.records if record.id == "MOB_DUP.1"
     ]
     assert duplicate_ids == ["MOB_DUP.1", "MOB_DUP.1"]
-    assert document.records[6].topology is None
-    assert document.records[6].features == []
+    assert document.records[8].topology is None
+    assert document.records[8].features == []
 
 
 def test_mobilome_evidence_fixture_uses_canonical_pseudo_and_location_semantics() -> (

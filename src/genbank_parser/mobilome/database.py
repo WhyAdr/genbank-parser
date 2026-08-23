@@ -442,6 +442,7 @@ def _parse_provenance(provenance_data: dict[str, Any]) -> tuple[ProvenanceSource
             _string(
                 raw_source.get("taxonomic_scope"), f"source {source_id}.taxonomic_scope"
             )
+            _string_list(raw_source.get("supports"), f"source {source_id}.supports")
             _string_list(
                 raw_source.get("limitations"), f"source {source_id}.limitations"
             )

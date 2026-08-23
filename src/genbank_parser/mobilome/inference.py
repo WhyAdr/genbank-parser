@@ -300,6 +300,40 @@ def _infer_toxin_antitoxin_pairs(
     return tuple(hypotheses)
 
 
+def record_inference_limitations(
+    inventory: RepliconInventory,
+    hits: Sequence[MobilomeHit],
+    database: MobilomeDatabase,
+) -> tuple[str, ...]:
+    """Return record-level limits that cannot be represented by a pair hit."""
+
+    limitations: list[str] = []
+    local_hits = tuple(
+        hit for hit in hits if hit.feature.record_index == inventory.record_index
+    )
+    for rule in database.inference_rules:
+        if rule.kind != "toxin_antitoxin" or len(rule.required_marker_ids) != 2:
+            continue
+        first_marker, second_marker = rule.required_marker_ids
+        first_hits = tuple(
+            hit for hit in _functional_hits(local_hits) if hit.marker_id == first_marker
+        )
+        second_hits = tuple(
+            hit
+            for hit in _functional_hits(local_hits)
+            if hit.marker_id == second_marker
+        )
+        if any(
+            not first.feature.segments or not second.feature.segments
+            for first in first_hits
+            for second in second_hits
+        ):
+            limitations.append(
+                f"{rule.id}: at least one same-record toxin/antitoxin candidate is unlocatable; spatial pairing was skipped."
+            )
+    return tuple(sorted(set(limitations)))
+
+
 def infer_replicon_hypotheses(
     replicon: RepliconInventory,
     hits: Sequence[MobilomeHit],
@@ -393,4 +427,8 @@ def infer_cross_record_hypotheses(
     )
 
 
-__all__ = ["infer_cross_record_hypotheses", "infer_replicon_hypotheses"]
+__all__ = [
+    "infer_cross_record_hypotheses",
+    "infer_replicon_hypotheses",
+    "record_inference_limitations",
+]

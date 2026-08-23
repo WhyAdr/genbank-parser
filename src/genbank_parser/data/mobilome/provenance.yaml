@@ -37,6 +37,17 @@ sources:
       - Mobilizable plasmids may use helper mating-pair-formation machinery.
     limitations:
       - Annotation co-occurrence does not establish transfer or co-transfer.
+  - id: robertson-2018-mob-suite
+    type: primary_article
+    title: Comprehensive assessment of plasmid prevalence and diversity in the complete genome collection
+    year: 2018
+    doi: 10.1099/mgen.0.000206
+    pmcid: PMC6159552
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC6159552/
+    supports:
+      - MOB-suite plasmid typing and mobility results depend on versioned databases and operating thresholds.
+    limitations:
+      - Database composition, taxonomic coverage, and thresholds affect external plasmid-typing interpretation.
   - id: anjum-2014-pxo1
     type: primary_article
     title: Functional analysis of pXO1 plasmid replication

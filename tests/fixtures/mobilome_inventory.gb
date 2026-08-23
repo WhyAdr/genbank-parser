@@ -2,12 +2,38 @@ LOCUS       MOB_CHR                  120 bp    DNA     circular BCT 22-AUG-2026
 DEFINITION  Synthetic source-declared chromosome.
 ACCESSION   MOB_CHR
 VERSION     MOB_CHR.1
+COMMENT     ##Bakta-START##
+            Version :: 1.9.4
+            Database :: v5.0.1
+            ##Bakta-END##
 FEATURES             Location/Qualifiers
      source          1..120
                      /organism="Synthetic bacterium"
                      /chromosome="main"
      rep_origin      5..18
                      /note="generic replication origin"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       MOB_NEGP                 120 bp    DNA     linear   BCT 22-AUG-2026
+DEFINITION  Synthetic plasmid-like protein negative control.
+ACCESSION   MOB_NEG_PLASMID
+VERSION     MOB_NEG_PLASMID.1
+FEATURES             Location/Qualifiers
+     source          1..120
+                     /organism="Synthetic bacterium"
+ORIGIN
+        1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+       61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
+//
+LOCUS       MOB_NEGC                 120 bp    DNA     linear   BCT 22-AUG-2026
+DEFINITION  Synthetic chromosome partition protein negative control.
+ACCESSION   MOB_NEG_CHROMOSOME
+VERSION     MOB_NEG_CHROMOSOME.1
+FEATURES             Location/Qualifiers
+     source          1..120
+                     /organism="Synthetic bacterium"
 ORIGIN
         1 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa
        61 aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa aaaaaaaaaa

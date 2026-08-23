@@ -18,11 +18,11 @@
     "resources": [
       {
         "name": "markers.yaml",
-        "sha256": "6e9272bd7d36c3ffec2b3ecbd0064a3039445c7ce21ba11fa5a663212efdad52"
+        "sha256": "0fa4e8c4580e291eb0775202a343d45006b755f68693cbb662ec4876f331aebf"
       },
       {
         "name": "provenance.yaml",
-        "sha256": "9fd9cc3f243ccc2280ad7f3a571a948ebd1a5d74e0e987e8c17d22287a381b17"
+        "sha256": "c7eaba5c68d2b0bf4a3f45e8f2a0d769c9359833c702674835434ade28f20021"
       },
       {
         "name": "inference.yaml",

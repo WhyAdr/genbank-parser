@@ -23,6 +23,7 @@ Generic Rep, pXO-numbered products, and phage-module observations do not select 
 - ToxI is represented as the RNA antitoxin in a Type III ToxIN correspondence, following [Blower et al. (2012)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3401426/).
 - The HEPN/MNT reference retains the reported MntA/HepT biochemical correspondence without generalizing it to every annotation match; see [Yao et al. (2020)](https://pmc.ncbi.nlm.nih.gov/articles/PMC7641770/).
 - Helper-dependent mobilization wording is limited by the distinction between annotated component co-occurrence and demonstrated transfer described by [Smillie et al. (2010)](https://pmc.ncbi.nlm.nih.gov/articles/PMC2937521/).
+- The external MOB-suite or PlasmidFinder handoff requires versioned database and threshold provenance; see [Robertson and Nash (2018)](https://pmc.ncbi.nlm.nih.gov/articles/PMC6159552/) for MOB-suite performance and database/taxonomic limitations.
 - AimR/AimP/AimX labels are retained as annotation correspondence only; [Erez et al. (2017)](https://pmc.ncbi.nlm.nih.gov/articles/PMC5378303/) does not make a single new-genome annotation functional evidence.
 - INSDC feature and source-qualifier meanings are taken from the [INSDC feature table](https://www.ncbi.nlm.nih.gov/genbank/feature_table/); observed input feature representation remains authoritative.
 - Bakta capabilities and output forms are version-sensitive; use the observed typed record and feature annotations alongside the [Bakta documentation](https://bakta.readthedocs.io/en/latest/).
@@ -30,3 +31,16 @@ Generic Rep, pXO-numbered products, and phage-module observations do not select 
 ## External handoffs
 
 The report never runs external programs. It records `not_run` handoffs for MOB-suite or PlasmidFinder, AMRFinderPlus, a curated virulence workflow, prophage/ICE callers, and HMM/domain or sequence workflows. A future imported result must retain its tool/database release, method, thresholds, coverage, taxonomic scope, and limitations.
+
+Records without a detected annotation pipeline retain a `null` pipeline name in
+the schema-versioned `annotation_pipelines` array; this explicitly records that
+the input did not declare a recognized pipeline rather than inferring one.
+
+TSV uses the fixed 58-column header and lossless empty-cell semantics. To keep
+rows readable, trailing empty cells are omitted from individual data rows;
+consumers should map fields by the header and tolerate these deterministic
+ragged rows.
+
+The catalog intentionally has no TPR-specific marker in v1. Generic RepA/RepB,
+replication-relaxation, and pXO annotations therefore remain observations and
+do not select theta, rolling-circle, or another replication mechanism.

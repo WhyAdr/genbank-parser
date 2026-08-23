@@ -21,6 +21,15 @@ def test_public_api_is_pure_and_root_api_remains_small() -> None:
     assert not hasattr(genbank_parser, "analyze_mobilome")
 
 
+def test_structured_bakta_comment_is_normalized_and_provenanced() -> None:
+    report = analyze_mobilome(Path("tests/fixtures/mobilome_inventory.gb"))
+
+    bakta = next(item for item in report.annotation_provenance if item.name == "Bakta")
+    assert bakta.version == "1.9.4"
+    assert bakta.database_version == "5.0.1"
+    assert bakta.evidence_fields == ("record_annotations", "structured_comment")
+
+
 def test_invalid_public_options_fail_before_input_work() -> None:
     missing = Path("does-not-exist.gbff")
     with pytest.raises(MobilomeParameterError, match="include"):

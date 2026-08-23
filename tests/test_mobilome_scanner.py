@@ -4,7 +4,8 @@ from pathlib import Path
 
 from genbank_parser import read_genbank
 from genbank_parser.mobilome import load_mobilome_database
-from genbank_parser.mobilome.scanner import scan_mobilome_features
+from genbank_parser.mobilome.scanner import _match_value, scan_mobilome_features
+from genbank_parser.model import GenBankFeature
 
 
 def test_scanner_retains_all_reasons_and_pseudogene_observations() -> None:
@@ -64,3 +65,61 @@ def test_annotation_candidates_preserve_provenance_without_aggregate_calls() -> 
     assert not {item.rule_id for item in database.disabled_aggregate_rules} & set(
         database.inference_rule_map
     )
+
+
+def test_matching_modes_and_negative_patterns_are_field_local() -> None:
+    assert (
+        _match_value("RepA", mode="exact", pattern="RepA", negative_patterns=())
+        == "RepA"
+    )
+    assert (
+        _match_value("repa", mode="exact", pattern="RepA", negative_patterns=()) is None
+    )
+    assert (
+        _match_value(
+            "repa", mode="casefold_exact", pattern="RepA", negative_patterns=()
+        )
+        == "repa"
+    )
+    assert (
+        _match_value(
+            "replication initiator",
+            mode="regex",
+            pattern=r"\binitiator\b",
+            negative_patterns=(),
+        )
+        == "initiator"
+    )
+    assert (
+        _match_value(
+            "transcriptional repressor",
+            mode="regex",
+            pattern=r"\brepressor\b",
+            negative_patterns=(r"\btranscriptional repressor\b",),
+        )
+        is None
+    )
+
+
+def test_multi_value_qualifiers_remain_traceable_without_inference_inflation() -> None:
+    database = load_mobilome_database()
+    feature = GenBankFeature(
+        record_id="synthetic",
+        record_index=1,
+        feature_index=1,
+        type="CDS",
+        location=None,
+        qualifiers={
+            "gene": ["toxN", "toxN"],
+            "product": ["ToxN-family toxin", "unrelated"],
+        },
+        record_length=100,
+    )
+
+    hits = scan_mobilome_features([feature], database)
+    toxn = next(hit for hit in hits if hit.marker_id == "toxn")
+
+    assert {reason.field for reason in toxn.reasons} == {"gene", "product"}
+    assert len({reason.reason_id for reason in toxn.reasons}) == len(toxn.reasons)
+    assert toxn.feature.start is None
+    assert toxn.feature.end is None
