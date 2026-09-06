@@ -198,13 +198,13 @@ plus the docs handoff paragraph, because v1 handoffs cannot carry source ids.
 
 Resolving authority: Unpaywall `is_oa` plus PMC article-id lookup, 2026-09-06.
 
-**No free full text found (3) — these are the ones to fetch manually:**
+**Previously paywalled / no free full text found (3) — fetched manually by maintainer and verified in workspace (2026-09-06):**
 
-| Source | DOI | Note |
-|---|---|---|
-| mazel-2006-integrons (NEW) | 10.1038/nrmicro1462 | Nature Reviews Microbiology 2006; no OA, no PMC |
-| garcillan-barcia-2009-relaxases (existing) | 10.1111/j.1574-6976.2009.00168.x | FEMS Microbiology Reviews 2009; no OA, no PMC |
-| makarova-2020-crispr (existing) | 10.1038/s41579-019-0299-x | No publisher OA; the accepted manuscript is freely available at the Wageningen repository (research.wur.nl) if that suffices |
+| Source | DOI | Local file | Note |
+|---|---|---|---|
+| mazel-2006-integrons (NEW) | 10.1038/nrmicro1462 | `integrons-mazel2006.pdf` | Nature Reviews Microbiology 2006; full text verified |
+| garcillan-barcia-2009-relaxases (existing) | 10.1111/j.1574-6976.2009.00168.x | `conjugative-relaxases-diversity-Garcillan-Barcia-2009.pdf` | FEMS Microbiology Reviews 2009; full text verified |
+| makarova-2020-crispr (existing) / 2025 update | 10.1038/s41579-019-0299-x / 10.1038/s41564-025-02180-8 | `evolutionary-classification-CRISPRCas-makarova-2025.pdf` | 2025 updated classification in Nat Microbiol (DOI 10.1038/s41564-025-02180-8); accepted manuscript of 2020 at research.wur.nl |
 
 **Paywalled at the publisher, but free full text at PMC (6):**
 
@@ -1123,4 +1123,8 @@ Validation completed:
 - Git diff check passed with no whitespace errors.
 - Mobilome and discover CLI smoke tests confirmed tool version 0.6.5, catalog and
   inference 1.2.0, and identical discover output.
-
+- Received, verified, and committed the 3 manually fetched paywalled reference
+  papers in the workspace root:
+  - `integrons-mazel2006.pdf`: Mazel 2006 (Nat Rev Microbiol, DOI 10.1038/nrmicro1462)
+  - `conjugative-relaxases-diversity-Garcillan-Barcia-2009.pdf`: Garcillán-Barcia 2009 (FEMS Microbiol Rev, DOI 10.1111/j.1574-6976.2009.00168.x)
+  - `evolutionary-classification-CRISPRCas-makarova-2025.pdf`: Makarova et al. 2025 (Nat Microbiol, DOI 10.1038/s41564-025-02180-8)
