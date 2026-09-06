@@ -9,6 +9,7 @@ from .models import (
     HypothesisParticipant,
     InferenceComponent,
     InferenceRule,
+    MissingComponent,
     MobilomeDatabase,
     MobilomeHit,
     MobilomeHypothesis,
@@ -90,6 +91,7 @@ def _component_support(
         return None, missing or component.facets
     if missing:
         return None, missing
+    missing_facets: list[str] = []
     selected_hits: list[MobilomeHit] = []
     used = set(forbidden)
     for facet in component.facets:
@@ -99,10 +101,13 @@ def _component_support(
             forbidden_features=used if distinct_features else set(),
         )
         if chosen is None:
-            return None, (facet,)
+            missing_facets.append(facet)
+            continue
         selected_hits.extend(chosen)
         if distinct_features:
             used.update(_feature_key(hit) for hit in chosen)
+    if missing_facets:
+        return None, tuple(missing_facets)
     return tuple(selected_hits), ()
 
 
@@ -112,13 +117,13 @@ def _rule_component_support(
     database: MobilomeDatabase,
     *,
     role: str,
-) -> tuple[tuple[MobilomeHit, ...] | None, tuple[str, ...]]:
+) -> tuple[tuple[MobilomeHit, ...] | None, tuple[MissingComponent, ...]]:
     """Evaluate every component required for one role in a rule."""
 
     component_ids = rule.components_by_role.get(role, ())
     selected: list[MobilomeHit] = []
     used: set[tuple[int, int]] = set()
-    missing: list[str] = []
+    missing: list[MissingComponent] = []
     for component_id in component_ids:
         component = database.component_map[component_id]
         component_hits, component_missing = _component_support(
@@ -128,13 +133,18 @@ def _rule_component_support(
             distinct_features=rule.distinct_features,
         )
         if component_hits is None:
-            missing.extend(component_missing or (component_id,))
+            missing.append(
+                MissingComponent(
+                    component_id=component_id,
+                    missing_facets=component_missing,
+                )
+            )
             continue
         selected.extend(component_hits)
         if rule.distinct_features:
             used.update(_feature_key(hit) for hit in component_hits)
     if missing:
-        return None, tuple(sorted(set(missing)))
+        return None, tuple(missing)
     return tuple(selected), ()
 
 
@@ -154,7 +164,7 @@ def _hypothesis(
     rule: InferenceRule,
     inventory: RepliconInventory,
     supporting: Sequence[MobilomeHit],
-    missing: Sequence[str] = (),
+    missing: Sequence[MissingComponent] = (),
     summary: str | None = None,
     limitations: Sequence[str] | None = None,
 ) -> MobilomeHypothesis:
@@ -166,7 +176,7 @@ def _hypothesis(
         summary=summary or rule.wording,
         participants=(_participant(inventory),),
         supporting_hit_ids=tuple(sorted({hit.hit_id for hit in supporting})),
-        missing_components=tuple(sorted(set(missing))),
+        missing_components=tuple(missing),
         conflicting_hit_ids=(),
         limitations=tuple(limitations if limitations is not None else rule.limitations),
         source_ids=tuple(sorted(rule.sources)),
@@ -220,12 +230,19 @@ def _infer_component_rule(
         extra_limitations.append(
             "No annotated replication candidate was observed; autonomy is unresolved."
         )
+    default_missing = tuple(
+        MissingComponent(
+            component_id=cid,
+            missing_facets=database.component_map[cid].facets,
+        )
+        for cid in component_ids
+    )
     return _hypothesis(
         hypothesis_id=f"h:{rule.id}:{inventory.record_index}",
         rule=rule,
         inventory=inventory,
         supporting=raw,
-        missing=missing or ("replication_candidate",),
+        missing=missing or default_missing,
         summary="Replication evidence insufficient; mechanism unresolved"
         if rule_id == "replication_annotation_candidate"
         else f"{rule.wording} component pattern is incomplete",
@@ -293,7 +310,10 @@ def _infer_toxin_antitoxin_pairs(
                         supporting=(first, second),
                         limitations=tuple(rule.limitations)
                         + (
-                            f"Configured maximum circular gap: {rule.max_circular_gap_bp} bp; observed gap: {gap} bp.",
+                            (
+                                f"Configured maximum gap ({inventory.topology}): "
+                                f"{rule.max_circular_gap_bp} bp; observed gap: {gap} bp."
+                            ),
                         ),
                     )
                 )

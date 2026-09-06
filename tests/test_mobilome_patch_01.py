@@ -20,6 +20,7 @@ from genbank_parser.mobilome.inference import (
     record_inference_limitations,
 )
 from genbank_parser.mobilome.models import (
+    MissingComponent,
     MobilomeDatabaseError,
     MobilomeInputError,
     MobilomeOutputError,
@@ -306,8 +307,8 @@ def test_crispr_comment_isolation_and_separate_observations(tmp_path: Path) -> N
         )
     )
     assert {hit.marker_id for hit in annotated.scanned_replicons[0].hits} >= {
-        "crispr_array",
-        "crispr_cas",
+        "crispr_repeat_array",
+        "crispr_cas_candidate",
     }
     assert not any(item.kind == "crispr" for item in _hypotheses(annotated))
 
@@ -407,7 +408,7 @@ def test_mobility_component_subsets_report_exact_missing_facets() -> None:
         "relaxase_only": (
             (("CDS", 100, 140, {"gene": ["mobA"], "product": ["relaxase"]}),),
             "mobilizable_core_annotation_candidate",
-            ("mobility_orit",),
+            (MissingComponent("mobilizable_core", ("mobility_orit",)),),
         ),
         "t4cp_only": (
             (
@@ -419,7 +420,7 @@ def test_mobility_component_subsets_report_exact_missing_facets() -> None:
                 ),
             ),
             "helper_machinery_annotation_candidate",
-            ("mobility_mpf",),
+            (MissingComponent("helper_machinery", ("mobility_mpf",)),),
         ),
         "single_mpf": (
             (
@@ -431,7 +432,7 @@ def test_mobility_component_subsets_report_exact_missing_facets() -> None:
                 ),
             ),
             "helper_machinery_annotation_candidate",
-            ("mobility_mpf", "mobility_t4cp"),
+            (MissingComponent("helper_machinery", ("mobility_mpf", "mobility_t4cp")),),
         ),
         "t4cp_plus_one_mpf": (
             (
@@ -449,7 +450,7 @@ def test_mobility_component_subsets_report_exact_missing_facets() -> None:
                 ),
             ),
             "helper_machinery_annotation_candidate",
-            ("mobility_mpf",),
+            (MissingComponent("helper_machinery", ("mobility_mpf",)),),
         ),
     }
     for specs, rule_id, missing in cases.values():

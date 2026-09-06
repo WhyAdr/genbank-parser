@@ -1,5 +1,5 @@
 schema_version: 1
-inference_version: "1.2.0"
+inference_version: "1.3.0"
 
 components:
   replication_candidate:
@@ -125,6 +125,7 @@ handoffs:
     required_provenance_fields: [tool_version, database_release, identity_threshold, coverage_threshold, taxonomic_scope]
     limitations:
       - A future tool result remains dependent on database composition and thresholds.
+    sources: [carattoli-2014-plasmidfinder, robertson-2018-mob-suite]
   - id: amr_annotation
     tool: AMRFinderPlus
     purpose: Structured antimicrobial-resistance annotation
@@ -133,6 +134,7 @@ handoffs:
     required_provenance_fields: [tool_version, database_version, organism_option, method, thresholds]
     limitations:
       - A tool annotation is not a phenotype measurement.
+    sources: [feldgarden-2021-amrfinderplus]
   - id: vf_annotation
     tool: VFDB or curated virulence workflow
     purpose: Virulence-associated comparison
@@ -141,6 +143,7 @@ handoffs:
     required_provenance_fields: [database_release, search_method, thresholds, coverage, interpretation_limits]
     limitations:
       - A similarity result is not virulence phenotype evidence.
+    sources: [chen-2005-vfdb, liu-2022-vfdb]
   - id: element_boundary
     tool: Prophage or ICE caller
     purpose: Dedicated element-boundary analysis
@@ -149,6 +152,7 @@ handoffs:
     required_provenance_fields: [tool_version, database_version, caller_thresholds, boundary_uncertainty]
     limitations:
       - Predicted boundaries require method-specific review.
+    sources: [arndt-2016-phaster, camargo-2024-genomad]
   - id: mechanism_evidence
     tool: HMM, domain, or sequence workflow
     purpose: Mechanism-specific evidence
@@ -157,3 +161,4 @@ handoffs:
     required_provenance_fields: [model_accession, model_version, cutoffs, alignment_coverage]
     limitations:
       - Domain evidence still requires a reviewed mechanism rule.
+    sources: [local-annotation-candidate-policy]

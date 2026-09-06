@@ -291,6 +291,10 @@ def _parse_markers(
     }
     for raw_marker in raw_markers:
         marker_id = _string(raw_marker.get("id"), "marker.id")
+        if marker_id in facet_ids:
+            raise MobilomeDatabaseError(
+                f"Marker ID '{marker_id}' shadows an existing facet ID"
+            )
         _expect_keys(raw_marker, f"marker {marker_id}", allowed)
         facets = _string_list(raw_marker.get("facets"), f"marker {marker_id}.facets")
         missing_facets = sorted(set(facets) - facet_ids)
@@ -655,7 +659,10 @@ def _parse_inference_rules(
 
 
 def _parse_disabled_rules(
-    inference_data: dict[str, Any], facet_ids: set[str], rule_ids: set[str]
+    inference_data: dict[str, Any],
+    facet_ids: set[str],
+    marker_ids: set[str],
+    rule_ids: set[str],
 ) -> tuple[DisabledAggregateRule, ...]:
     raw_rules = inference_data.get("disabled_aggregate_rules")
     if not isinstance(raw_rules, list) or not all(
@@ -687,9 +694,8 @@ def _parse_disabled_rules(
             raw.get("evidence_retained_as"),
             f"disabled rule {rule_id}.evidence_retained_as",
         )
-        unknown = sorted(
-            set(retained) - facet_ids - {"pxo_numbered_product_annotation"}
-        )
+        allowed = facet_ids | marker_ids
+        unknown = sorted(set(retained) - allowed)
         if unknown:
             raise MobilomeDatabaseError(
                 f"Disabled aggregate rule {rule_id} has unknown retained evidence: {', '.join(unknown)}"
@@ -738,6 +744,7 @@ def _parse_handoffs(inference_data: dict[str, Any]) -> tuple[ExternalHandoff, ..
                 "required_input",
                 "required_provenance_fields",
                 "limitations",
+                "sources",
             },
         )
         handoffs.append(
@@ -757,6 +764,13 @@ def _parse_handoffs(inference_data: dict[str, Any]) -> tuple[ExternalHandoff, ..
                 limitations=_string_list(
                     raw.get("limitations"), f"handoff {handoff_id}.limitations"
                 ),
+                source_ids=tuple(
+                    sorted(
+                        _string_list(
+                            raw.get("sources", []), f"handoff {handoff_id}.sources"
+                        )
+                    )
+                ),
             )
         )
     return tuple(handoffs)
@@ -766,6 +780,7 @@ def _validate_source_references(
     markers: tuple[MobilomeMarker, ...],
     rules: tuple[InferenceRule, ...],
     disabled: tuple[DisabledAggregateRule, ...],
+    handoffs: tuple[ExternalHandoff, ...],
     sources: tuple[ProvenanceSource, ...],
 ) -> None:
     known_sources = {source.id for source in sources}
@@ -775,6 +790,10 @@ def _validate_source_references(
         *(
             (f"disabled aggregate rule {rule.rule_id}", rule.source_ids)
             for rule in disabled
+        ),
+        *(
+            (f"handoff {handoff.handoff_id}", handoff.source_ids)
+            for handoff in handoffs
         ),
     ]:
         unresolved = sorted(set(source_ids) - known_sources)
@@ -856,10 +875,13 @@ def load_mobilome_database(database_dir: str | Path | None = None) -> MobilomeDa
         {marker.id for marker in markers},
     )
     disabled = _parse_disabled_rules(
-        inference_data, facet_ids, {rule.id for rule in rules}
+        inference_data,
+        facet_ids,
+        {marker.id for marker in markers},
+        {rule.id for rule in rules},
     )
     handoffs = _parse_handoffs(inference_data)
-    _validate_source_references(markers, rules, disabled, sources)
+    _validate_source_references(markers, rules, disabled, handoffs, sources)
 
     catalog_resources = tuple(
         CatalogResource(

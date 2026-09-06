@@ -17,8 +17,8 @@ def test_scanner_retains_all_reasons_and_pseudogene_observations() -> None:
 
     assert by_marker["toxn"].feature.gene == "toxN"
     assert by_marker["toxi"].feature.feature_type == "ncRNA"
-    assert by_marker["crispr_array"].reasons[0].field == "note"
-    assert {reason.field for reason in by_marker["crispr_array"].reasons} == {
+    assert by_marker["crispr_repeat_array"].reasons[0].field == "note"
+    assert {reason.field for reason in by_marker["crispr_repeat_array"].reasons} == {
         "note",
         "rpt_type",
     }
@@ -34,7 +34,7 @@ def test_scanner_retains_all_reasons_and_pseudogene_observations() -> None:
 def test_scanner_preserves_compound_origin_and_multifacet_candidates() -> None:
     document = read_genbank(Path("tests/fixtures/mobilome_evidence.gb"))
     hits = scan_mobilome_features(document.all_features, load_mobilome_database())
-    cas = next(hit for hit in hits if hit.marker_id == "crispr_cas")
+    cas = next(hit for hit in hits if hit.marker_id == "crispr_cas_candidate")
     zot = next(hit for hit in hits if hit.marker_id == "zot_like_candidate")
 
     assert cas.feature.segments == ((571, 600), (1, 30))

@@ -26,9 +26,9 @@ def test_packaged_database_is_versioned_hashed_and_schema_valid() -> None:
     )
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
-    assert database.catalog_version == "1.2.0"
-    assert database.inference_version == "1.2.0"
-    assert database.provenance_version == "1.2.0"
+    assert database.catalog_version == "1.3.0"
+    assert database.inference_version == "1.3.0"
+    assert database.provenance_version == "1.3.0"
     assert database.database_source == "packaged"
     assert database.source_paths == ()
     assert [resource.name for resource in database.resources] == [
@@ -257,7 +257,9 @@ def _mutated_database(
         (
             "markers.yaml",
             lambda p: next(
-                marker for marker in p["markers"] if marker["id"] == "crispr_array"
+                marker
+                for marker in p["markers"]
+                if marker["id"] == "crispr_repeat_array"
             )["matchers"][1].update({"strength": 2}),
             "evidence ceiling",
         ),
@@ -275,6 +277,11 @@ def _mutated_database(
             "markers.yaml",
             lambda p: p["markers"][0].update({"limitations": []}),
             "must not be empty",
+        ),
+        (
+            "markers.yaml",
+            lambda p: p["markers"][0].update({"id": "replication_origin"}),
+            "shadows an existing facet ID",
         ),
         (
             "provenance.yaml",

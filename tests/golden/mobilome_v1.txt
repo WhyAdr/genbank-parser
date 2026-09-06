@@ -2,7 +2,7 @@ Mobilome evidence report
 Input and provenance
   Input: mobilome_evidence.gb
   SHA-256: 34d9908260fc17c0a199c17c4494d608b99219bfaa2411983ad45f77d86957fc
-  Catalog/inference: 1.2.0 / 1.2.0
+  Catalog/inference: 1.3.0 / 1.3.0
 Record inventory
   [1] MOB_EVIDENCE.1 | plasmid (supported) | circular | 600 bp | 9 CDS
 Replicon assessments
@@ -15,8 +15,8 @@ Replicon assessments
       ToxI RNA antitoxin annotation (toxi) on feature 6
       HepT-family toxin annotation (hept) on feature 7
       MntA-family antitoxin annotation (mnta) on feature 8
-      CRISPR repeat-array annotation (crispr_array) on feature 13
-      Cas annotation candidate (crispr_cas) on feature 14
+      CRISPR repeat-array annotation (crispr_repeat_array) on feature 13
+      Cas annotation candidate (crispr_cas_candidate) on feature 14
       Zot-like annotation candidate (zot_like_candidate) on feature 15
     Tentative hypotheses
       HEPN/MNT annotation-pair candidate [hepn_mnt_annotation_pair_candidate]

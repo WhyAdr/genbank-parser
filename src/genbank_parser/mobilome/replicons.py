@@ -223,6 +223,7 @@ def inventory_replicons(document: GenBankDocument) -> tuple[RepliconInventory, .
                 pseudogene_feature_count=sum(
                     feature.type.casefold() == "pseudogene" for feature in features
                 ),
+                spatial_limitations=(),
             )
         )
     return tuple(sorted(inventory, key=lambda item: item.record_index))

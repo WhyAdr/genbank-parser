@@ -163,6 +163,14 @@ class HypothesisParticipant:
 
 
 @dataclass(frozen=True)
+class MissingComponent:
+    """One unsatisfied component requirement with its missing facets."""
+
+    component_id: str
+    missing_facets: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class MobilomeHypothesis:
     """A configured, cautious hypothesis or an explicit insufficiency result."""
 
@@ -173,7 +181,7 @@ class MobilomeHypothesis:
     summary: str
     participants: tuple[HypothesisParticipant, ...]
     supporting_hit_ids: tuple[str, ...]
-    missing_components: tuple[str, ...]
+    missing_components: tuple[MissingComponent, ...]
     conflicting_hit_ids: tuple[str, ...]
     limitations: tuple[str, ...]
     source_ids: tuple[str, ...]
@@ -194,6 +202,7 @@ class RepliconInventory:
     pseudo_feature_count: int
     pseudo_cds_count: int
     pseudogene_feature_count: int
+    spatial_limitations: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -222,6 +231,7 @@ class ExternalHandoff:
     required_input: tuple[str, ...]
     required_provenance_fields: tuple[str, ...]
     limitations: tuple[str, ...]
+    source_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -369,6 +379,7 @@ __all__ = [
     "InferenceRule",
     "MarkerMatcher",
     "MatchMode",
+    "MissingComponent",
     "MobilomeDatabase",
     "MobilomeDatabaseError",
     "MobilomeError",

@@ -138,6 +138,7 @@ def _inventory_dict(inventory: RepliconInventory) -> dict[str, object]:
             ],
             "limitations": _list(classification.limitations),
         },
+        "spatial_limitations": _list(inventory.spatial_limitations),
         "feature_count": inventory.feature_count,
         "cds_count": inventory.cds_count,
         "pseudo_feature_count": inventory.pseudo_feature_count,
@@ -210,7 +211,13 @@ def _hypothesis_dict(hypothesis: MobilomeHypothesis) -> dict[str, object]:
             for participant in hypothesis.participants
         ],
         "supporting_hit_ids": _list(hypothesis.supporting_hit_ids),
-        "missing_components": _list(hypothesis.missing_components),
+        "missing_components": [
+            {
+                "component_id": item.component_id,
+                "missing_facets": _list(item.missing_facets),
+            }
+            for item in hypothesis.missing_components
+        ],
         "conflicting_hit_ids": _list(hypothesis.conflicting_hit_ids),
         "limitations": _list(hypothesis.limitations),
         "source_ids": _list(hypothesis.source_ids),
@@ -237,6 +244,7 @@ def _handoff_dict(handoff: ExternalHandoff) -> dict[str, object]:
         "required_input": _list(handoff.required_input),
         "required_provenance_fields": _list(handoff.required_provenance_fields),
         "limitations": _list(handoff.limitations),
+        "source_ids": _list(handoff.source_ids),
     }
 
 
@@ -546,7 +554,15 @@ def _hypothesis_row(
                 ]
             ),
             "supporting_hit_ids_json": _compact_json(hypothesis.supporting_hit_ids),
-            "missing_components_json": _compact_json(hypothesis.missing_components),
+            "missing_components_json": _compact_json(
+                [
+                    {
+                        "component_id": item.component_id,
+                        "missing_facets": _list(item.missing_facets),
+                    }
+                    for item in hypothesis.missing_components
+                ]
+            ),
             "conflicting_hit_ids_json": _compact_json(hypothesis.conflicting_hit_ids),
             "summary": hypothesis.summary,
             "limitations_json": _compact_json(hypothesis.limitations),
@@ -623,6 +639,7 @@ def render_tsv(report: MobilomeReport) -> str:
                         "limitations": handoff.limitations,
                     }
                 ),
+                "source_ids_json": _compact_json(handoff.source_ids),
             }
         )
         writer.writerow(_tsv_values(row))
@@ -683,7 +700,15 @@ def render_text(report: MobilomeReport) -> str:
         if insufficient:
             print("    Conflicts and missing components", file=output)
             for item in insufficient:
-                missing = ", ".join(item.missing_components) or "none configured"
+                missing = (
+                    ", ".join(
+                        f"{comp.component_id} (missing {', '.join(comp.missing_facets)})"
+                        if comp.missing_facets
+                        else comp.component_id
+                        for comp in item.missing_components
+                    )
+                    or "none configured"
+                )
                 print(f"      {item.summary}; missing: {missing}", file=output)
         if below:
             print("    Below-threshold observations", file=output)

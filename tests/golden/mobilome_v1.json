@@ -2,9 +2,9 @@
   "schema_version": "gbparse.mobilome.v1",
   "tool": "gbparse",
   "analysis": "mobilome",
-  "tool_version": "0.6.5",
-  "catalog_version": "1.2.0",
-  "inference_version": "1.2.0",
+  "tool_version": "0.7.0",
+  "catalog_version": "1.3.0",
+  "inference_version": "1.3.0",
   "input": {
     "file": "mobilome_evidence.gb",
     "sha256": "34d9908260fc17c0a199c17c4494d608b99219bfaa2411983ad45f77d86957fc"
@@ -18,19 +18,19 @@
     "resources": [
       {
         "name": "markers.yaml",
-        "sha256": "c8e298e47814bada2002b8ef7d38b36f96b79e45dca8db8f00c429637ae1148a"
+        "sha256": "8fbb601d81f4a85b16d07e6cedb608960b6643bb980f49c6aa0313701d65942f"
       },
       {
         "name": "provenance.yaml",
-        "sha256": "9d54c0bb6ae41f9ab8c51bd619dcf37b6d03cb62ff42ee1179eba941a6e72c5e"
+        "sha256": "cc4b96f7dd2269e8ba523d78165af57347517739c500241fa4ec6d75f44ed967"
       },
       {
         "name": "inference.yaml",
-        "sha256": "0be774cd747e928ca329e908214049e140dbcb66c95a676aafbf47cdff723677"
+        "sha256": "d81d55b20fbceb570e7e90c604998b1536ab3db2f081a7513974a4a1dfe8b376"
       },
       {
         "name": "report.schema.json",
-        "sha256": "8becc3cfb3d643fd5004d98f10d82f7677c1ce769dfa851b8913f24ffc32e92b"
+        "sha256": "3fc311ec2b2b3dde46bd81d161b3315579eb0666899fef5894d5aeec6ed90013"
       }
     ],
     "annotation_pipelines": [
@@ -100,6 +100,7 @@
         "conflicting_evidence": [],
         "limitations": []
       },
+      "spatial_limitations": [],
       "feature_count": 15,
       "cds_count": 9,
       "pseudo_feature_count": 3,
@@ -152,6 +153,7 @@
           "conflicting_evidence": [],
           "limitations": []
         },
+        "spatial_limitations": [],
         "feature_count": 15,
         "cds_count": 9,
         "pseudo_feature_count": 3,
@@ -615,7 +617,9 @@
               "strength": 2,
               "eligible": false,
               "source_ids": [
-                "local-annotation-candidate-policy"
+                "anand-2008-repx",
+                "local-annotation-candidate-policy",
+                "tinsley-2006-repx"
               ]
             },
             {
@@ -628,7 +632,9 @@
               "strength": 1,
               "eligible": false,
               "source_ids": [
-                "local-annotation-candidate-policy"
+                "anand-2008-repx",
+                "local-annotation-candidate-policy",
+                "tinsley-2006-repx"
               ]
             }
           ],
@@ -676,7 +682,9 @@
               "strength": 2,
               "eligible": false,
               "source_ids": [
-                "local-annotation-candidate-policy"
+                "anand-2008-repx",
+                "local-annotation-candidate-policy",
+                "tinsley-2006-repx"
               ]
             },
             {
@@ -689,7 +697,9 @@
               "strength": 1,
               "eligible": false,
               "source_ids": [
-                "local-annotation-candidate-policy"
+                "anand-2008-repx",
+                "local-annotation-candidate-policy",
+                "tinsley-2006-repx"
               ]
             }
           ],
@@ -728,7 +738,7 @@
           },
           "reasons": [
             {
-              "reason_id": "r1:f11:mreplication_initiation_candidate:gene:0:2",
+              "reason_id": "r1:f11:mreplication_initiation_candidate:gene:0:3",
               "field": "gene",
               "match_mode": "casefold_exact",
               "matched_value": "repS",
@@ -737,7 +747,9 @@
               "strength": 2,
               "eligible": false,
               "source_ids": [
-                "local-annotation-candidate-policy"
+                "anand-2008-repx",
+                "local-annotation-candidate-policy",
+                "tinsley-2006-repx"
               ]
             },
             {
@@ -750,7 +762,9 @@
               "strength": 1,
               "eligible": false,
               "source_ids": [
-                "local-annotation-candidate-policy"
+                "anand-2008-repx",
+                "local-annotation-candidate-policy",
+                "tinsley-2006-repx"
               ]
             }
           ],
@@ -839,7 +853,7 @@
           },
           "reasons": [
             {
-              "reason_id": "r1:f12:mreplication_initiation_candidate:gene:0:4",
+              "reason_id": "r1:f12:mreplication_initiation_candidate:gene:0:5",
               "field": "gene",
               "match_mode": "casefold_exact",
               "matched_value": "repFR",
@@ -848,7 +862,9 @@
               "strength": 2,
               "eligible": false,
               "source_ids": [
-                "local-annotation-candidate-policy"
+                "anand-2008-repx",
+                "local-annotation-candidate-policy",
+                "tinsley-2006-repx"
               ]
             },
             {
@@ -861,7 +877,9 @@
               "strength": 1,
               "eligible": false,
               "source_ids": [
-                "local-annotation-candidate-policy"
+                "anand-2008-repx",
+                "local-annotation-candidate-policy",
+                "tinsley-2006-repx"
               ]
             }
           ],
@@ -869,8 +887,8 @@
           "eligible_for_inference": false
         },
         {
-          "hit_id": "r1:f13:mcrispr_array",
-          "marker_id": "crispr_array",
+          "hit_id": "r1:f13:mcrispr_repeat_array",
+          "marker_id": "crispr_repeat_array",
           "marker_label": "CRISPR repeat-array annotation",
           "facets": [
             "crispr_array"
@@ -900,7 +918,7 @@
           },
           "reasons": [
             {
-              "reason_id": "r1:f13:mcrispr_array:note:1:0",
+              "reason_id": "r1:f13:mcrispr_repeat_array:note:1:0",
               "field": "note",
               "match_mode": "regex",
               "matched_value": "CRISPR repeat array",
@@ -915,7 +933,7 @@
               ]
             },
             {
-              "reason_id": "r1:f13:mcrispr_array:rpt_type:0:0",
+              "reason_id": "r1:f13:mcrispr_repeat_array:rpt_type:0:0",
               "field": "rpt_type",
               "match_mode": "casefold_exact",
               "matched_value": "CRISPR",
@@ -934,8 +952,8 @@
           "eligible_for_inference": true
         },
         {
-          "hit_id": "r1:f14:mcrispr_cas",
-          "marker_id": "crispr_cas",
+          "hit_id": "r1:f14:mcrispr_cas_candidate",
+          "marker_id": "crispr_cas_candidate",
           "marker_label": "Cas annotation candidate",
           "facets": [
             "crispr_cas"
@@ -969,12 +987,12 @@
           },
           "reasons": [
             {
-              "reason_id": "r1:f14:mcrispr_cas:gene:0:0",
+              "reason_id": "r1:f14:mcrispr_cas_candidate:gene:0:0",
               "field": "gene",
               "match_mode": "regex",
               "matched_value": "cas9",
               "matched_text": "cas9",
-              "pattern": "(?i)^cas(?:1|2|3|4|5|6|7|8|9|10|12|13|14|A|B|C|D|E|F)$",
+              "pattern": "(?i)^cas(?:(?:[1-9]|1[0-4])[a-z]?|[A-F])$",
               "strength": 2,
               "eligible": true,
               "source_ids": [
@@ -983,7 +1001,7 @@
               ]
             },
             {
-              "reason_id": "r1:f14:mcrispr_cas:product:1:0",
+              "reason_id": "r1:f14:mcrispr_cas_candidate:product:1:0",
               "field": "product",
               "match_mode": "regex",
               "matched_value": "CRISPR-associated protein Cas9",
@@ -1074,7 +1092,7 @@
             "Proximity is a versioned engineering heuristic, not proof of an operon.",
             "The cited biochemical correspondence is not generalized beyond annotation.",
             "Current classification reviews document HEPN/MNT-type systems among Type VII toxin-antitoxin systems; this rule deliberately assigns no type number to an annotation match.",
-            "Configured maximum circular gap: 2000 bp; observed gap: 9 bp."
+            "Configured maximum gap (circular): 2000 bp; observed gap: 9 bp."
           ],
           "source_ids": [
             "qiu-2022-ta-classification",
@@ -1157,7 +1175,7 @@
           "limitations": [
             "Proximity is a versioned engineering heuristic, not proof of an operon.",
             "Expression and toxin-antitoxin activity are untested.",
-            "Configured maximum circular gap: 2000 bp; observed gap: 9 bp."
+            "Configured maximum gap (circular): 2000 bp; observed gap: 9 bp."
           ],
           "source_ids": [
             "blower-2012-toxin",
@@ -1227,6 +1245,9 @@
       ],
       "limitations": [
         "A tool annotation is not a phenotype measurement."
+      ],
+      "source_ids": [
+        "feldgarden-2021-amrfinderplus"
       ]
     },
     {
@@ -1246,6 +1267,10 @@
       ],
       "limitations": [
         "Predicted boundaries require method-specific review."
+      ],
+      "source_ids": [
+        "arndt-2016-phaster",
+        "camargo-2024-genomad"
       ]
     },
     {
@@ -1265,6 +1290,9 @@
       ],
       "limitations": [
         "Domain evidence still requires a reviewed mechanism rule."
+      ],
+      "source_ids": [
+        "local-annotation-candidate-policy"
       ]
     },
     {
@@ -1285,6 +1313,10 @@
       ],
       "limitations": [
         "A future tool result remains dependent on database composition and thresholds."
+      ],
+      "source_ids": [
+        "carattoli-2014-plasmidfinder",
+        "robertson-2018-mob-suite"
       ]
     },
     {
@@ -1305,6 +1337,10 @@
       ],
       "limitations": [
         "A similarity result is not virulence phenotype evidence."
+      ],
+      "source_ids": [
+        "chen-2005-vfdb",
+        "liu-2022-vfdb"
       ]
     }
   ],

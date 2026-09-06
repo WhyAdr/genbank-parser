@@ -4,6 +4,36 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.7.0] - 2026-09-06
+
+### Mobilome Catalog Hygiene, Marker Expansions, and Schema Decoupling
+
+- **C2 Topology-aware TA gap wording**: Updated TA pair hypothesis limitation text in
+  `inference.py` to reflect actual replicon topology (`Configured maximum gap ({inventory.topology}): ...`).
+- **A4 Generic retained-evidence validator**: Removed hardcoded `pxo_numbered_product_annotation`
+  whitelist in `database.py::_parse_disabled_rules`, allowing retained-evidence tokens from
+  the union of `facet_ids | marker_ids`.
+- **C7.2 Cas gene regex expansion**: Updated Cas regex in `markers.yaml` to Python-valid
+  pattern `(?i)^cas(?:(?:[1-9]|1[0-4])[a-z]?|[A-F])$`, recognizing subtype-suffixed Cas names
+  (e.g., `cas8f`, `cas12a`, `cas13d`).
+- **C7.1 Conjugation MPF gene coverage**: Expanded `mpf_component` gene regex in `markers.yaml`
+  with Agrobacterium Ti-plasmid `(?i)^virB(?:[1-9]|1[01])$` and IncP plasmid `(?i)^trb[B-L]$`.
+- **C7.3 Replication initiation expansion**: Added `repX` and `repL` to
+  `replication_initiation_candidate` in `markers.yaml`, accompanied by verified provenance
+  entries for `anand-2008-repx` (PMID 18179418) and `tinsley-2006-repx` (PMID 16585744).
+- **A3 External handoff source tracking**: Added `source_ids` to `ExternalHandoff` dataclass,
+  JSON schema definition, `inference.yaml`, and JSON/TSV serializers.
+- **A5 Structured missing components**: Standardized hypothesis `missing_components` with
+  the `MissingComponent` dataclass, pairing component IDs with nested `missing_facets`
+  across models, inference engine, reports, and schema.
+- **Spatial limitations decoupling**: Isolated locus spatial-pairing warnings into
+  `RepliconInventory.spatial_limitations`, keeping replicon-level classification limitations clean.
+- **Catalog ID hygiene**: Disambiguated shadowed CRISPR marker IDs (`crispr_repeat_array` and
+  `crispr_cas_candidate`) from their enclosing facet IDs and added validation in `database.py`
+  to reject any marker ID that shadows an existing facet ID.
+- **Version bumps and goldens**: Bumped package to 0.7.0, mobilome catalog, provenance, and
+  inference resources to 1.3.0, updated CI wheel assertions, and regenerated versioned goldens.
+
 ## [0.6.5] - 2026-09-06
 
 ### Mobilome knowledge-base expansion and citation re-anchor

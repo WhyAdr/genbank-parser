@@ -20,6 +20,7 @@ from .inference import (
 from .models import (
     AnalysisParameters,
     AnnotationProvenance,
+    MissingComponent,
     MobilomeDatabase,
     MobilomeDatabaseError,
     MobilomeError,
@@ -194,10 +195,7 @@ def analyze_mobilome(
         if limitations:
             member = replace(
                 member,
-                classification=replace(
-                    member.classification,
-                    limitations=member.classification.limitations + limitations,
-                ),
+                spatial_limitations=member.spatial_limitations + limitations,
             )
         all_assessments.append(
             RepliconAssessment(
@@ -245,6 +243,7 @@ def analyze_mobilome(
 
 
 __all__ = [
+    "MissingComponent",
     "MobilomeDatabase",
     "MobilomeDatabaseError",
     "MobilomeError",
@@ -258,5 +257,6 @@ __all__ = [
     "infer_replicon_hypotheses",
     "inventory_replicons",
     "load_mobilome_database",
+    "record_inference_limitations",
     "scan_mobilome_features",
 ]

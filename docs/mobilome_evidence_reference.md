@@ -36,7 +36,7 @@ Generic Rep, pXO-numbered products, and phage-module observations do not select 
 
 The report never runs external programs. It records `not_run` handoffs for MOB-suite or PlasmidFinder, AMRFinderPlus, a curated virulence workflow, prophage/ICE callers, and HMM/domain or sequence workflows. A future imported result must retain its tool/database release, method, thresholds, coverage, taxonomic scope, and limitations.
 
-Primary descriptions for the handoff tools now carried in provenance: MOB-suite ([Robertson and Nash, 2018](https://pmc.ncbi.nlm.nih.gov/articles/PMC6159552/)), PlasmidFinder ([Carattoli et al., 2014](https://journals.asm.org/doi/10.1128/aac.02412-14)), AMRFinderPlus ([Feldgarden et al., 2021](https://www.nature.com/articles/s41598-021-91456-0)), VFDB ([Chen et al., 2005](https://academic.oup.com/nar/article/33/suppl_1/D325/2505203); [Liu et al., 2022](https://pmc.ncbi.nlm.nih.gov/articles/PMC8728188/)), prophage and element boundary callers such as PHASTER ([Arndt et al., 2016](https://pmc.ncbi.nlm.nih.gov/articles/PMC4987931/)) and geNomad ([Camargo et al., 2024](https://pmc.ncbi.nlm.nih.gov/articles/PMC11324519/)), and sequence-level mobile-element callers such as ISEScan ([Xie and Tang, 2017](https://doi.org/10.1093/bioinformatics/btx433)) and MobileElementFinder ([Johansson et al., 2021](https://pmc.ncbi.nlm.nih.gov/articles/PMC7729385/)). External handoffs carry no source_ids in schema v1, so docs plus provenance is the v1-compatible home; a v2 schema could add handoff source_ids.
+Primary descriptions for the handoff tools carried in provenance: MOB-suite ([Robertson and Nash, 2018](https://pmc.ncbi.nlm.nih.gov/articles/PMC6159552/)), PlasmidFinder ([Carattoli et al., 2014](https://journals.asm.org/doi/10.1128/aac.02412-14)), AMRFinderPlus ([Feldgarden et al., 2021](https://www.nature.com/articles/s41598-021-91456-0)), VFDB ([Chen et al., 2005](https://academic.oup.com/nar/article/33/suppl_1/D325/2505203); [Liu et al., 2022](https://pmc.ncbi.nlm.nih.gov/articles/PMC8728188/)), prophage and element boundary callers such as PHASTER ([Arndt et al., 2016](https://pmc.ncbi.nlm.nih.gov/articles/PMC4987931/)) and geNomad ([Camargo et al., 2024](https://pmc.ncbi.nlm.nih.gov/articles/PMC11324519/)), and sequence-level mobile-element callers such as ISEScan ([Xie and Tang, 2017](https://doi.org/10.1093/bioinformatics/btx433)) and MobileElementFinder ([Johansson et al., 2021](https://pmc.ncbi.nlm.nih.gov/articles/PMC7729385/)). External handoffs declare their `source_ids` linking directly to versioned provenance.
 
 Records without a detected annotation pipeline retain a `null` pipeline name in
 the schema-versioned `annotation_pipelines` array; this explicitly records that
@@ -51,7 +51,6 @@ The catalog intentionally has no TPR-specific marker in v1. Generic RepA/RepB,
 replication-relaxation, and pXO annotations therefore remain observations and
 do not select theta, rolling-circle, or another replication mechanism.
 
-The v1 schema currently carries record-level spatial-inference limitations in
-the classification limitation list. A future `gbparse.mobilome.v2` contract
-should provide a separate inventory-level `spatial_limitations` field rather
-than mixing classification and pairing caveats.
+Record-level spatial pairing warnings (such as unlocatable features skipping
+spatial pairing) are decoupled into `RepliconInventory.spatial_limitations`
+rather than mixing classification and pairing caveats.

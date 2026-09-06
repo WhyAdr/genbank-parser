@@ -1,5 +1,5 @@
 schema_version: 1
-provenance_version: "1.2.0"
+provenance_version: "1.3.0"
 
 sources:
   - id: blower-2012-toxin
@@ -62,6 +62,29 @@ sources:
       - pXO annotations alone do not specify a single replication mechanism.
     limitations:
       - Product labels are not a sequence-homology or ancestry result.
+  - id: anand-2008-repx
+    type: primary_article
+    title: "GTP-dependent polymerization of the tubulin-like RepX replication protein encoded by the pXO1 plasmid of Bacillus anthracis"
+    year: 2008
+    doi: 10.1111/j.1365-2958.2007.06100.x
+    pmid: "18179418"
+    url: https://doi.org/10.1111/j.1365-2958.2007.06100.x
+    supports:
+      - RepX is a tubulin-like replication initiator encoded on pXO1 of Bacillus anthracis.
+    limitations:
+      - Annotation alone does not identify the replication mechanism (rolling-circle, theta, or strand-displacement).
+  - id: tinsley-2006-repx
+    type: primary_article
+    title: "A novel FtsZ-like protein is involved in replication of the anthrax toxin-encoding pXO1 plasmid in Bacillus anthracis"
+    year: 2006
+    doi: 10.1128/JB.188.8.2829-2835.2006
+    pmid: "16585744"
+    pmcid: PMC1447009
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC1447009/
+    supports:
+      - An FtsZ-like protein (RepX) is required for pXO1 replication in Bacillus anthracis.
+    limitations:
+      - An FtsZ-like annotation does not establish a replication mechanism without further analysis.
   - id: erez-2017-arbitrium
     type: primary_article
     title: Communication between viruses guides lysis-lysogeny decisions

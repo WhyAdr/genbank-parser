@@ -108,12 +108,13 @@
     },
     "inventory": {
       "type": "object", "additionalProperties": false,
-      "required": ["record_index", "record_id", "name", "description", "length", "topology", "source_qualifiers", "classification", "feature_count", "cds_count", "pseudo_feature_count", "pseudo_cds_count", "pseudogene_feature_count"],
+      "required": ["record_index", "record_id", "name", "description", "length", "topology", "source_qualifiers", "classification", "spatial_limitations", "feature_count", "cds_count", "pseudo_feature_count", "pseudo_cds_count", "pseudogene_feature_count"],
       "properties": {
         "record_index": {"type": "integer", "minimum": 1}, "record_id": {"type": "string"}, "name": {"type": "string"}, "description": {"type": "string"}, "length": {"type": "integer", "minimum": 0},
         "topology": {"enum": ["circular", "linear", "unknown"]},
         "source_qualifiers": {"type": "array", "items": {"$ref": "#/$defs/sourceQualifier"}},
         "classification": {"$ref": "#/$defs/classification"},
+        "spatial_limitations": {"$ref": "#/$defs/stringArray"},
         "feature_count": {"type": "integer", "minimum": 0}, "cds_count": {"type": "integer", "minimum": 0}, "pseudo_feature_count": {"type": "integer", "minimum": 0}, "pseudo_cds_count": {"type": "integer", "minimum": 0}, "pseudogene_feature_count": {"type": "integer", "minimum": 0}
       }
     },
@@ -148,11 +149,16 @@
       "required": ["role", "record_index", "record_id"],
       "properties": {"role": {"enum": ["subject", "target", "helper"]}, "record_index": {"type": "integer", "minimum": 1}, "record_id": {"type": "string"}}
     },
+    "missingComponent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["component_id", "missing_facets"],
+      "properties": {"component_id": {"type": "string"}, "missing_facets": {"$ref": "#/$defs/stringArray"}}
+    },
     "hypothesis": {
       "type": "object", "additionalProperties": false,
       "required": ["hypothesis_id", "rule_id", "kind", "status", "summary", "participants", "supporting_hit_ids", "missing_components", "conflicting_hit_ids", "limitations", "source_ids"],
       "properties": {
-        "hypothesis_id": {"type": "string"}, "rule_id": {"type": "string"}, "kind": {"type": "string"}, "status": {"enum": ["supported", "tentative", "insufficient", "conflicting"]}, "summary": {"type": "string"}, "participants": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/participant"}}, "supporting_hit_ids": {"$ref": "#/$defs/stringArray"}, "missing_components": {"$ref": "#/$defs/stringArray"}, "conflicting_hit_ids": {"$ref": "#/$defs/stringArray"}, "limitations": {"$ref": "#/$defs/stringArray"}, "source_ids": {"$ref": "#/$defs/stringArray"}
+        "hypothesis_id": {"type": "string"}, "rule_id": {"type": "string"}, "kind": {"type": "string"}, "status": {"enum": ["supported", "tentative", "insufficient", "conflicting"]}, "summary": {"type": "string"}, "participants": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/participant"}}, "supporting_hit_ids": {"$ref": "#/$defs/stringArray"}, "missing_components": {"type": "array", "items": {"$ref": "#/$defs/missingComponent"}}, "conflicting_hit_ids": {"$ref": "#/$defs/stringArray"}, "limitations": {"$ref": "#/$defs/stringArray"}, "source_ids": {"$ref": "#/$defs/stringArray"}
       }
     },
     "replicon": {
@@ -167,8 +173,8 @@
     },
     "handoff": {
       "type": "object", "additionalProperties": false,
-      "required": ["handoff_id", "tool", "purpose", "status", "reason", "required_input", "required_provenance_fields", "limitations"],
-      "properties": {"handoff_id": {"type": "string"}, "tool": {"type": "string"}, "purpose": {"type": "string"}, "status": {"const": "not_run"}, "reason": {"type": "string"}, "required_input": {"$ref": "#/$defs/stringArray"}, "required_provenance_fields": {"$ref": "#/$defs/stringArray"}, "limitations": {"$ref": "#/$defs/stringArray"}}
+      "required": ["handoff_id", "tool", "purpose", "status", "reason", "required_input", "required_provenance_fields", "limitations", "source_ids"],
+      "properties": {"handoff_id": {"type": "string"}, "tool": {"type": "string"}, "purpose": {"type": "string"}, "status": {"const": "not_run"}, "reason": {"type": "string"}, "required_input": {"$ref": "#/$defs/stringArray"}, "required_provenance_fields": {"$ref": "#/$defs/stringArray"}, "limitations": {"$ref": "#/$defs/stringArray"}, "source_ids": {"$ref": "#/$defs/stringArray"}}
     }
   }
 }
