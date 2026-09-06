@@ -4,6 +4,36 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.6.5] - 2026-09-06
+
+### Mobilome knowledge-base expansion and citation re-anchor
+
+- Expanded the mobilome provenance knowledge base from 16 to 28 sources: Bakta
+  (Schwengers 2021), plasmid extended mobility (Garcillan-Barcia 2025), ICEs
+  (Johnson and Grossman 2015), integrons (Mazel 2006), toxin-antitoxin
+  classification (Qiu 2022), fused MNT-HEPN regulation (Yao 2026), VFDB 2022
+  (Liu 2022), MGE-AMR association (Partridge 2018), PHASTER, geNomad, ISEScan,
+  and MobileElementFinder, all verified through Crossref, PubMed, and Unpaywall
+  during the audit session.
+- Re-anchored the AMRFinderPlus and VFDB citations that the 0.6.2 commit had
+  landed on `phage_packaging_candidate` and `phage_structure_candidate`:
+  `generic_amr_candidate` now carries `feldgarden-2021-amrfinderplus` and
+  `partridge-2018-mge-amr`, and `generic_vf_candidate` now carries
+  `chen-2005-vfdb` and `liu-2022-vfdb`; the two phage markers are back to
+  local-policy-only sources, with a marker-level anchor regression test.
+- Anchored the mobility and toxin-antitoxin markers and rules to the new
+  sources and documented the modern Type VII classification of HEPN/MNT-type
+  systems in the HEPN/MNT rule limitations without assigning a type number to
+  any annotation match.
+- Updated the mobilome evidence reference documentation with new source
+  correspondence bullets and primary descriptions for the external handoff
+  tools.
+- Bumped the mobilome catalog, provenance, and inference resources to 1.2.0,
+  moved the package version to 0.6.5 (resolving the drift between the 0.6.1 /
+  0.6.2 changelog entries and the 0.6.0 pyproject version), updated the wheel
+  CI assertions, regenerated the JSON, TSV, and text goldens, and extended the
+  citation-integrity tests.
+
 ## [0.6.2] - 2026-08-23
 
 ### Mobilome source-science audit

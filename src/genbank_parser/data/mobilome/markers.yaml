@@ -1,5 +1,5 @@
 schema_version: 1
-catalog_version: "1.1.0"
+catalog_version: "1.2.0"
 
 facets:
   - id: replication_origin
@@ -65,7 +65,7 @@ markers:
         strength: 3
     requires_non_pseudo: false
     requires_complete: false
-    sources: [bakta-origin-docs, insdc-feature-table]
+    sources: [bakta-origin-docs, insdc-feature-table, schwengers-2021-bakta]
     interpretation: Supports the presence of an explicitly annotated oriT feature.
     limitations:
       - Annotation does not prove a cognate relaxase relationship.
@@ -105,7 +105,7 @@ markers:
         strength: 3
     requires_non_pseudo: false
     requires_complete: false
-    sources: [bakta-origin-docs, insdc-feature-table]
+    sources: [bakta-origin-docs, insdc-feature-table, schwengers-2021-bakta]
     interpretation: Supports an explicitly annotated plasmid replication-origin feature.
     limitations:
       - Annotation alone does not establish replication mechanism or autonomy.
@@ -152,7 +152,7 @@ markers:
         strength: 2
     requires_non_pseudo: true
     requires_complete: true
-    sources: [garcillan-barcia-2009-relaxases, smillie-2010-mobility]
+    sources: [garcillan-barcia-2009-relaxases, garcillan-barcia-2025-extended-mobility, smillie-2010-mobility]
     interpretation: Retains a relaxase annotation candidate.
     limitations:
       - Annotation does not demonstrate nicking or transfer.
@@ -175,7 +175,7 @@ markers:
         strength: 2
     requires_non_pseudo: true
     requires_complete: true
-    sources: [christie-2025-t4ss, smillie-2010-mobility]
+    sources: [christie-2025-t4ss, garcillan-barcia-2025-extended-mobility, smillie-2010-mobility]
     interpretation: Retains a Type IV coupling-protein annotation candidate.
     limitations:
       - Annotation does not establish a complete transfer apparatus.
@@ -199,7 +199,7 @@ markers:
         strength: 2
     requires_non_pseudo: true
     requires_complete: true
-    sources: [christie-2025-t4ss, smillie-2010-mobility]
+    sources: [christie-2025-t4ss, garcillan-barcia-2025-extended-mobility, smillie-2010-mobility]
     interpretation: Retains a mating-pair-formation annotation component.
     limitations:
       - Multiple annotated components do not establish expression or transfer.
@@ -222,7 +222,7 @@ markers:
         strength: 2
     requires_non_pseudo: true
     requires_complete: true
-    sources: [blower-2012-toxin]
+    sources: [blower-2012-toxin, qiu-2022-ta-classification]
     interpretation: Supports a ToxN-family toxin annotation.
     limitations:
       - Annotation does not establish toxin activity.
@@ -251,7 +251,7 @@ markers:
         strength: 1
     requires_non_pseudo: true
     requires_complete: true
-    sources: [blower-2012-toxin]
+    sources: [blower-2012-toxin, qiu-2022-ta-classification]
     interpretation: Supports a ToxI RNA antitoxin annotation.
     limitations:
       - ToxI correspondence does not establish Type III system activity.
@@ -274,7 +274,7 @@ markers:
         strength: 2
     requires_non_pseudo: true
     requires_complete: true
-    sources: [yao-2020-hepn-mnt]
+    sources: [qiu-2022-ta-classification, yao-2020-hepn-mnt]
     interpretation: Supports a HepT-family toxin annotation.
     limitations:
       - Annotation does not establish toxin activity.
@@ -297,7 +297,7 @@ markers:
         strength: 2
     requires_non_pseudo: true
     requires_complete: true
-    sources: [yao-2020-hepn-mnt]
+    sources: [qiu-2022-ta-classification, yao-2020-hepn-mnt]
     interpretation: Supports an MntA-family antitoxin annotation.
     limitations:
       - The cited chemistry is not generalized to every annotation match.
@@ -344,7 +344,7 @@ markers:
         strength: 1
     requires_non_pseudo: false
     requires_complete: false
-    sources: [local-annotation-candidate-policy, siguier-2006-isfinder]
+    sources: [johnson-2015-ice, local-annotation-candidate-policy, mazel-2006-integrons, siguier-2006-isfinder]
     interpretation: Retains recombination or integration annotation evidence.
     limitations:
       - Observation does not establish an element boundary or activity.
@@ -410,7 +410,7 @@ markers:
         strength: 1
     requires_non_pseudo: false
     requires_complete: false
-    sources: [bakta-origin-docs, insdc-feature-table]
+    sources: [bakta-origin-docs, insdc-feature-table, schwengers-2021-bakta]
     interpretation: Supports an explicitly annotated CRISPR repeat-array feature.
     limitations:
       - Annotation does not establish active immunity or target specificity.
@@ -470,7 +470,7 @@ markers:
         strength: 1
     requires_non_pseudo: false
     requires_complete: false
-    sources: [feldgarden-2021-amrfinderplus, local-annotation-candidate-policy]
+    sources: [local-annotation-candidate-policy]
     interpretation: Retains phage packaging annotation evidence.
     limitations:
       - Observation does not establish a complete phage module.
@@ -488,7 +488,7 @@ markers:
         strength: 1
     requires_non_pseudo: false
     requires_complete: false
-    sources: [chen-2005-vfdb, local-annotation-candidate-policy]
+    sources: [local-annotation-candidate-policy]
     interpretation: Retains phage structural annotation evidence.
     limitations:
       - Observation does not establish a complete phage module.
@@ -585,7 +585,7 @@ markers:
         strength: 1
     requires_non_pseudo: false
     requires_complete: false
-    sources: [local-annotation-candidate-policy]
+    sources: [feldgarden-2021-amrfinderplus, local-annotation-candidate-policy, partridge-2018-mge-amr]
     interpretation: Retains a generic antimicrobial-resistance annotation candidate.
     limitations:
       - Product text alone does not establish resistance phenotype or determinant status.
@@ -603,7 +603,7 @@ markers:
         strength: 1
     requires_non_pseudo: false
     requires_complete: false
-    sources: [local-annotation-candidate-policy]
+    sources: [chen-2005-vfdb, liu-2022-vfdb, local-annotation-candidate-policy]
     interpretation: Retains a generic virulence-associated annotation candidate.
     limitations:
       - Product text alone does not establish virulence phenotype.

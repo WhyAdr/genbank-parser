@@ -52,13 +52,13 @@ jobs:
 
     - name: Verify installed API, data, CLI, and dependencies
       run: |
-        .wheel-venv/bin/python -c "from importlib.resources import files; from genbank_parser import __version__; from genbank_parser.meor import load_meor_database; from genbank_parser.mobilome import load_mobilome_database; db=load_mobilome_database(); root=files('genbank_parser'); assert __version__ == '0.6.0'; assert load_meor_database().catalog_version == '1.1'; assert db.catalog_version == '1.1.0'; assert db.provenance_version == '1.1.0'; assert db.inference_version == '1.1.0'; assert root.joinpath('py.typed').is_file(); assert root.joinpath('data/meor/markers.yaml').is_file(); assert files('genbank_parser.rulesets').joinpath('mobilome.yaml').is_file(); assert root.joinpath('data/mobilome/markers.yaml').is_file(); assert root.joinpath('data/mobilome/provenance.yaml').is_file(); assert root.joinpath('data/mobilome/inference.yaml').is_file(); assert root.joinpath('data/mobilome/report.schema.json').is_file()"
+        .wheel-venv/bin/python -c "from importlib.resources import files; from genbank_parser import __version__; from genbank_parser.meor import load_meor_database; from genbank_parser.mobilome import load_mobilome_database; db=load_mobilome_database(); root=files('genbank_parser'); assert __version__ == '0.6.5'; assert load_meor_database().catalog_version == '1.1'; assert db.catalog_version == '1.2.0'; assert db.provenance_version == '1.2.0'; assert db.inference_version == '1.2.0'; assert root.joinpath('py.typed').is_file(); assert root.joinpath('data/meor/markers.yaml').is_file(); assert files('genbank_parser.rulesets').joinpath('mobilome.yaml').is_file(); assert root.joinpath('data/mobilome/markers.yaml').is_file(); assert root.joinpath('data/mobilome/provenance.yaml').is_file(); assert root.joinpath('data/mobilome/inference.yaml').is_file(); assert root.joinpath('data/mobilome/report.schema.json').is_file()"
         .wheel-venv/bin/gbparse --help
         .wheel-venv/bin/gbparse meor tests/fixtures/meor_parity.gb --format json --output wheel-meor.json
-        .wheel-venv/bin/python -c "import json; p=json.load(open('wheel-meor.json')); assert p['tool_version'] == '0.6.0'; assert p['catalog_version'] == '1.1'"
+        .wheel-venv/bin/python -c "import json; p=json.load(open('wheel-meor.json')); assert p['tool_version'] == '0.6.5'; assert p['catalog_version'] == '1.1'"
         .wheel-venv/bin/gbparse mobilome --help
         .wheel-venv/bin/gbparse mobilome tests/fixtures/mobilome_evidence.gb --format json --output wheel-mobilome.json
-        .wheel-venv/bin/python -c "import json; p=json.load(open('wheel-mobilome.json')); assert p['schema_version'] == 'gbparse.mobilome.v1'; assert p['tool_version'] == '0.6.0'; assert p['catalog_version'] == '1.1.0'"
+        .wheel-venv/bin/python -c "import json; p=json.load(open('wheel-mobilome.json')); assert p['schema_version'] == 'gbparse.mobilome.v1'; assert p['tool_version'] == '0.6.5'; assert p['catalog_version'] == '1.2.0'"
         .wheel-venv/bin/gbparse discover tests/fixtures/mobilome_evidence.gb --ruleset mobilome
         .wheel-venv/bin/python -m pip check
 

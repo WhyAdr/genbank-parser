@@ -2,9 +2,9 @@
   "schema_version": "gbparse.mobilome.v1",
   "tool": "gbparse",
   "analysis": "mobilome",
-  "tool_version": "0.6.0",
-  "catalog_version": "1.1.0",
-  "inference_version": "1.1.0",
+  "tool_version": "0.6.5",
+  "catalog_version": "1.2.0",
+  "inference_version": "1.2.0",
   "input": {
     "file": "mobilome_evidence.gb",
     "sha256": "34d9908260fc17c0a199c17c4494d608b99219bfaa2411983ad45f77d86957fc"
@@ -18,15 +18,15 @@
     "resources": [
       {
         "name": "markers.yaml",
-        "sha256": "b017e60208434fbf6022828dc3d364aa267c871163e11afb038f30bf13909b1f"
+        "sha256": "c8e298e47814bada2002b8ef7d38b36f96b79e45dca8db8f00c429637ae1148a"
       },
       {
         "name": "provenance.yaml",
-        "sha256": "7d90191f1365f57a96b3d9cc44fe5fa3f5f63603ca5342b9b194c4b1627cd306"
+        "sha256": "9d54c0bb6ae41f9ab8c51bd619dcf37b6d03cb62ff42ee1179eba941a6e72c5e"
       },
       {
         "name": "inference.yaml",
-        "sha256": "2fa78fb19a0d5769a0e06a78b7fa5b5a43653430b44d6793fadefbd3943e7a67"
+        "sha256": "0be774cd747e928ca329e908214049e140dbcb66c95a676aafbf47cdff723677"
       },
       {
         "name": "report.schema.json",
@@ -249,7 +249,8 @@
               "eligible": true,
               "source_ids": [
                 "bakta-origin-docs",
-                "insdc-feature-table"
+                "insdc-feature-table",
+                "schwengers-2021-bakta"
               ]
             }
           ],
@@ -298,6 +299,7 @@
               "eligible": true,
               "source_ids": [
                 "garcillan-barcia-2009-relaxases",
+                "garcillan-barcia-2025-extended-mobility",
                 "smillie-2010-mobility"
               ]
             },
@@ -312,6 +314,7 @@
               "eligible": true,
               "source_ids": [
                 "garcillan-barcia-2009-relaxases",
+                "garcillan-barcia-2025-extended-mobility",
                 "smillie-2010-mobility"
               ]
             }
@@ -360,7 +363,8 @@
               "strength": 2,
               "eligible": true,
               "source_ids": [
-                "blower-2012-toxin"
+                "blower-2012-toxin",
+                "qiu-2022-ta-classification"
               ]
             },
             {
@@ -373,7 +377,8 @@
               "strength": 2,
               "eligible": true,
               "source_ids": [
-                "blower-2012-toxin"
+                "blower-2012-toxin",
+                "qiu-2022-ta-classification"
               ]
             }
           ],
@@ -421,7 +426,8 @@
               "strength": 2,
               "eligible": true,
               "source_ids": [
-                "blower-2012-toxin"
+                "blower-2012-toxin",
+                "qiu-2022-ta-classification"
               ]
             },
             {
@@ -434,7 +440,8 @@
               "strength": 2,
               "eligible": true,
               "source_ids": [
-                "blower-2012-toxin"
+                "blower-2012-toxin",
+                "qiu-2022-ta-classification"
               ]
             }
           ],
@@ -482,6 +489,7 @@
               "strength": 2,
               "eligible": true,
               "source_ids": [
+                "qiu-2022-ta-classification",
                 "yao-2020-hepn-mnt"
               ]
             },
@@ -495,6 +503,7 @@
               "strength": 2,
               "eligible": true,
               "source_ids": [
+                "qiu-2022-ta-classification",
                 "yao-2020-hepn-mnt"
               ]
             }
@@ -543,6 +552,7 @@
               "strength": 2,
               "eligible": true,
               "source_ids": [
+                "qiu-2022-ta-classification",
                 "yao-2020-hepn-mnt"
               ]
             },
@@ -556,6 +566,7 @@
               "strength": 2,
               "eligible": true,
               "source_ids": [
+                "qiu-2022-ta-classification",
                 "yao-2020-hepn-mnt"
               ]
             }
@@ -788,6 +799,7 @@
               "eligible": false,
               "source_ids": [
                 "garcillan-barcia-2009-relaxases",
+                "garcillan-barcia-2025-extended-mobility",
                 "smillie-2010-mobility"
               ]
             }
@@ -898,7 +910,8 @@
               "eligible": true,
               "source_ids": [
                 "bakta-origin-docs",
-                "insdc-feature-table"
+                "insdc-feature-table",
+                "schwengers-2021-bakta"
               ]
             },
             {
@@ -912,7 +925,8 @@
               "eligible": true,
               "source_ids": [
                 "bakta-origin-docs",
-                "insdc-feature-table"
+                "insdc-feature-table",
+                "schwengers-2021-bakta"
               ]
             }
           ],
@@ -1059,10 +1073,13 @@
           "limitations": [
             "Proximity is a versioned engineering heuristic, not proof of an operon.",
             "The cited biochemical correspondence is not generalized beyond annotation.",
+            "Current classification reviews document HEPN/MNT-type systems among Type VII toxin-antitoxin systems; this rule deliberately assigns no type number to an annotation match.",
             "Configured maximum circular gap: 2000 bp; observed gap: 9 bp."
           ],
           "source_ids": [
-            "yao-2020-hepn-mnt"
+            "qiu-2022-ta-classification",
+            "yao-2020-hepn-mnt",
+            "yao-2026-mnt-hepn"
           ]
         },
         {
@@ -1089,6 +1106,7 @@
             "Expression and transfer are untested."
           ],
           "source_ids": [
+            "garcillan-barcia-2025-extended-mobility",
             "smillie-2010-mobility"
           ]
         },
@@ -1142,7 +1160,8 @@
             "Configured maximum circular gap: 2000 bp; observed gap: 9 bp."
           ],
           "source_ids": [
-            "blower-2012-toxin"
+            "blower-2012-toxin",
+            "qiu-2022-ta-classification"
           ]
         }
       ]

@@ -1,5 +1,5 @@
 schema_version: 1
-provenance_version: "1.1.0"
+provenance_version: "1.2.0"
 
 sources:
   - id: blower-2012-toxin
@@ -162,6 +162,147 @@ sources:
       - Insertion sequences carry standardized family nomenclature in a dedicated reference center.
     limitations:
       - An IS-like annotation is not a family assignment without sequence comparison.
+  - id: schwengers-2021-bakta
+    type: primary_article
+    title: "Bakta: rapid and standardized annotation of bacterial genomes via alignment-free sequence identification"
+    year: 2021
+    doi: 10.1099/mgen.0.000685
+    pmid: "34739369"
+    pmcid: PMC8743544
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC8743544/
+    supports:
+      - Bakta is a versioned command-line annotation pipeline whose database releases are declared alongside its outputs.
+    limitations:
+      - Tool output forms change across versions; observed input annotations remain authoritative over general tool claims.
+  - id: garcillan-barcia-2025-extended-mobility
+    type: primary_article
+    title: "The extended mobility of plasmids"
+    year: 2025
+    doi: 10.1093/nar/gkaf652
+    pmid: "40694848"
+    pmcid: PMC12282955
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC12282955/
+    supports:
+      - Plasmid mobility extends beyond canonical conjugation, and mobility frameworks cover mobilization routes broader than a single transfer pathway.
+    limitations:
+      - The review's extended-mobility framing does not transfer mechanism or route conclusions to annotation co-occurrence in a new genome.
+  - id: johnson-2015-ice
+    type: primary_article
+    title: "Integrative and Conjugative Elements (ICEs): What They Do and How They Work"
+    year: 2015
+    doi: 10.1146/annurev-genet-112414-055018
+    pmid: "26473380"
+    pmcid: PMC5180612
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC5180612/
+    supports:
+      - Integrative and conjugative elements are modular mobile elements that combine chromosomal integration and conjugative transfer functions in one element.
+    limitations:
+      - Integration and conjugation annotations in one record do not establish an ICE boundary or an active element.
+  - id: mazel-2006-integrons
+    type: primary_article
+    title: "Integrons: agents of bacterial evolution"
+    year: 2006
+    doi: 10.1038/nrmicro1462
+    pmid: "16845431"
+    url: https://doi.org/10.1038/nrmicro1462
+    supports:
+      - Integrons are recombination platforms that capture exogenous gene cassettes through an integron integrase and convert them into functional genes.
+    limitations:
+      - An integron-like annotation is not a cassette-array inventory or a resistance-gene prediction without sequence analysis.
+  - id: qiu-2022-ta-classification
+    type: primary_article
+    title: "Toxin-antitoxin systems: Classification, biological roles, and applications"
+    year: 2022
+    doi: 10.1016/j.micres.2022.127159
+    pmid: "35969944"
+    url: https://doi.org/10.1016/j.micres.2022.127159
+    supports:
+      - Toxin-antitoxin systems are classified into types according to the nature and mechanism of the antitoxin.
+    limitations:
+      - A review classification does not transfer to an annotation match in a new genome, and this catalog assigns no type number to annotations.
+  - id: yao-2026-mnt-hepn
+    type: primary_article
+    title: "Dual regulation of HEPN RNase in fused MNT-HEPN toxin-antitoxin systems via protein OligoAMPylation and oligomerization"
+    year: 2026
+    doi: 10.1093/nar/gkag228
+    pmid: "41854079"
+    pmcid: PMC13000451
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC13000451/
+    supports:
+      - Fused MNT-HEPN proteins are documented members of the HEPN/MNT toxin-antitoxin family with AMPylation-based regulation in studied systems.
+    limitations:
+      - Regulation biochemistry in studied systems is not generalized to annotation matches in new genomes.
+  - id: liu-2022-vfdb
+    type: primary_article
+    title: "VFDB 2022: a general classification scheme for bacterial virulence factors"
+    year: 2022
+    doi: 10.1093/nar/gkab1107
+    pmid: "34850947"
+    pmcid: PMC8728188
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC8728188/
+    supports:
+      - Virulence-factor determination relies on a curated, versioned database with an explicit classification scheme.
+    limitations:
+      - Database releases supersede earlier descriptions; version provenance is required for any future comparison.
+  - id: partridge-2018-mge-amr
+    type: primary_article
+    title: "Mobile Genetic Elements Associated with Antimicrobial Resistance"
+    year: 2018
+    doi: 10.1128/CMR.00088-17
+    pmid: "30068738"
+    pmcid: PMC6148190
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC6148190/
+    supports:
+      - Resistance genes are associated with diverse mobile genetic elements, including plasmids, transposons, integrons, and gene cassettes.
+    limitations:
+      - Association documented in the review does not establish that a generic resistance-like annotation in a record is mobile.
+  - id: arndt-2016-phaster
+    type: primary_article
+    title: "PHASTER: a better, faster version of the PHAST phage search tool"
+    year: 2016
+    doi: 10.1093/nar/gkw387
+    pmid: "27141966"
+    pmcid: PMC4987931
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC4987931/
+    supports:
+      - Dedicated prophage identification and annotation is performed from sequence by an external tool, not from product annotations.
+    limitations:
+      - Prophage boundary predictions carry method-specific uncertainty and require external provenance.
+  - id: camargo-2024-genomad
+    type: primary_article
+    title: "Identification of mobile genetic elements with geNomad"
+    year: 2024
+    doi: 10.1038/s41587-023-01953-y
+    pmid: "37735266"
+    pmcid: PMC11324519
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC11324519/
+    supports:
+      - Virus and plasmid identification from sequence data is performed by external tools combining marker genes and machine-learning classifiers.
+    limitations:
+      - External classifications depend on model versions, marker sets, and thresholds, which must be reported with any imported result.
+  - id: xie-2017-isescan
+    type: primary_article
+    title: "ISEScan: automated identification of insertion sequence elements in prokaryotic genomes"
+    year: 2017
+    doi: 10.1093/bioinformatics/btx433
+    pmid: "29077810"
+    url: https://doi.org/10.1093/bioinformatics/btx433
+    supports:
+      - Insertion-sequence elements can be identified automatically from genome sequence by an external tool.
+    limitations:
+      - Sequence-level IS family calls cannot be reproduced from product annotations alone.
+  - id: johansson-2021-mobileelementfinder
+    type: primary_article
+    title: "Detection of mobile genetic elements associated with antibiotic resistance in Salmonella enterica using a newly developed web tool: MobileElementFinder"
+    year: 2021
+    doi: 10.1093/jac/dkaa390
+    pmid: "33009809"
+    pmcid: PMC7729385
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC7729385/
+    supports:
+      - Mobile-element detection from sequence is performed by external tools backed by curated element databases.
+    limitations:
+      - The tool's database composition and thresholds bound any future imported result.
   - id: bakta-origin-docs
     type: official_documentation
     title: Bakta documentation

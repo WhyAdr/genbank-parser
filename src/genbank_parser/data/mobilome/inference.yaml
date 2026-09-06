@@ -1,5 +1,5 @@
 schema_version: 1
-inference_version: "1.1.0"
+inference_version: "1.2.0"
 
 components:
   replication_candidate:
@@ -38,7 +38,7 @@ rules:
     limitations:
       - A cognate relaxase-oriT relationship is untested.
       - Expression and transfer are untested.
-    sources: [smillie-2010-mobility]
+    sources: [garcillan-barcia-2025-extended-mobility, smillie-2010-mobility]
   - id: helper_machinery_annotation_candidate
     kind: mobility
     required_components:
@@ -48,7 +48,7 @@ rules:
     wording: Conjugation-machinery annotation candidate
     limitations:
       - Multiple components do not establish a complete or expressed transfer system.
-    sources: [smillie-2010-mobility]
+    sources: [garcillan-barcia-2025-extended-mobility, smillie-2010-mobility]
   - id: possible_helper_dependent_mobilization
     kind: mobility
     required_components:
@@ -63,7 +63,7 @@ rules:
       - Record taxonomic and same-cell co-affiliation are untested.
       - Expression and transfer are untested.
       - Co-transfer of both records is not implied.
-    sources: [smillie-2010-mobility]
+    sources: [garcillan-barcia-2025-extended-mobility, smillie-2010-mobility]
   - id: type_iii_toxin_antitoxin_pair_candidate
     kind: toxin_antitoxin
     required_marker_ids: [toxn, toxi]
@@ -75,7 +75,7 @@ rules:
     limitations:
       - Proximity is a versioned engineering heuristic, not proof of an operon.
       - Expression and toxin-antitoxin activity are untested.
-    sources: [blower-2012-toxin]
+    sources: [blower-2012-toxin, qiu-2022-ta-classification]
   - id: hepn_mnt_annotation_pair_candidate
     kind: toxin_antitoxin
     required_marker_ids: [hept, mnta]
@@ -87,7 +87,8 @@ rules:
     limitations:
       - Proximity is a versioned engineering heuristic, not proof of an operon.
       - The cited biochemical correspondence is not generalized beyond annotation.
-    sources: [yao-2020-hepn-mnt]
+      - Current classification reviews document HEPN/MNT-type systems among Type VII toxin-antitoxin systems; this rule deliberately assigns no type number to an annotation match.
+    sources: [qiu-2022-ta-classification, yao-2020-hepn-mnt, yao-2026-mnt-hepn]
 
 disabled_aggregate_rules:
   - id: pxo_like_annotation_pattern_candidate
