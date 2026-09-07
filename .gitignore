@@ -29,3 +29,6 @@ scratch_test.*
 *.gff3
 *_summary.tsv
 gene_matrix.tsv
+
+# Paywalled full-text papers for local curation (never committed)
+reference_pdfs/
