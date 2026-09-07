@@ -64,5 +64,70 @@ suffixed nomenclature, while an annotation match still does not establish a
 CRISPR-Cas subtype.
 
 The repX-specific citations (Anand et al. 2008; Tinsley and Khan 2006) anchor
-the repX pattern only; repL and the remaining generic rep gene names remain
-local-policy annotation candidates pending dedicated curation.
+the repX pattern only; the remaining generic rep gene names (repA, repB,
+repS, repF, repFR) remain local-policy annotation candidates.
+
+Type III toxin-antitoxin superfamilies beyond ToxIN follow Blower et al. 2012
+([NAR, PMC3401426](https://pmc.ncbi.nlm.nih.gov/articles/PMC3401426/)): the
+three sequence-similarity families are ToxIN, TenpIN (named for the
+*Photorhabdus luminescens* locus), and CptIN (named for the *Coprococcus
+catus* GD/7 locus). `tenpn`/`tenpi` and `cptn`/`cpti` retain the toxin and RNA
+antitoxin annotations of the latter two families, and their pair rules mirror
+the ToxIN rule. An annotation match still does not establish Type III
+activity, abortive infection, or phage resistance.
+
+Tripartite (N-marker) toxin-antitoxin modules are now supported by spatial
+cluster rules: toxin-antitoxin-chaperone (TAC) systems with HigBA plus a
+SecB-like chaperone ([Bordes et al. 2011](https://pmc.ncbi.nlm.nih.gov/articles/PMC3100995/);
+[Mets et al. 2024](https://doi.org/10.1016/j.chom.2024.05.003);
+[Nakamoto et al. 2026](https://doi.org/10.1016/j.celrep.2026.117024)),
+the omega-epsilon-zeta addiction module of pSM19035
+([Camacho et al. 2002](https://doi.org/10.1515/BC.2002.191);
+[Brzozowska et al. 2014](https://pmc.ncbi.nlm.nih.gov/articles/PMC3953265/);
+[Dmowski et al. 2016](https://doi.org/10.1099/mic.0.000308)), and the MqsRAC
+tripartite system, MqsR (RNase toxin) / MqsA (antitoxin) / MqsC (SecB-type
+chaperone) ([Fernández-García et al. 2024](https://pmc.ncbi.nlm.nih.gov/articles/PMC10783111/)).
+Retron antiphage modules pair the retron-encoded reverse transcriptase with
+the msDNA region; the effector toxin is system-specific (RcaT in Retron-Sen2)
+and is deliberately not required by the annotation rule
+([Bobonis et al. 2022](https://pmc.ncbi.nlm.nih.gov/articles/PMC11938430/)).
+
+Toxin-antitoxin spatial inference is cluster-based rather than combinatorial:
+eligible hits of one rule's markers are joined by single-linkage proximity
+edges (different markers, within the configured same-record gap), and one
+aggregate hypothesis is emitted per cluster that contains every required
+marker. A tandem array therefore collapses into one cluster hypothesis with
+all supporting hits instead of one hypothesis per cross-product pair, an
+isolated toxin without a cognate emits nothing, and two-feature clusters keep
+the previous pair wording and observed-gap limitation.
+
+The repL gene-name pattern now has dedicated curation
+(Catchpole and Dyke 1992, FEMS Microbiol Lett, PMID 1577254: repL disruption
+abolishes pT48 replication and functional repL complements in trans;
+Catchpole and Dyke 1991, Mol Microbiol, PMID 1906970; Projan et al. 1987,
+J Bacteriol, PMID 2822666; Khan and Novick 1982, J Bacteriol, PMID 7056699;
+Kwong et al. 2017, [Front Microbiol](https://pmc.ncbi.nlm.nih.gov/articles/PMC5703833/),
+family-level PF05732/pSN2 anchor; Šprincová et al. 2005, Plasmid, PMID
+15907537, RepL family outside the staphylococci). The remaining generic rep
+gene names (repA, repB, repS, repF, repFR) stay local-policy annotation
+candidates, and no rep annotation selects a replication mechanism.
+
+The unified type IV secretion nomenclature review
+([Christie et al.](https://doi.org/10.1093/femsre/fuaf069)) was released
+online-first on 2025-12-31 and is assigned to the 2026 volume 50 print issue;
+the provenance record carries the 2026 print year while keeping its
+`christie-2025-t4ss` stable identifier.
+
+An optional real-genome benchmark (`scripts/benchmark_mobilome.py`) runs the
+packaged analysis over a local, gitignored `PF_NNT_reoriented.gbff` and
+reports runtime, rendered output volume, and the section 16.9 calibration
+expectations; `tests/test_mobilome_real_genome.py` performs the same checks
+as an opt-in test that skips clearly when the file is absent. Neither ever
+stages the real input. The standalone mobilome-parser prototype remains an
+audit-time comparison artifact in its own repository; the native
+`genbank_parser.mobilome` engine is canonical, and any archival of the
+prototype happens in that repository in a separate commit.
+
+Paywalled full-text papers held for curation live in the gitignored
+`reference_pdfs/` directory; they are intentionally outside version control,
+and the catalog cites the published records rather than repository PDFs.
