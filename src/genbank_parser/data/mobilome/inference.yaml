@@ -1,5 +1,5 @@
 schema_version: 1
-inference_version: "1.4.0"
+inference_version: "1.5.0"
 
 components:
   replication_candidate:
@@ -89,6 +89,81 @@ rules:
       - The cited biochemical correspondence is not generalized beyond annotation.
       - Current classification reviews document HEPN/MNT-type systems among Type VII toxin-antitoxin systems; this rule deliberately assigns no type number to an annotation match.
     sources: [qiu-2022-ta-classification, yao-2020-hepn-mnt, yao-2026-mnt-hepn]
+
+  - id: type_iii_tenpin_annotation_pair_candidate
+    kind: toxin_antitoxin
+    required_marker_ids: [tenpn, tenpi]
+    same_record: true
+    distinct_features: true
+    max_circular_gap_bp: 2000
+    status: tentative
+    wording: Type III TenpIN annotation-pair candidate
+    limitations:
+      - Proximity is a versioned engineering heuristic, not proof of an operon.
+      - Expression and toxin-antitoxin activity are untested.
+    sources: [blower-2012-toxin, qiu-2022-ta-classification]
+  - id: type_iii_cptin_annotation_pair_candidate
+    kind: toxin_antitoxin
+    required_marker_ids: [cptn, cpti]
+    same_record: true
+    distinct_features: true
+    max_circular_gap_bp: 2000
+    status: tentative
+    wording: Type III CptIN annotation-pair candidate
+    limitations:
+      - Proximity is a versioned engineering heuristic, not proof of an operon.
+      - Expression and toxin-antitoxin activity are untested.
+    sources: [blower-2012-toxin, qiu-2022-ta-classification]
+  - id: higba_tac_module_candidate
+    kind: toxin_antitoxin
+    required_marker_ids: [higb, higa, tac_chaperone]
+    same_record: true
+    distinct_features: true
+    max_circular_gap_bp: 3000
+    status: tentative
+    wording: Toxin-antitoxin-chaperone (TAC) HigBA-module annotation candidate
+    limitations:
+      - Proximity is a versioned engineering heuristic, not proof of an operon.
+      - A SecB-like chaperone annotation does not establish antitoxin stabilization or antiphage defense.
+      - Expression and toxin-antitoxin activity are untested.
+    sources: [bordes-2011-tac, mansour-2022-tac, mets-2024-tac-phage-sensing, nakamoto-2026-tac-diversity]
+  - id: omega_epsilon_zeta_module_candidate
+    kind: toxin_antitoxin
+    required_marker_ids: [zeta, epsilon, omega]
+    same_record: true
+    distinct_features: true
+    max_circular_gap_bp: 3000
+    status: tentative
+    wording: Omega-epsilon-zeta annotation-module candidate
+    limitations:
+      - Proximity is a versioned engineering heuristic, not proof of an operon.
+      - The module does not establish plasmid addiction or post-segregational killing.
+    sources: [brzozowska-2014-epsilon-clpx, camacho-2002-oez, chan-2023-type2-ta, dmowski-2016-omega-parb]
+  - id: mqsrac_module_candidate
+    kind: toxin_antitoxin
+    required_marker_ids: [mqsr, mqsa, mqsc]
+    same_record: true
+    distinct_features: true
+    max_circular_gap_bp: 3000
+    status: tentative
+    wording: MqsRAC tripartite annotation-module candidate
+    limitations:
+      - Proximity is a versioned engineering heuristic, not proof of an operon.
+      - Tripartite co-occurrence does not establish chaperone function or phage defense.
+    sources: [chan-2023-type2-ta, fernandez-garcia-2024-mqsrac]
+  - id: retron_rt_msdna_module_candidate
+    kind: toxin_antitoxin
+    required_marker_ids: [retron_rt, msdna]
+    same_record: true
+    distinct_features: true
+    max_circular_gap_bp: 3000
+    status: tentative
+    wording: Retron RT-msDNA annotation-module candidate
+    limitations:
+      - Proximity is a versioned engineering heuristic, not proof of a retron operon.
+      - The system-specific effector toxin of retron antiphage systems is not required by this annotation rule.
+      - Antiphage defense function is untested.
+    sources: [bobonis-2022-retron]
 
 disabled_aggregate_rules:
   - id: pxo_like_annotation_pattern_candidate

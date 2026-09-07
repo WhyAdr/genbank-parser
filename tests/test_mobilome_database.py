@@ -26,9 +26,9 @@ def test_packaged_database_is_versioned_hashed_and_schema_valid() -> None:
     )
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
-    assert database.catalog_version == "1.4.0"
-    assert database.inference_version == "1.4.0"
-    assert database.provenance_version == "1.4.0"
+    assert database.catalog_version == "1.5.0"
+    assert database.inference_version == "1.5.0"
+    assert database.provenance_version == "1.5.0"
     assert database.database_source == "packaged"
     assert database.source_paths == ()
     assert [resource.name for resource in database.resources] == [
@@ -100,6 +100,49 @@ def test_provenance_sources_use_verified_citations() -> None:
         .payload["title"]
         .endswith("web tool: MobileElementFinder")
     )
+    for anchor in (
+        "catchpole-1992-pt48",
+        "catchpole-1991-pt48-mutants",
+        "projan-1987-pim13",
+        "khan-1982-psn2",
+        "kwong-2017-staph-plasmids",
+        "sprincova-2005-psrd191",
+        "bordes-2011-tac",
+        "mansour-2022-tac",
+        "mets-2024-tac-phage-sensing",
+        "nakamoto-2026-tac-diversity",
+        "fernandez-garcia-2024-mqsrac",
+        "bobonis-2022-retron",
+        "camacho-2002-oez",
+        "brzozowska-2014-epsilon-clpx",
+        "dmowski-2016-omega-parb",
+        "chan-2023-type2-ta",
+    ):
+        assert anchor in by_id
+    assert by_id["catchpole-1992-pt48"].payload["pmid"] == "1577254"
+    assert by_id["catchpole-1991-pt48-mutants"].payload["pmid"] == "1906970"
+    assert by_id["projan-1987-pim13"].payload["pmid"] == "2822666"
+    assert by_id["khan-1982-psn2"].payload["pmid"] == "7056699"
+    assert by_id["kwong-2017-staph-plasmids"].payload["pmid"] == "29218034"
+    assert by_id["sprincova-2005-psrd191"].payload["pmid"] == "15907537"
+    assert by_id["bordes-2011-tac"].payload["pmid"] == "21536872"
+    assert by_id["mansour-2022-tac"].payload["pmid"] == "35552387"
+    assert by_id["mets-2024-tac-phage-sensing"].payload["pmid"] == "38821063"
+    assert by_id["nakamoto-2026-tac-diversity"].payload["pmid"] == "41779618"
+    assert by_id["fernandez-garcia-2024-mqsrac"].payload["pmid"] == "38054715"
+    assert by_id["bobonis-2022-retron"].payload["pmid"] == "35850148"
+    assert by_id["bobonis-2022-retron"].payload["doi"] == "10.1038/s41586-022-05091-4"
+    assert by_id["camacho-2002-oez"].payload["pmid"] == "12530535"
+    assert by_id["brzozowska-2014-epsilon-clpx"].payload["pmid"] == "24492616"
+    assert by_id["dmowski-2016-omega-parb"].payload["pmid"] == "27177883"
+    assert by_id["chan-2023-type2-ta"].payload["pmid"] == "37715317"
+    # The print issue is now assigned; the online-first 2025-12-31 record
+    # belongs to the 2026 volume 50 issue.
+    assert by_id["christie-2025-t4ss"].payload["year"] == 2026
+    assert (
+        by_id["kwong-2017-staph-plasmids"].payload["title"]
+        == "Replication of Staphylococcal Resistance Plasmids"
+    )
 
 
 def test_retained_evidence_accepts_facet_and_marker_tokens() -> None:
@@ -154,6 +197,33 @@ def test_ta_and_mobility_rules_carry_their_configured_sources() -> None:
     assert rules["type_iii_toxin_antitoxin_pair_candidate"].sources == (
         "blower-2012-toxin",
         "qiu-2022-ta-classification",
+    )
+    assert rules["type_iii_tenpin_annotation_pair_candidate"].sources == (
+        "blower-2012-toxin",
+        "qiu-2022-ta-classification",
+    )
+    assert rules["omega_epsilon_zeta_module_candidate"].required_marker_ids == (
+        "epsilon",
+        "omega",
+        "zeta",
+    )
+    assert rules["mqsrac_module_candidate"].required_marker_ids == (
+        "mqsa",
+        "mqsc",
+        "mqsr",
+    )
+    assert rules["higba_tac_module_candidate"].required_marker_ids == (
+        "higa",
+        "higb",
+        "tac_chaperone",
+    )
+    assert rules["mqsrac_module_candidate"].max_circular_gap_bp == 3000
+    assert rules["retron_rt_msdna_module_candidate"].sources == ("bobonis-2022-retron",)
+    assert rules["omega_epsilon_zeta_module_candidate"].sources == (
+        "brzozowska-2014-epsilon-clpx",
+        "camacho-2002-oez",
+        "chan-2023-type2-ta",
+        "dmowski-2016-omega-parb",
     )
     assert rules["mobilizable_core_annotation_candidate"].sources == (
         "garcillan-barcia-2025-extended-mobility",
@@ -325,6 +395,20 @@ def _mutated_database(
                 rule for rule in p["rules"] if rule.get("kind") == "toxin_antitoxin"
             ).pop("max_circular_gap_bp"),
             "must declare max_circular_gap_bp",
+        ),
+        (
+            "inference.yaml",
+            lambda p: next(
+                rule for rule in p["rules"] if rule.get("kind") == "toxin_antitoxin"
+            ).update({"required_marker_ids": ["toxn"]}),
+            "at least two required_marker_ids",
+        ),
+        (
+            "inference.yaml",
+            lambda p: next(
+                rule for rule in p["rules"] if rule.get("kind") == "toxin_antitoxin"
+            ).update({"required_marker_ids": ["toxn", "toxn"]}),
+            "must not contain duplicate values",
         ),
         (
             "provenance.yaml",

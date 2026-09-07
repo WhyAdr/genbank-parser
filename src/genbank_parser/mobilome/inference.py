@@ -269,54 +269,142 @@ def _distance_between_hits(
         return None
 
 
-def _infer_toxin_antitoxin_pairs(
+def _ta_rule_hits(
+    hits: Sequence[MobilomeHit], rule: InferenceRule
+) -> list[MobilomeHit]:
+    marker_ids = frozenset(rule.required_marker_ids)
+    return [hit for hit in _functional_hits(hits) if hit.marker_id in marker_ids]
+
+
+def _cluster_span_bp(
+    members: Sequence[MobilomeHit], inventory: RepliconInventory
+) -> int:
+    """Return the maximum pairwise distance within one cluster."""
+
+    span = 0
+    for index, first in enumerate(members):
+        for second in members[index + 1 :]:
+            gap = _distance_between_hits(first, second, inventory)
+            if gap is not None and gap > span:
+                span = gap
+    return span
+
+
+def _connected_marker_clusters(
+    rule_hits: Sequence[MobilomeHit],
+    rule: InferenceRule,
+    inventory: RepliconInventory,
+) -> tuple[tuple[MobilomeHit, ...], ...]:
+    """Group a rule's marker hits into deterministic single-linkage clusters.
+
+    Only hits of two different required markers can be joined by an edge, and
+    an edge requires the configured same-record maximum gap.  A cluster
+    therefore represents one spatially contiguous candidate module instead of
+    the previous O(N x M) cross product of every eligible pair.
+    """
+
+    total = len(rule_hits)
+    parent = list(range(total))
+
+    def find(index: int) -> int:
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+        return index
+
+    def union(left: int, right: int) -> None:
+        left_root, right_root = find(left), find(right)
+        if left_root == right_root:
+            return
+        # Deterministic root: the smaller index always wins.
+        if left_root < right_root:
+            parent[right_root] = left_root
+        else:
+            parent[left_root] = right_root
+
+    max_gap = rule.max_circular_gap_bp
+    for left in range(total):
+        for right in range(left + 1, total):
+            first, second = rule_hits[left], rule_hits[right]
+            if first.marker_id == second.marker_id:
+                continue
+            if rule.distinct_features and _feature_key(first) == _feature_key(second):
+                continue
+            gap = _distance_between_hits(first, second, inventory)
+            if gap is None or max_gap is None or gap > max_gap:
+                continue
+            union(left, right)
+
+    grouped: dict[int, list[int]] = {}
+    for index in range(total):
+        grouped.setdefault(find(index), []).append(index)
+    clusters = [
+        tuple(
+            sorted(
+                (rule_hits[index] for index in indices),
+                key=lambda hit: (_feature_key(hit), hit.marker_id),
+            )
+        )
+        for _, indices in sorted(grouped.items())
+    ]
+    return tuple(clusters)
+
+
+def _infer_toxin_antitoxin_clusters(
     inventory: RepliconInventory,
     hits: Sequence[MobilomeHit],
     database: MobilomeDatabase,
 ) -> tuple[MobilomeHypothesis, ...]:
+    """Emit one hypothesis per complete marker cluster (finding C4/C5).
+
+    A cluster is emitted only when it contains at least one eligible hit of
+    every required marker, so an isolated toxin or antitoxin never produces a
+    hypothesis, and tandem arrays collapse into one aggregate hypothesis
+    instead of one hypothesis per cross product pair.
+    """
+
     hypotheses: list[MobilomeHypothesis] = []
     for rule in database.inference_rules:
-        if rule.kind != "toxin_antitoxin" or len(rule.required_marker_ids) != 2:
+        if rule.kind != "toxin_antitoxin" or len(rule.required_marker_ids) < 2:
             continue
-        first_marker, second_marker = rule.required_marker_ids
-        first_hits = [
-            hit for hit in _functional_hits(hits) if hit.marker_id == first_marker
-        ]
-        second_hits = [
-            hit for hit in _functional_hits(hits) if hit.marker_id == second_marker
-        ]
-        for first in first_hits:
-            for second in second_hits:
-                if rule.distinct_features and _feature_key(first) == _feature_key(
-                    second
-                ):
-                    continue
-                gap = _distance_between_hits(first, second, inventory)
-                if (
-                    gap is None
-                    or rule.max_circular_gap_bp is None
-                    or gap > rule.max_circular_gap_bp
-                ):
-                    continue
-                hypotheses.append(
-                    _hypothesis(
-                        hypothesis_id=(
-                            f"h:{rule.id}:{inventory.record_index}:"
-                            f"{min(first.feature.feature_index, second.feature.feature_index)}:"
-                            f"{max(first.feature.feature_index, second.feature.feature_index)}"
-                        ),
-                        rule=rule,
-                        inventory=inventory,
-                        supporting=(first, second),
-                        limitations=tuple(rule.limitations)
-                        + (
-                            (
-                                f"Configured maximum gap ({inventory.topology}): "
-                                f"{rule.max_circular_gap_bp} bp; observed gap: {gap} bp."
-                            ),
-                        ),
-                    )
+        rule_hits = _ta_rule_hits(hits, rule)
+        if len(rule_hits) < len(rule.required_marker_ids):
+            continue
+        required = frozenset(rule.required_marker_ids)
+        for cluster in _connected_marker_clusters(rule_hits, rule, inventory):
+            present = {hit.marker_id for hit in cluster}
+            if not required <= present:
+                continue
+            feature_indices = sorted({hit.feature.feature_index for hit in cluster})
+            observed = _cluster_span_bp(cluster, inventory)
+            extra_limitations: list[str] = []
+            if len(feature_indices) == 2:
+                extra_limitations.append(
+                    f"Configured maximum gap ({inventory.topology}): "
+                    f"{rule.max_circular_gap_bp} bp; observed gap: {observed} bp."
                 )
+            else:
+                extra_limitations.append(
+                    f"Configured maximum gap ({inventory.topology}): "
+                    f"{rule.max_circular_gap_bp} bp; observed cluster span: "
+                    f"{observed} bp."
+                )
+                extra_limitations.append(
+                    "Aggregate cluster of nearby candidates; per-copy pairing is a "
+                    "spatial heuristic and individual pairings are unresolved."
+                )
+            hypotheses.append(
+                _hypothesis(
+                    hypothesis_id=(
+                        f"h:{rule.id}:{inventory.record_index}:"
+                        + ":".join(str(index) for index in feature_indices)
+                    ),
+                    rule=rule,
+                    inventory=inventory,
+                    supporting=cluster,
+                    limitations=tuple(rule.limitations) + tuple(extra_limitations),
+                )
+            )
     return tuple(hypotheses)
 
 
@@ -332,22 +420,13 @@ def record_inference_limitations(
         hit for hit in hits if hit.feature.record_index == inventory.record_index
     )
     for rule in database.inference_rules:
-        if rule.kind != "toxin_antitoxin" or len(rule.required_marker_ids) != 2:
+        if rule.kind != "toxin_antitoxin" or len(rule.required_marker_ids) < 2:
             continue
-        first_marker, second_marker = rule.required_marker_ids
-        first_hits = tuple(
-            hit for hit in _functional_hits(local_hits) if hit.marker_id == first_marker
-        )
-        second_hits = tuple(
-            hit
-            for hit in _functional_hits(local_hits)
-            if hit.marker_id == second_marker
-        )
-        if any(
-            not first.feature.segments or not second.feature.segments
-            for first in first_hits
-            for second in second_hits
-        ):
+        rule_hits = _ta_rule_hits(local_hits, rule)
+        present_markers = {hit.marker_id for hit in rule_hits}
+        if len(present_markers) < 2:
+            continue
+        if any(not hit.feature.segments for hit in rule_hits):
             limitations.append(
                 f"{rule.id}: at least one same-record toxin/antitoxin candidate is unlocatable; spatial pairing was skipped."
             )
@@ -373,7 +452,7 @@ def infer_replicon_hypotheses(
         hypothesis = _infer_component_rule(replicon, local_hits, database, rule_id)
         if hypothesis is not None:
             hypotheses.append(hypothesis)
-    hypotheses.extend(_infer_toxin_antitoxin_pairs(replicon, local_hits, database))
+    hypotheses.extend(_infer_toxin_antitoxin_clusters(replicon, local_hits, database))
     return tuple(
         sorted(
             hypotheses,

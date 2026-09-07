@@ -1,5 +1,5 @@
 schema_version: 1
-provenance_version: "1.4.0"
+provenance_version: "1.5.0"
 
 sources:
   - id: blower-2012-toxin
@@ -133,7 +133,7 @@ sources:
   - id: christie-2025-t4ss
     type: primary_article
     title: "Type IV secretion systems: reconciling diversity through a unified nomenclature"
-    year: 2025
+    year: 2026
     doi: 10.1093/femsre/fuaf069
     pmid: "41474020"
     url: https://academic.oup.com/femsre/article/doi/10.1093/femsre/fuaf069/8407627
@@ -337,6 +337,188 @@ sources:
       - Mobile-element detection from sequence is performed by external tools backed by curated element databases.
     limitations:
       - The tool's database composition and thresholds bound any future imported result.
+  - id: catchpole-1992-pt48
+    type: primary_article
+    title: Replication of staphylococcal plasmid pT48
+    year: 1992
+    doi: 10.1016/0378-1097(92)90562-3
+    pmid: "1577254"
+    url: https://academic.oup.com/femsle/article/91/1/55/566627
+    supports:
+      - Disruption of the pT48 repL gene abolishes plasmid replication, and a functional pT48 repL complements the defect in trans.
+    limitations:
+      - Complementation evidence is specific to pT48 and does not generalize to every repL annotation.
+  - id: catchpole-1991-pt48-mutants
+    type: primary_article
+    title: Replication mutants of Staphylococcus aureus macrolide-lincosamide-streptogramin B resistance plasmid pT48
+    year: 1991
+    doi: 10.1111/j.1365-2958.1991.tb00771.x
+    pmid: "1906970"
+    url: https://doi.org/10.1111/j.1365-2958.1991.tb00771.x
+    supports:
+      - Mutational analysis of the pT48 Rep protein; C-terminal changes cause abnormal copy number and multimerization consistent with defective termination of rolling-circle replication.
+    limitations:
+      - The pT48 mutant phenotypes do not establish a replication mechanism for other repL annotations.
+  - id: projan-1987-pim13
+    type: primary_article
+    title: Replication properties of pIM13, a naturally occurring plasmid found in Bacillus subtilis, and of its close relative pE5, a plasmid native to Staphylococcus aureus
+    year: 1987
+    doi: 10.1128/jb.169.11.5131-5139.1987
+    pmid: "2822666"
+    url: https://doi.org/10.1128/jb.169.11.5131-5139.1987
+    supports:
+      - The second pIM13 open reading frame is named repL, is homologous to the pSN2 replication ORF, and is associated with plasmid replication.
+    limitations:
+      - Historical nomenclature evidence; the association does not establish replication for every repL annotation.
+  - id: khan-1982-psn2
+    type: primary_article
+    title: "Structural analysis of plasmid pSN2 in Staphylococcus aureus: no involvement in enterotoxin B production"
+    year: 1982
+    doi: 10.1128/jb.149.2.642-649.1982
+    pmid: "7056699"
+    url: https://doi.org/10.1128/jb.149.2.642-649.1982
+    supports:
+      - Complete sequence and coding analysis of pSN2, the prototype replicon of the later RepL family.
+    limitations:
+      - Prototype reference only; it does not by itself define the RepL family nomenclature.
+  - id: kwong-2017-staph-plasmids
+    type: primary_article
+    title: Replication of Staphylococcal Resistance Plasmids
+    year: 2017
+    doi: 10.3389/fmicb.2017.02279
+    pmid: "29218034"
+    pmcid: PMC5703833
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC5703833/
+    supports:
+      - RepL designates the PF05732 pSN2-family replication initiator proteins of staphylococcal resistance plasmids.
+    limitations:
+      - Family-level nomenclature does not establish the replication mechanism or autonomy of a new annotation.
+  - id: sprincova-2005-psrd191
+    type: primary_article
+    title: pSRD191, a new member of RepL replicating plasmid family from Selenomonas ruminantium
+    year: 2005
+    doi: 10.1016/j.plasmid.2004.11.004
+    pmid: "15907537"
+    url: https://doi.org/10.1016/j.plasmid.2004.11.004
+    supports:
+      - Rep191 of pSRD191 is homologous to the Firmicute RepL family, extending the family beyond the classical staphylococcal replicons.
+    limitations:
+      - Inference from sequence homology does not establish replication in a new host or context.
+  - id: bordes-2011-tac
+    type: primary_article
+    title: SecB-like chaperone controls a toxin-antitoxin stress-responsive system in Mycobacterium tuberculosis
+    year: 2011
+    doi: 10.1073/pnas.1101189108
+    pmid: "21536872"
+    pmcid: PMC3100995
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC3100995/
+    supports:
+      - The Mycobacterium tuberculosis HigB1-HigA1 locus forms a toxin-antitoxin-chaperone (TAC) module with the SecB-like chaperone Rv1957.
+    limitations:
+      - The characterized TAC module does not generalize to every HigBA or SecB-like annotation.
+  - id: mansour-2022-tac
+    type: primary_article
+    title: Substrate recognition and cryo-EM structure of the ribosome-bound TAC toxin of Mycobacterium tuberculosis
+    year: 2022
+    doi: 10.1038/s41467-022-30373-w
+    pmid: "35552387"
+    pmcid: PMC9098466
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC9098466/
+    supports:
+      - The TAC toxin HigB1 is ribosome-associated, providing structural substrate-recognition evidence for the Mycobacterium tuberculosis TAC module.
+    limitations:
+      - Structural evidence does not establish activity for an annotation match in a new genome.
+  - id: mets-2024-tac-phage-sensing
+    type: primary_article
+    title: Mechanism of phage sensing and restriction by toxin-antitoxin-chaperone systems
+    year: 2024
+    doi: 10.1016/j.chom.2024.05.003
+    pmid: "38821063"
+    url: https://doi.org/10.1016/j.chom.2024.05.003
+    supports:
+      - Escherichia coli HigBAC and CmdTAC are antiphage TAC modules in which a SecB-like chaperone stabilizes the antitoxin.
+    limitations:
+      - The characterized antiphage mechanisms do not transfer to a co-occurring annotation cluster.
+  - id: nakamoto-2026-tac-diversity
+    type: primary_article
+    title: Structural and functional diversity of toxin-antitoxin-chaperone systems
+    year: 2026
+    doi: 10.1016/j.celrep.2026.117024
+    pmid: "41779618"
+    url: https://doi.org/10.1016/j.celrep.2026.117024
+    supports:
+      - Toxin-antitoxin-chaperone (TAC) systems are a structurally and functionally diverse module class beyond the Mycobacterium tuberculosis exemplar.
+    limitations:
+      - A diversity review does not establish that an annotation cluster is an active TAC module.
+  - id: fernandez-garcia-2024-mqsrac
+    type: primary_article
+    title: Toxin/antitoxin systems induce persistence and work in concert with restriction/modification systems to inhibit phage
+    year: 2024
+    doi: 10.1128/spectrum.03388-23
+    pmid: "38054715"
+    pmcid: PMC10783111
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC10783111/
+    supports:
+      - The Escherichia coli C496_10 MqsR/MqsA/MqsC (MqsRAC) tripartite toxin/antitoxin/chaperone system is a bona fide phage-defense system.
+    limitations:
+      - The characterized system does not establish chaperone function or phage defense for a new annotation cluster.
+  - id: bobonis-2022-retron
+    type: primary_article
+    title: Bacterial retrons encode phage-defending tripartite toxin-antitoxin systems
+    year: 2022
+    doi: 10.1038/s41586-022-05091-4
+    pmid: "35850148"
+    pmcid: PMC11938430
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC11938430/
+    supports:
+      - Retrons encode a reverse transcriptase plus msDNA antitoxin complex that neutralizes an accessory toxin (for example RcaT) in antiphage defense.
+    limitations:
+      - The characterized antiphage role does not establish defense function for a new retron annotation.
+  - id: camacho-2002-oez
+    type: primary_article
+    title: In vitro and in vivo stability of the epsilon2zeta2 protein complex of the broad host-range Streptococcus pyogenes pSM19035 addiction system
+    year: 2002
+    doi: 10.1515/BC.2002.191
+    pmid: "12530535"
+    url: https://doi.org/10.1515/BC.2002.191
+    supports:
+      - The pSM19035 omega-epsilon-zeta addiction system contributes to stable plasmid inheritance; epsilon neutralizes the zeta toxin.
+    limitations:
+      - The characterized addiction system does not establish plasmid stabilization for a new annotation cluster.
+  - id: brzozowska-2014-epsilon-clpx
+    type: primary_article
+    title: The ClpXP protease is responsible for the degradation of the Epsilon antidote to the Zeta toxin of the streptococcal pSM19035 plasmid
+    year: 2014
+    doi: 10.1074/jbc.M113.519488
+    pmid: "24492616"
+    pmcid: PMC3953265
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC3953265/
+    supports:
+      - Epsilon is a labile antidote degraded by the ClpXP protease, releasing zeta activity.
+    limitations:
+      - Protease-dependent regulation of the studied plasmid does not generalize to every epsilon annotation.
+  - id: dmowski-2016-omega-parb
+    type: primary_article
+    title: Omega (ParB) binding sites together with the RNA polymerase-recognized sequence are essential for centromeric functions of the P omega region in the partition system of pSM19035
+    year: 2016
+    doi: 10.1099/mic.0.000308
+    pmid: "27177883"
+    url: https://doi.org/10.1099/mic.0.000308
+    supports:
+      - Omega of pSM19035 is a ParB-family DNA-binding protein acting in partition and centromeric control of the omega-epsilon-zeta region.
+    limitations:
+      - Partition function of the studied plasmid does not generalize to every omega annotation.
+  - id: chan-2023-type2-ta
+    type: primary_article
+    title: "Type II bacterial toxin-antitoxins: hypotheses, facts, and the newfound plethora of the PezAT system"
+    year: 2023
+    doi: 10.1093/femsre/fuad052
+    pmid: "37715317"
+    url: https://doi.org/10.1093/femsre/fuad052
+    supports:
+      - The omega-epsilon-zeta and MqsR/MqsA systems are documented members of the Type II toxin-antitoxin complement in a current review.
+    limitations:
+      - A review classification does not transfer to an annotation match in a new genome.
   - id: bakta-origin-docs
     type: official_documentation
     title: Bakta documentation

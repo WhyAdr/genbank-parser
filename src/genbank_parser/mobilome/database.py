@@ -630,11 +630,17 @@ def _parse_inference_rules(
             else _positive_int(raw_gap, f"rule {rule_id}.max_circular_gap_bp")
         )
         rule_kind = _string(raw_rule.get("kind"), f"rule {rule_id}.kind")
-        if rule_kind == "toxin_antitoxin" and required_marker_ids and max_gap is None:
-            raise MobilomeDatabaseError(
-                f"Rule {rule_id} is a toxin-antitoxin rule and must declare "
-                "max_circular_gap_bp"
-            )
+        if rule_kind == "toxin_antitoxin":
+            if len(required_marker_ids) < 2:
+                raise MobilomeDatabaseError(
+                    f"Rule {rule_id} is a toxin-antitoxin rule and must declare "
+                    "at least two required_marker_ids"
+                )
+            if max_gap is None:
+                raise MobilomeDatabaseError(
+                    f"Rule {rule_id} is a toxin-antitoxin rule and must declare "
+                    "max_circular_gap_bp"
+                )
         rules.append(
             InferenceRule(
                 id=rule_id,

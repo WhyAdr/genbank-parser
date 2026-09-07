@@ -1,5 +1,5 @@
 schema_version: 1
-catalog_version: "1.4.0"
+catalog_version: "1.5.0"
 
 facets:
   - id: replication_origin
@@ -18,6 +18,8 @@ facets:
     title: Toxin-antitoxin toxin evidence
   - id: ta_antitoxin
     title: Toxin-antitoxin antitoxin evidence
+  - id: ta_accessory
+    title: Toxin-antitoxin accessory component annotation evidence
   - id: partition_maintenance
     title: Partition or plasmid-maintenance annotation evidence
   - id: recombination
@@ -129,11 +131,12 @@ markers:
         strength: 1
     requires_non_pseudo: true
     requires_complete: true
-    sources: [anand-2008-repx, local-annotation-candidate-policy, tinsley-2006-repx]
+    sources: [anand-2008-repx, catchpole-1991-pt48-mutants, catchpole-1992-pt48, khan-1982-psn2, kwong-2017-staph-plasmids, local-annotation-candidate-policy, projan-1987-pim13, sprincova-2005-psrd191, tinsley-2006-repx]
     interpretation: Retains a replication-initiation annotation candidate.
     limitations:
       - Does not identify a replication mechanism or incompatibility group.
-      - The repX-specific citations anchor the repX pattern only; repL and other generic rep gene names remain local-policy annotation candidates.
+      - The repX-specific citations anchor the repX pattern only.
+      - repL annotations are anchored by the pT48 and pSN2-family RepL literature and remain replication-mechanism-neutral.
 
   - id: relaxase_candidate
     label: Relaxase annotation candidate
@@ -305,6 +308,365 @@ markers:
     limitations:
       - The cited chemistry is not generalized to every annotation match.
 
+  - id: tenpn
+    label: TenpN-family toxin annotation
+    facets: [ta_toxin]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [tenpN]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bTenpN(?:-family)?\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [blower-2012-toxin, qiu-2022-ta-classification]
+    interpretation: Supports a TenpN-family Type III toxin annotation.
+    limitations:
+      - Annotation does not establish toxin activity.
+
+  - id: tenpi
+    label: TenpI RNA antitoxin annotation
+    facets: [ta_antitoxin]
+    feature_types: [ncRNA, misc_RNA, repeat_region, regulatory, CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [tenpI]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bTenpI(?: RNA)?(?: antitoxin)?\\b"
+        negative_patterns: []
+        strength: 2
+      - field: note
+        mode: regex
+        patterns:
+          - "(?i)\\bTenpI\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [blower-2012-toxin, qiu-2022-ta-classification]
+    interpretation: Supports a TenpI RNA antitoxin annotation.
+    limitations:
+      - TenpI correspondence does not establish Type III system activity.
+
+  - id: cptn
+    label: CptN-family toxin annotation
+    facets: [ta_toxin]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [cptN]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bCptN(?:-family)?\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [blower-2012-toxin, qiu-2022-ta-classification]
+    interpretation: Supports a CptN-family Type III toxin annotation.
+    limitations:
+      - Annotation does not establish toxin activity.
+
+  - id: cpti
+    label: CptI RNA antitoxin annotation
+    facets: [ta_antitoxin]
+    feature_types: [ncRNA, misc_RNA, repeat_region, regulatory, CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [cptI]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bCptI(?: RNA)?(?: antitoxin)?\\b"
+        negative_patterns: []
+        strength: 2
+      - field: note
+        mode: regex
+        patterns:
+          - "(?i)\\bCptI\\b"
+        negative_patterns: []
+        strength: 1
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [blower-2012-toxin, qiu-2022-ta-classification]
+    interpretation: Supports a CptI RNA antitoxin annotation.
+    limitations:
+      - CptI correspondence does not establish Type III system activity.
+
+  - id: zeta
+    label: Zeta-family toxin annotation
+    facets: [ta_toxin]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [zeta]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bzeta toxin\\b"
+        negative_patterns:
+          - "(?i)carotene"
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [camacho-2002-oez, chan-2023-type2-ta]
+    interpretation: Supports a zeta-family toxin annotation.
+    limitations:
+      - Annotation does not establish toxin activity or phosphoryl transfer.
+
+  - id: epsilon
+    label: Epsilon-family antitoxin annotation
+    facets: [ta_antitoxin]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [epsilon]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bepsilon (?:antitoxin|antidote)\\b"
+        negative_patterns:
+          - "(?i)polymerase"
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [brzozowska-2014-epsilon-clpx, camacho-2002-oez]
+    interpretation: Supports an epsilon-family antitoxin annotation.
+    limitations:
+      - The cited neutralization chemistry is not generalized to every annotation match.
+
+  - id: omega
+    label: Omega-family accessory regulator annotation
+    facets: [ta_accessory]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [omega]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bomega (?:transcriptional )?repressor\\b"
+        negative_patterns:
+          - "(?i)fatty acid"
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [chan-2023-type2-ta, dmowski-2016-omega-parb]
+    interpretation: Supports an omega-family accessory regulator annotation.
+    limitations:
+      - An omega annotation does not establish partition or copy-number control.
+
+  - id: mqsr
+    label: MqsR-family toxin annotation
+    facets: [ta_toxin]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [mqsR]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bMqsR\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [chan-2023-type2-ta, fernandez-garcia-2024-mqsrac, qiu-2022-ta-classification]
+    interpretation: Supports an MqsR-family toxin annotation.
+    limitations:
+      - Annotation does not establish toxin activity.
+
+  - id: mqsa
+    label: MqsA-family antitoxin annotation
+    facets: [ta_antitoxin]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [mqsA]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bMqsA\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [chan-2023-type2-ta, fernandez-garcia-2024-mqsrac, qiu-2022-ta-classification]
+    interpretation: Supports an MqsA-family antitoxin annotation.
+    limitations:
+      - Annotation does not establish antitoxin activity.
+
+  - id: mqsc
+    label: MqsC-family accessory chaperone annotation
+    facets: [ta_accessory]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [mqsC]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bMqsC\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [fernandez-garcia-2024-mqsrac]
+    interpretation: Supports an MqsC-family accessory chaperone annotation.
+    limitations:
+      - The SecB-type chaperone correspondence is documented for the studied MqsRAC system and is not generalized to every mqsC annotation.
+
+  - id: higb
+    label: HigB-family toxin annotation
+    facets: [ta_toxin]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [higB, higB1, higB2]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bHigB(?:1|2)?(?:-family)? toxin\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [bordes-2011-tac, mets-2024-tac-phage-sensing, qiu-2022-ta-classification]
+    interpretation: Supports a HigB-family toxin annotation.
+    limitations:
+      - Annotation does not establish toxin activity.
+
+  - id: higa
+    label: HigA-family antitoxin annotation
+    facets: [ta_antitoxin]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [higA, higA1, higA2]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bHigA(?:1|2)?(?:-family)? antitoxin\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [bordes-2011-tac, mets-2024-tac-phage-sensing, qiu-2022-ta-classification]
+    interpretation: Supports a HigA-family antitoxin annotation.
+    limitations:
+      - Annotation does not establish antitoxin activity.
+
+  - id: tac_chaperone
+    label: Toxin-antitoxin-chaperone SecB-like chaperone annotation
+    facets: [ta_accessory]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [higC, rv1957]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\b(?:SecB-?like|antitoxin|TAC) chaperone\\b"
+        negative_patterns:
+          - "(?i)chaperonin"
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [bordes-2011-tac, mansour-2022-tac, mets-2024-tac-phage-sensing, nakamoto-2026-tac-diversity]
+    interpretation: Supports a toxin-antitoxin-chaperone (TAC) SecB-like chaperone annotation.
+    limitations:
+      - A SecB-like chaperone annotation does not establish antitoxin stabilization.
+
+  - id: retron_rt
+    label: Retron-encoded reverse-transcriptase annotation
+    facets: [ta_antitoxin]
+    feature_types: [CDS, pseudogene]
+    matchers:
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bretron .{0,30}reverse transcriptase\\b"
+        negative_patterns:
+          - "(?i)group (?:II|2) intron"
+          - "(?i)retrotransposon"
+          - "(?i)telomerase"
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [bobonis-2022-retron]
+    interpretation: Supports a retron-encoded reverse-transcriptase annotation.
+    limitations:
+      - A reverse-transcriptase annotation does not establish msDNA biosynthesis or antiphage defense.
+
+  - id: msdna
+    label: msDNA region annotation
+    facets: [ta_antitoxin]
+    feature_types: [ncRNA, misc_RNA, misc_feature, repeat_region, CDS, pseudogene]
+    matchers:
+      - field: gene
+        mode: casefold_exact
+        patterns: [msr, msd]
+        negative_patterns: []
+        strength: 2
+      - field: product
+        mode: regex
+        patterns:
+          - "(?i)\\bmsDNA\\b"
+          - "(?i)\\bmulticopy single[- ]stranded DNA\\b"
+        negative_patterns: []
+        strength: 2
+    requires_non_pseudo: true
+    requires_complete: true
+    sources: [bobonis-2022-retron]
+    interpretation: Supports an msDNA (msr/msd) region annotation.
+    limitations:
+      - msDNA correspondence does not establish retron antiphage activity.
   - id: partition_maintenance_candidate
     label: Partition or maintenance annotation candidate
     facets: [partition_maintenance]
