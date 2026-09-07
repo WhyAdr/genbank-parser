@@ -56,13 +56,13 @@ def test_mobilome_serializers_match_versioned_goldens() -> None:
     golden_dir = Path("tests/golden")
 
     assert serialize_mobilome_report(report, "json") == (
-        golden_dir / "mobilome_v1.json"
+        golden_dir / "mobilome_v2.json"
     ).read_bytes().decode("utf-8")
     assert serialize_mobilome_report(report, "tsv") == (
-        golden_dir / "mobilome_v1.tsv"
+        golden_dir / "mobilome_v2.tsv"
     ).read_bytes().decode("utf-8")
     assert serialize_mobilome_report(report, "text") == (
-        golden_dir / "mobilome_v1.txt"
+        golden_dir / "mobilome_v2.txt"
     ).read_bytes().decode("utf-8")
 
 

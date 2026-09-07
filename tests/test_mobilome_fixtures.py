@@ -4,7 +4,7 @@ from pathlib import Path
 
 from genbank_parser import read_genbank
 
-REPORT_SCHEMA_VERSION = "gbparse.mobilome.v1"
+REPORT_SCHEMA_VERSION = "gbparse.mobilome.v2"
 CATALOG_VERSION = "1.0.1"
 INFERENCE_VERSION = "1.0.0"
 FORBIDDEN_CLAIMS = (

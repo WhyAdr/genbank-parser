@@ -234,10 +234,10 @@ def _load_schema(raw: bytes) -> None:
         )
     if (
         schema.get("properties", {}).get("schema_version", {}).get("const")
-        != "gbparse.mobilome.v1"
+        != "gbparse.mobilome.v2"
     ):
         raise MobilomeDatabaseError(
-            "report.schema.json must require gbparse.mobilome.v1"
+            "report.schema.json must require gbparse.mobilome.v2"
         )
 
 

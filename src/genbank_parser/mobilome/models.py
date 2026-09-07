@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-SCHEMA_VERSION = "gbparse.mobilome.v1"
+SCHEMA_VERSION = "gbparse.mobilome.v2"
 
 RepliconClass = Literal["chromosome", "plasmid", "unknown"]
 RepliconTopology = Literal["circular", "linear", "unknown"]

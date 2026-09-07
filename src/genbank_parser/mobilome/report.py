@@ -12,6 +12,7 @@ from collections.abc import Iterable, Sequence
 from pathlib import Path
 
 from .models import (
+    SCHEMA_VERSION,
     CatalogResource,
     DisabledAggregateRule,
     EvidenceReason,
@@ -394,7 +395,7 @@ def mobilome_report_to_dict(report: MobilomeReport) -> dict[str, object]:
 
     validate_mobilome_report_semantics(report)
     return {
-        "schema_version": "gbparse.mobilome.v1",
+        "schema_version": SCHEMA_VERSION,
         "tool": "gbparse",
         "analysis": "mobilome",
         "tool_version": report.tool_version,
@@ -455,7 +456,7 @@ def _compact_json(value: object) -> str:
 
 def _blank_row(row_type: str) -> dict[str, object]:
     row: dict[str, object] = {column: "" for column in TSV_COLUMNS}
-    row["schema_version"] = "gbparse.mobilome.v1"
+    row["schema_version"] = SCHEMA_VERSION
     row["row_type"] = row_type
     return row
 

@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://gbparse.dev/schema/mobilome/v1",
-  "title": "gbparse mobilome evidence report v1",
+  "$id": "https://gbparse.dev/schema/mobilome/v2",
+  "title": "gbparse mobilome evidence report v2",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "tool", "analysis", "tool_version", "catalog_version", "inference_version", "input", "parameters", "provenance", "summary", "inventory", "replicons", "cross_record_hypotheses", "disabled_aggregate_rules", "handoffs", "limitations"],
   "properties": {
-    "schema_version": {"const": "gbparse.mobilome.v1"},
+    "schema_version": {"const": "gbparse.mobilome.v2"},
     "tool": {"const": "gbparse"},
     "analysis": {"const": "mobilome"},
     "tool_version": {"type": "string", "minLength": 1},

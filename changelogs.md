@@ -4,6 +4,36 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.8.0] - 2026-09-06
+
+### Mobilome Report Schema v2 and Hardening
+
+- **Breaking report-contract repair**: Bumped the mobilome report contract to
+  `gbparse.mobilome.v2`. The 0.7.0 release had introduced required fields
+  (`handoffs[].source_ids`, `inventory[].spatial_limitations`) and a structured
+  `missing_components` object array under the unchanged v1 schema version, so
+  v1-labeled reports could no longer validate against the packaged v1 schema.
+  Goldens were renamed to `mobilome_v2.*` and regenerated.
+- **Text-report regression fix**: `RepliconInventory.spatial_limitations` are
+  now printed in the text renderer (0.7.0 had silently dropped them there) and
+  are carried in the TSV through a new `spatial_limitations_json` column
+  (59-column header).
+- **Fail-closed toxin-antitoxin gap policy**: the loader now rejects
+  `toxin_antitoxin` rules that declare required markers without
+  `max_circular_gap_bp`, preventing silently disabled pairing rules.
+- **Knowledge-base addition**: added `makarova-2025-crispr-classification`
+  (Nature Microbiology, PMID 41198952) anchoring subtype-suffixed Cas
+  nomenclature, and extended the `crispr_cas_candidate` product matcher to
+  recognize suffixed Cas names consistently with the gene matcher.
+- **repL provenance scoping**: documented that the repX-specific citations
+  anchor the repX pattern only; repL remains a local-policy candidate.
+- **Test hardening**: regression tests for the linear-topology TA gap wording,
+  scanner-level behavior of the expanded cas/virB/trb/repX regexes,
+  retained-evidence facet/marker validation, handoff source resolution, and
+  citation anchors for the 1.4.0 provenance additions.
+- **Version bumps**: package 0.8.0; mobilome catalog, provenance, and
+  inference resources 1.4.0.
+
 ## [0.7.0] - 2026-09-06
 
 ### Mobilome Catalog Hygiene, Marker Expansions, and Schema Decoupling

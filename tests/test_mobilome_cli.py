@@ -13,7 +13,7 @@ def test_mobilome_cli_formats_and_output_behavior(tmp_path: Path, capsys) -> Non
 
     assert main(["mobilome", str(fixture), "--format", "json"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["schema_version"] == "gbparse.mobilome.v1"
+    assert payload["schema_version"] == "gbparse.mobilome.v2"
 
     output = tmp_path / "report.tsv"
     assert (

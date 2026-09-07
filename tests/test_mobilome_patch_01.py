@@ -379,6 +379,25 @@ def test_toxin_antitoxin_gap_boundary_is_inclusive(
     assert any(item.kind == "toxin_antitoxin" for item in hypotheses) is expected
 
 
+def test_toxin_antitoxin_gap_wording_reports_record_topology() -> None:
+    inventory, hits, database = _synthetic_features(
+        (
+            ("CDS", 100, 110, {"gene": ["toxN"], "product": ["ToxN-family toxin"]}),
+            ("ncRNA", 130, 140, {"gene": ["toxI"], "product": ["ToxI RNA antitoxin"]}),
+        ),
+        topology="linear",
+    )
+    pair = next(
+        item
+        for item in infer_replicon_hypotheses(inventory, hits, database)
+        if item.kind == "toxin_antitoxin"
+    )
+    assert any(
+        limitation.startswith("Configured maximum gap (linear):")
+        for limitation in pair.limitations
+    )
+
+
 @pytest.mark.parametrize(
     "gene_name, expected_marker",
     [
@@ -584,7 +603,7 @@ def test_cli_matrix_covers_include_database_and_input_errors(
         )
         assert (
             json.loads(capsys.readouterr().out)["schema_version"]
-            == "gbparse.mobilome.v1"
+            == "gbparse.mobilome.v2"
         )
 
     database_dir = tmp_path / "database"
