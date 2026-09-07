@@ -26,9 +26,9 @@ def test_packaged_database_is_versioned_hashed_and_schema_valid() -> None:
     )
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
-    assert database.catalog_version == "1.3.0"
-    assert database.inference_version == "1.3.0"
-    assert database.provenance_version == "1.3.0"
+    assert database.catalog_version == "1.4.0"
+    assert database.inference_version == "1.4.0"
+    assert database.provenance_version == "1.4.0"
     assert database.database_source == "packaged"
     assert database.source_paths == ()
     assert [resource.name for resource in database.resources] == [
@@ -81,9 +81,16 @@ def test_provenance_sources_use_verified_citations() -> None:
         "camargo-2024-genomad",
         "xie-2017-isescan",
         "johansson-2021-mobileelementfinder",
+        "anand-2008-repx",
+        "tinsley-2006-repx",
+        "makarova-2025-crispr-classification",
     ):
         assert anchor in by_id
     assert by_id["schwengers-2021-bakta"].payload["pmid"] == "34739369"
+    assert by_id["anand-2008-repx"].payload["pmid"] == "18179418"
+    assert by_id["tinsley-2006-repx"].payload["pmid"] == "16585744"
+    assert by_id["christie-2025-t4ss"].payload["pmid"] == "41474020"
+    assert by_id["makarova-2025-crispr-classification"].payload["pmid"] == "41198952"
     assert (
         by_id["garcillan-barcia-2025-extended-mobility"].payload["pmid"] == "40694848"
     )

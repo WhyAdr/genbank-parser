@@ -1,5 +1,5 @@
 schema_version: 1
-catalog_version: "1.3.0"
+catalog_version: "1.4.0"
 
 facets:
   - id: replication_origin
@@ -133,6 +133,7 @@ markers:
     interpretation: Retains a replication-initiation annotation candidate.
     limitations:
       - Does not identify a replication mechanism or incompatibility group.
+      - The repX-specific citations anchor the repX pattern only; repL and other generic rep gene names remain local-policy annotation candidates.
 
   - id: relaxase_candidate
     label: Relaxase annotation candidate
@@ -431,12 +432,12 @@ markers:
       - field: product
         mode: regex
         patterns:
-          - "(?i)\\b(?:CRISPR-associated|Cas(?:1|2|3|4|5|6|7|8|9|10|12|13|14))\\b"
+          - "(?i)\\b(?:CRISPR-associated|Cas(?:(?:[1-9]|1[0-4])[a-z]?|[A-F]))\\b"
         negative_patterns: []
         strength: 2
     requires_non_pseudo: true
     requires_complete: true
-    sources: [bakta-origin-docs, makarova-2020-crispr]
+    sources: [bakta-origin-docs, makarova-2020-crispr, makarova-2025-crispr-classification]
     interpretation: Retains a Cas annotation candidate.
     limitations:
       - Annotation does not establish a complete or active CRISPR system.

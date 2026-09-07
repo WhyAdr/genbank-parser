@@ -380,6 +380,39 @@ def test_toxin_antitoxin_gap_boundary_is_inclusive(
 
 
 @pytest.mark.parametrize(
+    "gene_name, expected_marker",
+    [
+        ("cas12a", "crispr_cas_candidate"),
+        ("cas13d", "crispr_cas_candidate"),
+        ("cas8f", "crispr_cas_candidate"),
+        ("cas14", "crispr_cas_candidate"),
+        ("virB4", "mpf_component"),
+        ("virB10", "mpf_component"),
+        ("trbE", "mpf_component"),
+        ("repX", "replication_initiation_candidate"),
+    ],
+)
+def test_expanded_marker_regexes_match_subtype_gene_names(
+    gene_name: str, expected_marker: str
+) -> None:
+    _, hits, _ = _synthetic_features((("CDS", 100, 160, {"gene": [gene_name]}),))
+
+    assert any(hit.marker_id == expected_marker for hit in hits)
+
+
+@pytest.mark.parametrize(
+    "gene_name",
+    ["cas15", "cas123", "casein", "virB12", "trbA", "repQ"],
+)
+def test_expanded_marker_regexes_reject_out_of_scope_gene_names(
+    gene_name: str,
+) -> None:
+    _, hits, _ = _synthetic_features((("CDS", 100, 160, {"gene": [gene_name]}),))
+
+    assert not hits
+
+
+@pytest.mark.parametrize(
     "spec",
     [
         (("CDS", 100, 110, {"gene": ["toxN"], "product": ["ToxN-family toxin"]}),),
