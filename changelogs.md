@@ -4,6 +4,53 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.8.1] - 2026-09-07
+
+### Mobilome Spatial Clustering, Tripartite Modules, and repL Curation
+
+- **C4 cluster engine**: Replaced the O(N x M) cross-product toxin-antitoxin
+  pair emission with deterministic single-linkage marker clusters. A tandem
+  array now collapses into one aggregate cluster hypothesis (with the observed
+  cluster span and an explicit per-copy-pairing limitation) instead of one
+  hypothesis per eligible pair; isolated toxins without a cognate still emit
+  nothing; two-feature clusters keep the previous hypothesis ids, wording,
+  and observed-gap limitations, so existing single-pair reports are unchanged.
+- **C5 tripartite modules**: `required_marker_ids` now supports N-marker
+  spatial clusters (N >= 2). Added rules for TAC modules
+  (`higba_tac_module_candidate`: higb/higa/tac_chaperone), the
+  omega-epsilon-zeta module (`omega_epsilon_zeta_module_candidate`), MqsRAC
+  (`mqsrac_module_candidate`), and retron RT-msDNA modules
+  (`retron_rt_msdna_module_candidate`), plus the Type III TenpIN and CptIN
+  pair rules (`tenpn`/`tenpi`, `cptn`/`cpti`).
+- **Marker expansion**: 15 new markers (tenpn, tenpi, cptn, cpti, zeta,
+  epsilon, omega, mqsr, mqsa, mqsc, higb, higa, tac_chaperone, retron_rt,
+  msdna) and the new `ta_accessory` facet for chaperone and regulator
+  components.
+- **repL dedicated curation (F5)**: `replication_initiation_candidate` now
+  cites six verified RepL references (Catchpole 1992 PMID 1577254 and 1991
+  PMID 1906970, Projan 1987 PMID 2822666, Khan and Novick 1982 PMID 7056699,
+  Kwong 2017 PMID 29218034, Šprincová 2005 PMID 15907537); repL stays
+  replication-mechanism-neutral.
+- **Print-year update (F6)**: `christie-2025-t4ss` provenance carries the
+  2026 print year (volume 50, online-first 2025-12-31) under its stable id.
+- **Real-genome benchmark**: `scripts/benchmark_mobilome.py` and the opt-in
+  `tests/test_mobilome_real_genome.py` check the integration-plan section
+  16.9 calibration against a local, gitignored `PF_NNT_reoriented.gbff`,
+  skipping clearly when absent and never staging the file. The standalone
+  mobilome-parser prototype is documented as archived in its own repository.
+- **Repository hygiene (F9)**: Removed the three paywalled full-text PDFs
+  from version control; local copies now live in the gitignored
+  `reference_pdfs/` directory and the catalog cites published records.
+- **Fail-closed loader hardening**: toxin-antitoxin rules must declare at
+  least two distinct `required_marker_ids` (duplicates already rejected).
+- **Knowledge base**: 16 new verified provenance sources (six repL, ten
+  tripartite-TA) with corrected identifiers: the deferred-review drafts
+  mis-cited Bordes 2011 (correct: PNAS 108(20):8438-8443, PMID 21536872),
+  Camacho 2002 (correct: Biol Chem 383(11):1701-1713, PMID 12530535), and
+  Bobonis 2022 (correct PMID 35850148, not 35978194).
+- **Version bumps**: package 0.8.1; mobilome catalog, provenance, and
+  inference resources 1.5.0.
+
 ## [0.8.0] - 2026-09-06
 
 ### Mobilome Report Schema v2 and Hardening

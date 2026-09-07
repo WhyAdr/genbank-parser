@@ -28,7 +28,7 @@ def test_report_contracts() -> None:
         "karyograms",
     ]
     assert payload["schema_version"] == "gbparse.meor.v1"
-    assert payload["tool_version"] == "0.8.0"
+    assert payload["tool_version"] == "0.8.1"
     assert payload["catalog_version"] == "1.1"
     assert payload["parameters"] == {
         "min_weight": 1,
@@ -46,7 +46,7 @@ def test_report_contracts() -> None:
         assert section in text
     assert "Low (W=1)" in text
     assert "1 kb windows" in text
-    assert "gbparse Version: 0.8.0" in text
+    assert "gbparse Version: 0.8.1" in text
     assert "MEOR Catalog Version: 1.1" in text
 
 

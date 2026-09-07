@@ -2,9 +2,9 @@
   "schema_version": "gbparse.mobilome.v2",
   "tool": "gbparse",
   "analysis": "mobilome",
-  "tool_version": "0.8.0",
-  "catalog_version": "1.4.0",
-  "inference_version": "1.4.0",
+  "tool_version": "0.8.1",
+  "catalog_version": "1.5.0",
+  "inference_version": "1.5.0",
   "input": {
     "file": "mobilome_evidence.gb",
     "sha256": "34d9908260fc17c0a199c17c4494d608b99219bfaa2411983ad45f77d86957fc"
@@ -18,15 +18,15 @@
     "resources": [
       {
         "name": "markers.yaml",
-        "sha256": "53d0efd3fe44f808242cdfed01866059a4b9afb80d8d764f4e0a7f2e37c8b720"
+        "sha256": "593975055470d16a5a3c8d14dfccba92393917d6cca2411826ee8e25a437c3e2"
       },
       {
         "name": "provenance.yaml",
-        "sha256": "17ca387a48c960885f19aaefc3f080f88da0f0306c3a63f6cc0f6a0ceebe074a"
+        "sha256": "a685c443d5cd38358ad9002c00657085ed3621a9b6ca7f1f379702c58d8ceb41"
       },
       {
         "name": "inference.yaml",
-        "sha256": "e436b6096abef81b025168ec459fd0628fcd678c3500679d3a4b546bdb7aec08"
+        "sha256": "9b46b6c075fb2e28b99060206b7b7c9e1c7501b3069e855237cee2865e0c8574"
       },
       {
         "name": "report.schema.json",
@@ -618,7 +618,13 @@
               "eligible": false,
               "source_ids": [
                 "anand-2008-repx",
+                "catchpole-1991-pt48-mutants",
+                "catchpole-1992-pt48",
+                "khan-1982-psn2",
+                "kwong-2017-staph-plasmids",
                 "local-annotation-candidate-policy",
+                "projan-1987-pim13",
+                "sprincova-2005-psrd191",
                 "tinsley-2006-repx"
               ]
             },
@@ -633,7 +639,13 @@
               "eligible": false,
               "source_ids": [
                 "anand-2008-repx",
+                "catchpole-1991-pt48-mutants",
+                "catchpole-1992-pt48",
+                "khan-1982-psn2",
+                "kwong-2017-staph-plasmids",
                 "local-annotation-candidate-policy",
+                "projan-1987-pim13",
+                "sprincova-2005-psrd191",
                 "tinsley-2006-repx"
               ]
             }
@@ -683,7 +695,13 @@
               "eligible": false,
               "source_ids": [
                 "anand-2008-repx",
+                "catchpole-1991-pt48-mutants",
+                "catchpole-1992-pt48",
+                "khan-1982-psn2",
+                "kwong-2017-staph-plasmids",
                 "local-annotation-candidate-policy",
+                "projan-1987-pim13",
+                "sprincova-2005-psrd191",
                 "tinsley-2006-repx"
               ]
             },
@@ -698,7 +716,13 @@
               "eligible": false,
               "source_ids": [
                 "anand-2008-repx",
+                "catchpole-1991-pt48-mutants",
+                "catchpole-1992-pt48",
+                "khan-1982-psn2",
+                "kwong-2017-staph-plasmids",
                 "local-annotation-candidate-policy",
+                "projan-1987-pim13",
+                "sprincova-2005-psrd191",
                 "tinsley-2006-repx"
               ]
             }
@@ -748,7 +772,13 @@
               "eligible": false,
               "source_ids": [
                 "anand-2008-repx",
+                "catchpole-1991-pt48-mutants",
+                "catchpole-1992-pt48",
+                "khan-1982-psn2",
+                "kwong-2017-staph-plasmids",
                 "local-annotation-candidate-policy",
+                "projan-1987-pim13",
+                "sprincova-2005-psrd191",
                 "tinsley-2006-repx"
               ]
             },
@@ -763,7 +793,13 @@
               "eligible": false,
               "source_ids": [
                 "anand-2008-repx",
+                "catchpole-1991-pt48-mutants",
+                "catchpole-1992-pt48",
+                "khan-1982-psn2",
+                "kwong-2017-staph-plasmids",
                 "local-annotation-candidate-policy",
+                "projan-1987-pim13",
+                "sprincova-2005-psrd191",
                 "tinsley-2006-repx"
               ]
             }
@@ -863,7 +899,13 @@
               "eligible": false,
               "source_ids": [
                 "anand-2008-repx",
+                "catchpole-1991-pt48-mutants",
+                "catchpole-1992-pt48",
+                "khan-1982-psn2",
+                "kwong-2017-staph-plasmids",
                 "local-annotation-candidate-policy",
+                "projan-1987-pim13",
+                "sprincova-2005-psrd191",
                 "tinsley-2006-repx"
               ]
             },
@@ -878,7 +920,13 @@
               "eligible": false,
               "source_ids": [
                 "anand-2008-repx",
+                "catchpole-1991-pt48-mutants",
+                "catchpole-1992-pt48",
+                "khan-1982-psn2",
+                "kwong-2017-staph-plasmids",
                 "local-annotation-candidate-policy",
+                "projan-1987-pim13",
+                "sprincova-2005-psrd191",
                 "tinsley-2006-repx"
               ]
             }
