@@ -102,6 +102,23 @@ def test_provenance_sources_use_verified_citations() -> None:
     )
 
 
+def test_retained_evidence_accepts_facet_and_marker_tokens() -> None:
+    database = load_mobilome_database()
+    marker_ids = {marker.id for marker in database.markers}
+    facet_ids = {facet.id for facet in database.facets}
+
+    for rule in database.disabled_aggregate_rules:
+        assert set(rule.evidence_retained_as) <= facet_ids | marker_ids
+
+    pxo = next(
+        rule
+        for rule in database.disabled_aggregate_rules
+        if rule.rule_id == "pxo_like_annotation_pattern_candidate"
+    )
+    assert pxo.evidence_retained_as == ("pxo_numbered_product_annotation",)
+    assert "pxo_numbered_product_annotation" in marker_ids
+
+
 def test_amr_and_vf_citations_are_anchored_to_their_own_markers() -> None:
     database = load_mobilome_database()
     markers = database.marker_map
@@ -289,6 +306,25 @@ def _mutated_database(
             "markers.yaml",
             lambda p: p["markers"][0].update({"id": "replication_origin"}),
             "shadows an existing facet ID",
+        ),
+        (
+            "inference.yaml",
+            lambda p: p["disabled_aggregate_rules"][1]["evidence_retained_as"].append(
+                "not_a_retained_token"
+            ),
+            "unknown retained evidence",
+        ),
+        (
+            "inference.yaml",
+            lambda p: p["handoffs"][0]["sources"].append("no-such-source"),
+            "unresolved sources",
+        ),
+        (
+            "inference.yaml",
+            lambda p: next(
+                rule for rule in p["rules"] if rule.get("kind") == "toxin_antitoxin"
+            ).pop("max_circular_gap_bp"),
+            "must declare max_circular_gap_bp",
         ),
         (
             "provenance.yaml",

@@ -629,10 +629,16 @@ def _parse_inference_rules(
             if raw_gap is None
             else _positive_int(raw_gap, f"rule {rule_id}.max_circular_gap_bp")
         )
+        rule_kind = _string(raw_rule.get("kind"), f"rule {rule_id}.kind")
+        if rule_kind == "toxin_antitoxin" and required_marker_ids and max_gap is None:
+            raise MobilomeDatabaseError(
+                f"Rule {rule_id} is a toxin-antitoxin rule and must declare "
+                "max_circular_gap_bp"
+            )
         rules.append(
             InferenceRule(
                 id=rule_id,
-                kind=_string(raw_rule.get("kind"), f"rule {rule_id}.kind"),
+                kind=rule_kind,
                 status=status,  # type: ignore[arg-type]
                 wording=_string(raw_rule.get("wording"), f"rule {rule_id}.wording"),
                 sources=tuple(
