@@ -43,6 +43,7 @@ TSV_COLUMNS = (
     "pseudo_feature_count",
     "pseudo_cds_count",
     "pseudogene_feature_count",
+    "spatial_limitations_json",
     "feature_index",
     "feature_type",
     "locus_tag",
@@ -478,6 +479,7 @@ def _inventory_row(
             "pseudo_feature_count": inventory.pseudo_feature_count,
             "pseudo_cds_count": inventory.pseudo_cds_count,
             "pseudogene_feature_count": inventory.pseudogene_feature_count,
+            "spatial_limitations_json": _compact_json(inventory.spatial_limitations),
         }
     )
     return row
@@ -669,6 +671,8 @@ def render_text(report: MobilomeReport) -> str:
         )
         for limitation in inventory.classification.limitations:
             print(f"    Limitation: {limitation}", file=output)
+        for limitation in inventory.spatial_limitations:
+            print(f"    Spatial limitation: {limitation}", file=output)
     print("Replicon assessments", file=output)
     for assessment in report.replicons:
         inventory = assessment.inventory

@@ -42,7 +42,7 @@ Records without a detected annotation pipeline retain a `null` pipeline name in
 the schema-versioned `annotation_pipelines` array; this explicitly records that
 the input did not declare a recognized pipeline rather than inferring one.
 
-TSV uses the fixed 58-column header and lossless empty-cell semantics. To keep
+TSV uses the fixed 59-column header and lossless empty-cell semantics. To keep
 rows readable, trailing empty cells are omitted from individual data rows;
 consumers should map fields by the header and tolerate these deterministic
 ragged rows.
@@ -53,4 +53,16 @@ do not select theta, rolling-circle, or another replication mechanism.
 
 Record-level spatial pairing warnings (such as unlocatable features skipping
 spatial pairing) are decoupled into `RepliconInventory.spatial_limitations`
-rather than mixing classification and pairing caveats.
+rather than mixing classification and pairing caveats. They render in the text
+report and are carried in the TSV `spatial_limitations_json` column, so all
+three formats expose the same record-level pairing caveats.
+
+Subtype-suffixed Cas gene names follow the updated evolutionary classification
+of CRISPR-Cas systems ([Makarova et al., 2025](https://doi.org/10.1038/s41564-025-02180-8));
+the gene and product matchers of `crispr_cas_candidate` both recognize the
+suffixed nomenclature, while an annotation match still does not establish a
+CRISPR-Cas subtype.
+
+The repX-specific citations (Anand et al. 2008; Tinsley and Khan 2006) anchor
+the repX pattern only; repL and the remaining generic rep gene names remain
+local-policy annotation candidates pending dedicated curation.
