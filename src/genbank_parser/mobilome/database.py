@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from copy import deepcopy
 from importlib import resources
 from pathlib import Path
 from typing import Any
@@ -217,19 +218,72 @@ def _load_yaml(
     raw: bytes,
     name: str,
     *,
-    expected_schema_version: int = 1,
+    expected_schema_version: int | tuple[int, ...] = 1,
 ) -> dict[str, Any]:
     try:
         loaded = yaml.load(raw.decode("utf-8"), Loader=_UniqueKeyLoader)
     except (UnicodeDecodeError, yaml.YAMLError) as exc:
         raise MobilomeDatabaseError(f"Could not load {name}: {exc}") from exc
     payload = _expect_mapping(loaded, name)
-    if payload.get("schema_version") != expected_schema_version:
+    expected_versions = (
+        (expected_schema_version,)
+        if isinstance(expected_schema_version, int)
+        else expected_schema_version
+    )
+    if payload.get("schema_version") not in expected_versions:
+        expected_label = ", ".join(str(version) for version in expected_versions)
         raise MobilomeDatabaseError(
             f"Unsupported {name} schema_version: {payload.get('schema_version')!r}; "
-            f"expected {expected_schema_version}"
+            f"expected {expected_label}"
         )
     return payload
+
+
+def _migrate_inference_schema(
+    inference_data: dict[str, Any],
+) -> dict[str, Any]:
+    """Migrate the v0.8.1 inference catalog shape in memory.
+
+    Schema 1 used ``max_circular_gap_bp`` for all topology types and did not
+    declare the spatial inference mode. Three-or-more-marker rules also lacked
+    the newer global span field, so the legacy edge gap becomes a conservative
+    span bound during migration. Packaged schema-2 resources are returned
+    unchanged.
+    """
+
+    if inference_data.get("schema_version") == 2:
+        return inference_data
+    if inference_data.get("schema_version") != 1:
+        raise MobilomeDatabaseError(
+            "Unsupported inference.yaml schema_version: "
+            f"{inference_data.get('schema_version')!r}; expected 1 or 2"
+        )
+
+    migrated = deepcopy(inference_data)
+    migrated["schema_version"] = 2
+    raw_rules = migrated.get("rules")
+    if not isinstance(raw_rules, list):
+        return migrated
+    for raw_rule in raw_rules:
+        if not isinstance(raw_rule, dict):
+            continue
+        raw_marker_ids = raw_rule.get("required_marker_ids", ())
+        marker_ids = (
+            raw_marker_ids
+            if isinstance(raw_marker_ids, list)
+            else ()
+        )
+        legacy_gap = raw_rule.get("max_circular_gap_bp")
+        if legacy_gap is not None and "max_edge_gap_bp" not in raw_rule:
+            raw_rule["max_edge_gap_bp"] = legacy_gap
+            raw_rule.pop("max_circular_gap_bp", None)
+        if marker_ids:
+            raw_rule.setdefault("inference_mode", "spatial_marker_cluster")
+            if len(marker_ids) >= 3 and "max_cluster_span_bp" not in raw_rule:
+                edge_gap = raw_rule.get("max_edge_gap_bp")
+                if edge_gap is not None:
+                    raw_rule["max_cluster_span_bp"] = edge_gap
+    return migrated
 
 
 def _load_schema(raw: bytes) -> None:
@@ -996,8 +1050,9 @@ def load_mobilome_database(database_dir: str | Path | None = None) -> MobilomeDa
     inference_data = _load_yaml(
         raw_resources["inference.yaml"],
         "inference.yaml",
-        expected_schema_version=2,
+        expected_schema_version=(1, 2),
     )
+    inference_data = _migrate_inference_schema(inference_data)
     _load_schema(raw_resources[_REPORT_SCHEMA_NAME])
     _expect_keys(
         inference_data,

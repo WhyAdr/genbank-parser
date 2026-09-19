@@ -19,6 +19,34 @@ def _copy_custom_database(destination: Path) -> None:
         (destination / name).write_bytes(source.joinpath(name).read_bytes())
 
 
+def _write_legacy_v1_inference_catalog(destination: Path) -> None:
+    """Create the v0.8.1 inference.yaml shape from the current catalog."""
+
+    path = destination / "inference.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    payload["schema_version"] = 1
+    payload["inference_version"] = "1.5.0"
+    for rule in payload["rules"]:
+        marker_ids = rule.get("required_marker_ids", [])
+        if not marker_ids:
+            continue
+        rule.pop("inference_mode", None)
+        rule.pop("max_cluster_span_bp", None)
+        rule["max_circular_gap_bp"] = rule.pop("max_edge_gap_bp")
+    retron = next(
+        rule for rule in payload["rules"] if rule["id"] == "retron_core_annotation_candidate"
+    )
+    retron["id"] = "retron_rt_msdna_module_candidate"
+    retron["kind"] = "toxin_antitoxin"
+    retron["wording"] = "Retron RT-msDNA annotation-module candidate"
+    payload["disabled_aggregate_rules"] = [
+        rule
+        for rule in payload["disabled_aggregate_rules"]
+        if rule["id"] != "retron_ta_module_candidate"
+    ]
+    path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+
 def test_packaged_database_is_versioned_hashed_and_schema_valid() -> None:
     database = load_mobilome_database()
     schema_path = resources.files("genbank_parser").joinpath(
@@ -453,6 +481,22 @@ def test_legacy_gap_alias_is_accepted_as_topology_neutral_edge_gap(
     database = load_mobilome_database(tmp_path)
 
     assert database.inference_rule_map[rule["id"]].max_edge_gap_bp == gap
+
+
+def test_v081_schema_one_catalog_is_migrated_in_memory(tmp_path: Path) -> None:
+    _copy_custom_database(tmp_path)
+    _write_legacy_v1_inference_catalog(tmp_path)
+
+    database = load_mobilome_database(tmp_path)
+
+    assert database.inference_version == "1.5.0"
+    pair = database.inference_rule_map["type_iii_toxin_antitoxin_pair_candidate"]
+    assert pair.inference_mode == "spatial_marker_cluster"
+    assert pair.max_edge_gap_bp == 2000
+    compact = database.inference_rule_map["mqsrac_module_candidate"]
+    assert compact.max_edge_gap_bp == 3000
+    assert compact.max_cluster_span_bp == 3000
+    assert "retron_rt_msdna_module_candidate" in database.inference_rule_map
 
 
 def test_conflicting_gap_aliases_fail_closed(tmp_path: Path) -> None:
