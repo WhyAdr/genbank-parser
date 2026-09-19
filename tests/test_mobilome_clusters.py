@@ -7,7 +7,10 @@ from Bio.Seq import Seq
 from Bio.SeqFeature import FeatureLocation
 
 from genbank_parser.mobilome import analyze_mobilome, load_mobilome_database
-from genbank_parser.mobilome.inference import infer_replicon_hypotheses
+from genbank_parser.mobilome.inference import (
+    infer_replicon_hypotheses,
+    record_inference_limitations,
+)
 from genbank_parser.mobilome.replicons import inventory_replicons
 from genbank_parser.mobilome.scanner import scan_mobilome_features
 from genbank_parser.model import GenBankDocument, GenBankFeature, GenBankRecord
@@ -351,6 +354,62 @@ def test_two_complete_compact_modules_remain_two_selected_modules() -> None:
     ]
 
 
+def test_many_independent_compact_modules_do_not_overflow_global_packing() -> None:
+    specs = tuple(
+        spec
+        for module_index in range(17)
+        for spec in (
+            ("CDS", 100 + module_index * 5000, 200 + module_index * 5000, {"gene": ["mqsR"]}),
+            ("CDS", 300 + module_index * 5000, 400 + module_index * 5000, {"gene": ["mqsA"]}),
+            ("CDS", 500 + module_index * 5000, 600 + module_index * 5000, {"gene": ["mqsC"]}),
+        )
+    )
+    inventory, hits, database = _synthetic_features(specs, length=100_000)
+
+    hypotheses = [
+        item
+        for item in infer_replicon_hypotheses(inventory, hits, database)
+        if item.rule_id == "mqsrac_module_candidate"
+    ]
+    record = replace(
+        inventory,
+        spatial_limitations=record_inference_limitations(
+            inventory, hits, database
+        ),
+    )
+
+    assert len(hypotheses) == 17
+    assert not record.spatial_limitations
+
+
+def test_dense_single_cluster_overflow_is_visible_and_fail_closed() -> None:
+    specs = tuple(
+        (
+            "CDS",
+            100 + index * 150,
+            200 + index * 150,
+            {"product": ["MqsR MqsA MqsC fusion protein"]},
+        )
+        for index in range(10)
+    )
+    inventory, hits, database, features = _synthetic_features(
+        specs,
+        return_features=True,
+    )
+
+    hypotheses = infer_replicon_hypotheses(
+        inventory, hits, database, features=features
+    )
+    limitations = record_inference_limitations(
+        inventory, hits, database, features=features
+    )
+
+    assert not any(
+        item.rule_id == "mqsrac_module_candidate" for item in hypotheses
+    )
+    assert any("enumeration limit" in item for item in limitations)
+
+
 def test_compact_module_span_accepts_exact_boundary_and_rejects_boundary_plus_one() -> (
     None
 ):
@@ -506,3 +565,81 @@ def test_reverse_strand_order_and_interveners_are_normalized() -> None:
 
     assert any("biological-order policy passed" in item for item in module.limitations)
     assert any("maximum observed: 1" in item for item in module.limitations)
+
+
+def test_circular_structural_policy_does_not_close_over_the_complementary_arc() -> None:
+    inventory, hits, database, features = _synthetic_features(
+        (
+            ("CDS", 100, 200, {"gene": ["mqsR"]}),
+            ("CDS", 300, 400, {"gene": ["mqsA"]}),
+            ("CDS", 500, 600, {"gene": ["mqsC"]}),
+            ("CDS", 9000, 9100, {"gene": ["unrelated"]}),
+        ),
+        topology="circular",
+        return_features=True,
+    )
+    base_rule = database.inference_rule_map["mqsrac_module_candidate"]
+    structural_rule = replace(
+        base_rule,
+        strand_policy="same",
+        allowed_orders=(("mqsr", "mqsa", "mqsc"),),
+        max_intervening_features=0,
+        intervening_feature_types=("CDS",),
+    )
+    database = replace(
+        database,
+        inference_rules=tuple(
+            structural_rule if rule.id == structural_rule.id else rule
+            for rule in database.inference_rules
+        ),
+    )
+
+    hypotheses = infer_replicon_hypotheses(
+        inventory, hits, database, features=features
+    )
+    module = next(
+        item for item in hypotheses if item.rule_id == "mqsrac_module_candidate"
+    )
+
+    assert any(
+        "intervening-feature policy passed" in item for item in module.limitations
+    )
+
+
+def test_circular_origin_straddling_structural_policy_uses_selected_arc() -> None:
+    inventory, hits, database, features = _synthetic_features(
+        (
+            ("CDS", 9900, 9950, {"gene": ["mqsR"]}),
+            ("CDS", 1, 50, {"gene": ["mqsA"]}),
+            ("CDS", 100, 150, {"gene": ["mqsC"]}),
+            ("CDS", 5000, 5100, {"gene": ["unrelated"]}),
+        ),
+        topology="circular",
+        return_features=True,
+    )
+    base_rule = database.inference_rule_map["mqsrac_module_candidate"]
+    structural_rule = replace(
+        base_rule,
+        strand_policy="same",
+        allowed_orders=(("mqsr", "mqsa", "mqsc"),),
+        max_intervening_features=0,
+        intervening_feature_types=("CDS",),
+    )
+    database = replace(
+        database,
+        inference_rules=tuple(
+            structural_rule if rule.id == structural_rule.id else rule
+            for rule in database.inference_rules
+        ),
+    )
+
+    hypotheses = infer_replicon_hypotheses(
+        inventory, hits, database, features=features
+    )
+    module = next(
+        item for item in hypotheses if item.rule_id == "mqsrac_module_candidate"
+    )
+
+    assert any(
+        "intervening-feature policy passed" in item for item in module.limitations
+    )

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from itertools import pairwise
 
 from ..model import GenBankFeature
 from ..spatial import (
@@ -29,7 +30,15 @@ _MAX_PACKING_STATES = 100_000
 
 
 class _CandidateLimitExceeded(RuntimeError):
-    """Internal signal for fail-closed compact-module enumeration."""
+    """Base signal for fail-closed compact-module candidate limits."""
+
+
+class _AssignmentLimitExceeded(_CandidateLimitExceeded):
+    """Internal signal for compact-module assignment enumeration limits."""
+
+
+class _PackingLimitExceeded(_CandidateLimitExceeded):
+    """Internal signal for compact-module set-packing state limits."""
 
 
 def _functional_hits(hits: Sequence[MobilomeHit]) -> tuple[MobilomeHit, ...]:
@@ -451,7 +460,7 @@ def _enumerate_marker_assignments(
         used_features: frozenset[tuple[int, int]],
     ) -> None:
         if len(assignments) >= _MAX_COMPACT_ASSIGNMENTS:
-            raise _CandidateLimitExceeded
+            raise _AssignmentLimitExceeded
         if marker_index == len(candidates_by_marker):
             assignments.append(selected)
             return
@@ -588,6 +597,48 @@ def _circular_rotation_matches(
     )
 
 
+def _feature_contains_coordinate(hit: MobilomeHit, coordinate: int) -> bool:
+    return any(
+        start <= coordinate <= end for start, end in hit.feature.segments
+    )
+
+
+def _ordered_assignment_for_policy(
+    assignment: Sequence[MobilomeHit],
+    inventory: RepliconInventory,
+) -> tuple[MobilomeHit, ...] | None:
+    """Return biological order aligned to the selected covering arc.
+
+    A circular assignment has no meaningful origin at coordinate one when its
+    minimum covering arc crosses the record origin. Rotate only to the boundary
+    of that selected arc; arbitrary rotations would make an
+    intervening-feature policy inspect the complementary chromosome arc.
+    """
+
+    ordered = _ordered_assignment(assignment)
+    if ordered is None or inventory.topology != "circular" or len(ordered) < 2:
+        return ordered
+    arc = _assignment_covering_arc(assignment, inventory)
+    if arc is None:
+        return None
+    strands = {hit.feature.strand for hit in ordered}
+    if strands == {1}:
+        boundary = arc.start
+    elif strands == {-1}:
+        boundary = arc.end
+    else:
+        return None
+    matching = [
+        index
+        for index, hit in enumerate(ordered)
+        if _feature_contains_coordinate(hit, boundary)
+    ]
+    if not matching:
+        return None
+    index = matching[0]
+    return ordered[index:] + ordered[:index]
+
+
 def _feature_segments_for_policy(
     feature: GenBankFeature,
 ) -> tuple[tuple[int, int], ...]:
@@ -636,8 +687,8 @@ def _intervening_feature_count(
     features: Sequence[GenBankFeature],
     feature_types: frozenset[str],
     reverse: bool,
+    selected_features: frozenset[tuple[int, int]],
 ) -> int:
-    selected = {_feature_key(left), _feature_key(right)}
     count = 0
     left_boundaries = _biological_boundaries(left.feature.segments, left.feature.strand)
     right_boundaries = _biological_boundaries(
@@ -654,7 +705,7 @@ def _intervening_feature_count(
             return 0
         for feature in features:
             key = (feature.record_index, feature.feature_index)
-            if key in selected or feature.record_index != inventory.record_index:
+            if key in selected_features or feature.record_index != inventory.record_index:
                 continue
             if feature.type.casefold() not in feature_types:
                 continue
@@ -675,7 +726,7 @@ def _intervening_feature_count(
     )
     for feature in features:
         key = (feature.record_index, feature.feature_index)
-        if key in selected or feature.record_index != inventory.record_index:
+        if key in selected_features or feature.record_index != inventory.record_index:
             continue
         if feature.type.casefold() not in feature_types:
             continue
@@ -706,6 +757,8 @@ def _structural_evidence(
             return False, ()
 
     ordered = _ordered_assignment(assignment)
+    if rule.allowed_orders or rule.max_intervening_features is not None:
+        ordered = _ordered_assignment_for_policy(assignment, inventory)
     if rule.allowed_orders:
         if ordered is None:
             return False, ()
@@ -739,6 +792,7 @@ def _structural_evidence(
         feature_types = frozenset(
             feature_type.casefold() for feature_type in rule.intervening_feature_types
         )
+        selected_features = frozenset(_feature_key(hit) for hit in assignment)
         counts = [
             _intervening_feature_count(
                 left,
@@ -747,11 +801,10 @@ def _structural_evidence(
                 features=features,
                 feature_types=feature_types,
                 reverse=reverse,
+                selected_features=selected_features,
             )
-            for left, right in zip(ordered, (*ordered[1:], ordered[0]))
+            for left, right in pairwise(ordered)
         ]
-        if inventory.topology != "circular":
-            counts = counts[:-1]
         if any(count > rule.max_intervening_features for count in counts):
             return False, ()
         limitations.append(
@@ -777,6 +830,42 @@ def _candidate_sort_key(candidate: _CompactCandidate) -> tuple[object, ...]:
         candidate.hit_ids,
         candidate.span_bp,
     )
+
+
+def _compact_candidates_for_cluster(
+    cluster: Sequence[MobilomeHit],
+    rule: InferenceRule,
+    inventory: RepliconInventory,
+    features: Sequence[GenBankFeature],
+) -> tuple[_CompactCandidate, ...]:
+    """Return valid compact assignments from one connected marker cluster."""
+
+    candidates: list[_CompactCandidate] = []
+    for assignment in _enumerate_marker_assignments(cluster, rule):
+        arc = _assignment_covering_arc(assignment, inventory)
+        if arc is None or (
+            rule.max_cluster_span_bp is not None
+            and arc.span_bp > rule.max_cluster_span_bp
+        ):
+            continue
+        structural_ok, structural_limitations = _structural_evidence(
+            assignment,
+            rule,
+            inventory,
+            features,
+        )
+        if not structural_ok:
+            continue
+        candidates.append(
+            _CompactCandidate(
+                assignment=assignment,
+                span_bp=arc.span_bp,
+                feature_keys=tuple(_feature_key(hit) for hit in assignment),
+                hit_ids=tuple(hit.hit_id for hit in assignment),
+                structural_limitations=structural_limitations,
+            )
+        )
+    return tuple(candidates)
 
 
 def _select_non_overlapping_candidates(
@@ -805,7 +894,7 @@ def _select_non_overlapping_candidates(
         nonlocal best, best_score, states
         states += 1
         if states > _MAX_PACKING_STATES:
-            raise _CandidateLimitExceeded
+            raise _PackingLimitExceeded
         current_score = score(selection)
         if best_score is None or current_score < best_score:
             best, best_score = selection, current_score
@@ -842,60 +931,44 @@ def _infer_compact_marker_modules(
         rule_hits = _ta_rule_hits(hits, rule)
         if len(rule_hits) < len(rule.required_marker_ids):
             continue
-        rule_candidates: list[_CompactCandidate] = []
-        try:
-            for cluster in _connected_marker_clusters(rule_hits, rule, inventory):
-                for assignment in _enumerate_marker_assignments(cluster, rule):
-                    arc = _assignment_covering_arc(assignment, inventory)
-                    if arc is None or (
-                        rule.max_cluster_span_bp is not None
-                        and arc.span_bp > rule.max_cluster_span_bp
-                    ):
-                        continue
-                    structural_ok, structural_limitations = _structural_evidence(
-                        assignment,
-                        rule,
-                        inventory,
-                        features,
-                    )
-                    if not structural_ok:
-                        continue
-                    rule_candidates.append(
-                        _CompactCandidate(
-                            assignment=assignment,
-                            span_bp=arc.span_bp,
-                            feature_keys=tuple(_feature_key(hit) for hit in assignment),
-                            hit_ids=tuple(hit.hit_id for hit in assignment),
-                            structural_limitations=structural_limitations,
-                        )
-                    )
-            selected = _select_non_overlapping_candidates(rule_candidates)
-        except _CandidateLimitExceeded:
-            continue
-        for candidate in selected:
-            feature_indices = sorted(
-                {hit.feature.feature_index for hit in candidate.assignment}
-            )
-            limitations = list(rule.limitations)
-            limitations.append(
-                f"Configured maximum edge gap ({inventory.topology}): "
-                f"{rule.max_edge_gap_bp} bp; configured maximum cluster span: "
-                f"{rule.max_cluster_span_bp} bp; observed selected-assignment extent: "
-                f"{candidate.span_bp} bp."
-            )
-            limitations.extend(candidate.structural_limitations)
-            hypotheses.append(
-                _hypothesis(
-                    hypothesis_id=(
-                        f"h:{rule.id}:{inventory.record_index}:"
-                        + ":".join(str(index) for index in feature_indices)
-                    ),
-                    rule=rule,
-                    inventory=inventory,
-                    supporting=candidate.assignment,
-                    limitations=tuple(limitations),
+        for cluster in _connected_marker_clusters(rule_hits, rule, inventory):
+            try:
+                candidates = _compact_candidates_for_cluster(
+                    cluster,
+                    rule,
+                    inventory,
+                    features,
                 )
-            )
+                selected = _select_non_overlapping_candidates(candidates)
+            except _CandidateLimitExceeded:
+                # The corresponding record-level limitation is emitted by
+                # record_inference_limitations(); one failed cluster must not
+                # suppress hypotheses from its independent neighbors.
+                continue
+            for candidate in selected:
+                feature_indices = sorted(
+                    {hit.feature.feature_index for hit in candidate.assignment}
+                )
+                limitations = list(rule.limitations)
+                limitations.append(
+                    f"Configured maximum edge gap ({inventory.topology}): "
+                    f"{rule.max_edge_gap_bp} bp; configured maximum cluster span: "
+                    f"{rule.max_cluster_span_bp} bp; observed selected-assignment extent: "
+                    f"{candidate.span_bp} bp."
+                )
+                limitations.extend(candidate.structural_limitations)
+                hypotheses.append(
+                    _hypothesis(
+                        hypothesis_id=(
+                            f"h:{rule.id}:{inventory.record_index}:"
+                            + ":".join(str(index) for index in feature_indices)
+                        ),
+                        rule=rule,
+                        inventory=inventory,
+                        supporting=candidate.assignment,
+                        limitations=tuple(limitations),
+                    )
+                )
     return tuple(hypotheses)
 
 
@@ -936,14 +1009,27 @@ def record_inference_limitations(
             continue
         for cluster in _connected_marker_clusters(rule_hits, rule, inventory):
             try:
-                _enumerate_marker_assignments(cluster, rule)
-            except _CandidateLimitExceeded:
-                limitations.append(
-                    f"{rule.id}: compact marker assignment candidate limit "
-                    f"({_MAX_COMPACT_ASSIGNMENTS}) was exceeded; spatial inference "
-                    "was skipped for this record."
+                candidates = _compact_candidates_for_cluster(
+                    cluster,
+                    rule,
+                    inventory,
+                    features,
                 )
-                break
+            except _AssignmentLimitExceeded:
+                limitations.append(
+                    f"{rule.id}: compact marker assignment enumeration limit "
+                    f"({_MAX_COMPACT_ASSIGNMENTS}) was exceeded for one connected "
+                    "marker cluster; spatial inference was skipped for that cluster."
+                )
+                continue
+            try:
+                _select_non_overlapping_candidates(candidates)
+            except _PackingLimitExceeded:
+                limitations.append(
+                    f"{rule.id}: compact marker set-packing state limit "
+                    f"({_MAX_PACKING_STATES}) was exceeded for one connected marker "
+                    "cluster; spatial inference was skipped for that cluster."
+                )
     return tuple(sorted(set(limitations)))
 
 
