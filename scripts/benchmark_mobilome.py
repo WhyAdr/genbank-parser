@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Optional real-genome benchmark for the mobilome analysis (non-CI).
+"""Optional real-genome calibration for the mobilome analysis (non-CI).
 
 Runs the packaged mobilome analysis over a local real GenBank file (default:
 ``PF_NNT_reoriented.gbff`` at the repository root) and reports runtime,
 rendered output volume, and the calibrated expectations from the mobilome
-integration plan (section 16.9).  The file is intentionally gitignored, so the
-benchmark must skip clearly when the file is absent and must never stage it.
+integration plan (section 16.9). The file is intentionally gitignored, so the
+calibration must skip clearly when the file is absent and must never stage it.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 import sys
 import time
 from pathlib import Path
@@ -28,9 +30,64 @@ FORBIDDEN_CLAIMS = (
 )
 
 DEFAULT_INPUT = Path("PF_NNT_reoriented.gbff")
+DEFAULT_MANIFEST = Path("tests/data/PF_NNT_reoriented.manifest.json")
 
 
-def benchmark(path: Path) -> int:
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_calibration_manifest(path: Path = DEFAULT_MANIFEST) -> dict[str, object]:
+    """Load and minimally validate the committed calibration manifest."""
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Could not load calibration manifest {path}: {exc}") from exc
+    if not isinstance(payload, dict) or payload.get("schema_version") != 1:
+        raise ValueError(f"Calibration manifest {path} must use schema_version 1")
+    fixture_id = payload.get("fixture_id")
+    expected = payload.get("sha256")
+    if not isinstance(fixture_id, str) or not fixture_id:
+        raise ValueError("Calibration manifest fixture_id must be a non-empty string")
+    if not isinstance(expected, str) or len(expected) != 64:
+        raise ValueError(
+            "Calibration manifest sha256 must be a 64-character hex string"
+        )
+    try:
+        int(expected, 16)
+    except ValueError as exc:
+        raise ValueError("Calibration manifest sha256 must be hexadecimal") from exc
+    return payload
+
+
+def verify_calibration_input(
+    path: Path,
+    manifest_path: Path = DEFAULT_MANIFEST,
+) -> dict[str, object]:
+    """Verify exact input bytes before running real-genome calibration."""
+
+    manifest = load_calibration_manifest(manifest_path)
+    observed = _sha256(path)
+    expected = str(manifest["sha256"]).lower()
+    if observed != expected:
+        raise ValueError(
+            "Calibration fixture hash mismatch: "
+            f"expected {expected}, observed {observed}"
+        )
+    return {**manifest, "observed_sha256": observed}
+
+
+def calibrate(
+    path: Path,
+    *,
+    manifest_path: Path = DEFAULT_MANIFEST,
+) -> int:
+    metadata = verify_calibration_input(path, manifest_path)
     started = time.perf_counter()
     report = analyze_mobilome(path)
     elapsed = time.perf_counter() - started
@@ -77,7 +134,10 @@ def benchmark(path: Path) -> int:
         )
     }
 
+    print(f"calibration fixture:    {metadata['fixture_id']}")
     print(f"input:                  {path}")
+    print("hash verification:      verified")
+    print(f"input SHA-256:          {metadata['observed_sha256']}")
     print(f"records inventoried:    {len(inventories)}")
     print(f"source-level plasmids:  {len(plasmid_evidence)}")
     print(f"pseudo CDS retained:    {pseudo_cds}")
@@ -135,15 +195,25 @@ def benchmark(path: Path) -> int:
     return 0
 
 
+def benchmark(path: Path) -> int:
+    """Compatibility wrapper for callers of the pre-0.8.2 script API."""
+
+    return calibrate(path)
+
+
 def main(argv: list[str]) -> int:
     path = Path(argv[1]) if len(argv) > 1 else DEFAULT_INPUT
     if not path.is_file():
         print(
-            f"skip: real-genome input {path} is not present "
+            f"skip: real-genome calibration input {path} is not present "
             "(it is gitignored by design and never staged)"
         )
         return 0
-    return benchmark(path)
+    try:
+        return calibrate(path)
+    except ValueError as exc:
+        print(f"calibration error: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

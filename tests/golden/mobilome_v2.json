@@ -2,9 +2,9 @@
   "schema_version": "gbparse.mobilome.v2",
   "tool": "gbparse",
   "analysis": "mobilome",
-  "tool_version": "0.8.1",
+  "tool_version": "0.8.2",
   "catalog_version": "1.5.0",
-  "inference_version": "1.5.0",
+  "inference_version": "1.6.0",
   "input": {
     "file": "mobilome_evidence.gb",
     "sha256": "34d9908260fc17c0a199c17c4494d608b99219bfaa2411983ad45f77d86957fc"
@@ -26,7 +26,7 @@
       },
       {
         "name": "inference.yaml",
-        "sha256": "9b46b6c075fb2e28b99060206b7b7c9e1c7501b3069e855237cee2865e0c8574"
+        "sha256": "9788a1eec332f3512fa7b09e99ce5e8be609349394fc94a5a03b2aa1320efe72"
       },
       {
         "name": "report.schema.json",
@@ -1142,7 +1142,7 @@
             "Proximity is a versioned engineering heuristic, not proof of an operon.",
             "The cited biochemical correspondence is not generalized beyond annotation.",
             "Current classification reviews document HEPN/MNT-type systems among Type VII toxin-antitoxin systems; this rule deliberately assigns no type number to an annotation match.",
-            "Configured maximum gap (circular): 2000 bp; observed gap: 9 bp."
+            "Configured maximum edge gap (circular): 2000 bp; observed gap: 9 bp."
           ],
           "source_ids": [
             "qiu-2022-ta-classification",
@@ -1225,7 +1225,7 @@
           "limitations": [
             "Proximity is a versioned engineering heuristic, not proof of an operon.",
             "Expression and toxin-antitoxin activity are untested.",
-            "Configured maximum gap (circular): 2000 bp; observed gap: 9 bp."
+            "Configured maximum edge gap (circular): 2000 bp; observed gap: 9 bp."
           ],
           "source_ids": [
             "blower-2012-toxin",
@@ -1273,6 +1273,22 @@
       "source_ids": [
         "akhtar-2012-pxo1",
         "local-disabled-aggregate-policy"
+      ]
+    },
+    {
+      "rule_id": "retron_ta_module_candidate",
+      "reason": "No curated cognate-effector marker/correspondence contract is implemented.",
+      "evidence_retained_as": [
+        "msdna",
+        "retron_rt"
+      ],
+      "enablement_requirements": [
+        "Curated retron-family-specific effector marker(s), including negative controls.",
+        "Cognate RT-msr/msd-effector correspondence policy.",
+        "Versioned sequence/domain evidence and operating thresholds."
+      ],
+      "source_ids": [
+        "bobonis-2022-retron"
       ]
     }
   ],

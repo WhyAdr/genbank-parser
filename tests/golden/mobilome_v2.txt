@@ -2,7 +2,7 @@ Mobilome evidence report
 Input and provenance
   Input: mobilome_evidence.gb
   SHA-256: 34d9908260fc17c0a199c17c4494d608b99219bfaa2411983ad45f77d86957fc
-  Catalog/inference: 1.5.0 / 1.5.0
+  Catalog/inference: 1.5.0 / 1.6.0
 Record inventory
   [1] MOB_EVIDENCE.1 | plasmid (supported) | circular | 600 bp | 9 CDS
 Replicon assessments
@@ -34,6 +34,7 @@ Cross-record hypotheses
 Disabled aggregate rules and retained evidence
   phage_module_bearing_plasmid_candidate: No v1 distinct-module operating threshold has been validated.
   pxo_like_annotation_pattern_candidate: No v1 ordinal, synteny, and null-model contract has been validated.
+  retron_ta_module_candidate: No curated cognate-effector marker/correspondence contract is implemented.
 External handoffs not run
   AMRFinderPlus: Structured antimicrobial-resistance annotation (not_run)
   Prophage or ICE caller: Dedicated element-boundary analysis (not_run)

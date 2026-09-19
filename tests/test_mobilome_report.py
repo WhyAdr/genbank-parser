@@ -66,6 +66,14 @@ def test_mobilome_serializers_match_versioned_goldens() -> None:
     ).read_bytes().decode("utf-8")
 
 
+def test_mobilome_v2_goldens_are_lf_stable() -> None:
+    for extension in ("json", "tsv", "txt"):
+        assert (
+            b"\r\n"
+            not in (Path("tests/golden") / f"mobilome_v2.{extension}").read_bytes()
+        )
+
+
 def test_include_filters_details_but_not_inventory_or_scanned_summary() -> None:
     report = analyze_mobilome(
         Path("tests/fixtures/mobilome_inference.gb"), include="plasmid"
