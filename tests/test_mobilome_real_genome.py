@@ -6,12 +6,23 @@ stage it. When present, its manifest-locked bytes are verified before the
 calibrated expectations documented in the mobilome integration plan run.
 """
 
+import importlib.util
 from pathlib import Path
 
 import pytest
 
 from genbank_parser.mobilome import analyze_mobilome
-from scripts.benchmark_mobilome import main, verify_calibration_input
+
+_SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "benchmark_mobilome.py"
+_SCRIPT_SPEC = importlib.util.spec_from_file_location(
+    "gbparse_benchmark_mobilome", _SCRIPT_PATH
+)
+if _SCRIPT_SPEC is None or _SCRIPT_SPEC.loader is None:
+    raise ImportError(f"Could not load calibration script from {_SCRIPT_PATH}")
+_SCRIPT_MODULE = importlib.util.module_from_spec(_SCRIPT_SPEC)
+_SCRIPT_SPEC.loader.exec_module(_SCRIPT_MODULE)
+main = _SCRIPT_MODULE.main
+verify_calibration_input = _SCRIPT_MODULE.verify_calibration_input
 
 REAL_GENOME = Path("PF_NNT_reoriented.gbff")
 MANIFEST = Path("tests/data/PF_NNT_reoriented.manifest.json")
