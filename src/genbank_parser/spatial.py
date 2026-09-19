@@ -25,6 +25,16 @@ class FeatureWindow:
     wraps_origin: bool
 
 
+@dataclass(frozen=True)
+class CoveringArc:
+    """The smallest inclusive circular arc containing one or more segments."""
+
+    span_bp: int
+    start: int
+    end: int
+    wraps_origin: bool
+
+
 def _validated_segments(
     segments: Sequence[tuple[int, int]],
     *,
@@ -34,10 +44,77 @@ def _validated_segments(
         raise ValueError(f"{owner} must contain at least one located segment")
     normalized: list[tuple[int, int]] = []
     for start, end in segments:
-        if isinstance(start, bool) or isinstance(end, bool) or start < 1 or end < start:
+        if (
+            isinstance(start, bool)
+            or isinstance(end, bool)
+            or not isinstance(start, int)
+            or not isinstance(end, int)
+            or start < 1
+            or end < start
+        ):
             raise ValueError(f"{owner} has an invalid one-based inclusive segment")
         normalized.append((start, end))
     return tuple(normalized)
+
+
+def _merge_intervals(
+    segments: Sequence[tuple[int, int]],
+) -> tuple[tuple[int, int], ...]:
+    """Merge overlapping or adjacent inclusive linear intervals."""
+
+    merged: list[list[int]] = []
+    for start, end in sorted(segments):
+        if not merged or start > merged[-1][1] + 1:
+            merged.append([start, end])
+        else:
+            merged[-1][1] = max(merged[-1][1], end)
+    return tuple((start, end) for start, end in merged)
+
+
+def minimum_feature_covering_arc(
+    feature_segments: Sequence[tuple[int, int]],
+    *,
+    record_length: int,
+) -> CoveringArc:
+    """Return one globally coherent minimum covering arc on a circular record.
+
+    Coordinates are one-based and inclusive.  The occupied segments are merged,
+    every empty circular gap is considered, and the largest empty gap is removed.
+    Thus the returned span is the complement of one gap rather than a maximum of
+    pairwise shortest distances, which may describe incompatible directions.
+    Equal-size gaps are resolved by the lowest clockwise covering-arc start.
+    """
+
+    if (
+        isinstance(record_length, bool)
+        or not isinstance(record_length, int)
+        or record_length <= 0
+    ):
+        raise ValueError("record_length must be a positive integer")
+    normalized = _validated_segments(feature_segments, owner="feature_segments")
+    if any(end > record_length for _, end in normalized):
+        raise ValueError("segments must lie within record_length")
+    intervals = _merge_intervals(normalized)
+
+    candidates: list[tuple[int, int, int]] = []
+    for index, (_, current_end) in enumerate(intervals):
+        next_start = intervals[(index + 1) % len(intervals)][0]
+        if index == len(intervals) - 1:
+            next_start += record_length
+        gap = next_start - current_end - 1
+        covering_start = intervals[(index + 1) % len(intervals)][0]
+        candidates.append((gap, covering_start, current_end))
+
+    largest_gap, start, end = max(
+        candidates,
+        key=lambda item: (item[0], -item[1], -item[2]),
+    )
+    return CoveringArc(
+        span_bp=record_length - largest_gap,
+        start=start,
+        end=end,
+        wraps_origin=start > end,
+    )
 
 
 def intervening_gap_bp(

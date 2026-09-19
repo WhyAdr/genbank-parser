@@ -1,8 +1,16 @@
 """C4/C5 spatial-cluster calibration tests for toxin-antitoxin inference."""
 
+from dataclasses import replace
 from pathlib import Path
 
-from genbank_parser.mobilome import analyze_mobilome
+from Bio.Seq import Seq
+from Bio.SeqFeature import FeatureLocation
+
+from genbank_parser.mobilome import analyze_mobilome, load_mobilome_database
+from genbank_parser.mobilome.inference import infer_replicon_hypotheses
+from genbank_parser.mobilome.replicons import inventory_replicons
+from genbank_parser.mobilome.scanner import scan_mobilome_features
+from genbank_parser.model import GenBankDocument, GenBankFeature, GenBankRecord
 
 FORBIDDEN = (
     "obligate co-transfer",
@@ -15,6 +23,49 @@ FORBIDDEN = (
 )
 
 
+def _synthetic_features(
+    specs: tuple[tuple[str, int, int, dict[str, list[str]]], ...],
+    *,
+    topology: str = "linear",
+    length: int = 10_000,
+    strands: tuple[int | None, ...] | None = None,
+    return_features: bool = False,
+):
+    features = [
+        GenBankFeature(
+            record_id="synthetic.1",
+            record_index=1,
+            feature_index=index,
+            type=feature_type,
+            location=FeatureLocation(
+                start - 1,
+                end,
+                strand=1 if strands is None else strands[index - 1],
+            ),
+            qualifiers=qualifiers,
+            record_length=length,
+            topology=topology,
+        )
+        for index, (feature_type, start, end, qualifiers) in enumerate(specs, 1)
+    ]
+    record = GenBankRecord(
+        id="synthetic.1",
+        name="synthetic",
+        description="Synthetic compact-module regression record.",
+        seq=Seq("A" * length),
+        length=length,
+        topology=topology,
+        features=features,
+    )
+    document = GenBankDocument(path=Path("synthetic.gb"), records=[record])
+    inventory = inventory_replicons(document)[0]
+    database = load_mobilome_database()
+    hits = scan_mobilome_features(features, database)
+    if return_features:
+        return inventory, hits, database, tuple(features)
+    return inventory, hits, database
+
+
 def test_tandem_toxin_antitoxin_array_collapses_into_one_aggregate_cluster() -> None:
     report = analyze_mobilome(Path("tests/fixtures/mobilome_ta_cluster.gb"))
     replicon = report.replicons[0]
@@ -24,7 +75,7 @@ def test_tandem_toxin_antitoxin_array_collapses_into_one_aggregate_cluster() -> 
         if hypothesis.rule_id == "type_iii_toxin_antitoxin_pair_candidate"
     ]
 
-    # Six cross-product pairs (3 toxN x 2 toxI within the gap) collapse to one
+    # Nine nearby cross-product pairs (3 toxN x 3 toxI within the gap) collapse to one
     # aggregate cluster hypothesis instead of the previous combinatorial list.
     assert len(clusters) == 1
     cluster = clusters[0]
@@ -88,9 +139,9 @@ def test_tripartite_module_rules_fire_with_required_markers() -> None:
         ),
         "mqsrac_module_candidate": (3, "h:mqsrac_module_candidate:1:7:8:9"),
         "higba_tac_module_candidate": (3, "h:higba_tac_module_candidate:1:16:17:18"),
-        "retron_rt_msdna_module_candidate": (
+        "retron_core_annotation_candidate": (
             2,
-            "h:retron_rt_msdna_module_candidate:1:10:11",
+            "h:retron_core_annotation_candidate:1:10:11",
         ),
         "type_iii_tenpin_annotation_pair_candidate": (
             2,
@@ -113,7 +164,7 @@ def test_tripartite_module_rules_fire_with_required_markers() -> None:
     assert "TAC" in summaries["higba_tac_module_candidate"].summary
     assert "TenpIN" in summaries["type_iii_tenpin_annotation_pair_candidate"].summary
     assert "CptIN" in summaries["type_iii_cptin_annotation_pair_candidate"].summary
-    assert "Retron RT-msDNA" in summaries["retron_rt_msdna_module_candidate"].summary
+    assert "Retron RT-msr/msd" in summaries["retron_core_annotation_candidate"].summary
 
 
 def test_incomplete_tripartite_cluster_emits_no_module_hypothesis() -> None:
@@ -162,8 +213,296 @@ def test_retron_rule_documents_the_system_specific_effector_limit() -> None:
     retron = next(
         hypothesis
         for hypothesis in replicon.hypotheses
-        if hypothesis.rule_id == "retron_rt_msdna_module_candidate"
+        if hypothesis.rule_id == "retron_core_annotation_candidate"
     )
 
-    assert any("effector toxin" in limitation for limitation in retron.limitations)
+    assert retron.kind == "retron"
+    assert any(
+        "not a toxin-antitoxin call" in limitation for limitation in retron.limitations
+    )
     assert retron.source_ids == ("bobonis-2022-retron",)
+
+
+def test_tripartite_collision_requires_three_physical_features() -> None:
+    inventory, hits, database = _synthetic_features(
+        (
+            (
+                "CDS",
+                100,
+                200,
+                {"product": ["MqsR MqsA fusion protein"]},
+            ),
+            ("CDS", 300, 400, {"gene": ["mqsC"]}),
+        )
+    )
+
+    hypotheses = infer_replicon_hypotheses(inventory, hits, database)
+
+    assert not any(item.rule_id == "mqsrac_module_candidate" for item in hypotheses)
+
+
+def test_pair_rule_also_requires_distinct_physical_features() -> None:
+    inventory, hits, database = _synthetic_features(
+        (
+            (
+                "CDS",
+                100,
+                200,
+                {"gene": ["toxN"], "product": ["ToxN ToxI fusion annotation"]},
+            ),
+        )
+    )
+
+    hypotheses = infer_replicon_hypotheses(inventory, hits, database)
+
+    assert not any(
+        item.rule_id == "type_iii_toxin_antitoxin_pair_candidate" for item in hypotheses
+    )
+
+
+def test_tripartite_bridge_over_global_extent_is_rejected() -> None:
+    inventory, hits, database = _synthetic_features(
+        (
+            ("CDS", 100, 200, {"gene": ["mqsR"]}),
+            ("CDS", 2601, 2700, {"gene": ["mqsA"]}),
+            ("CDS", 5101, 5200, {"gene": ["mqsC"]}),
+        )
+    )
+
+    hypotheses = infer_replicon_hypotheses(inventory, hits, database)
+
+    assert not any(item.rule_id == "mqsrac_module_candidate" for item in hypotheses)
+
+
+def test_compact_submodule_survives_an_unrelated_single_linkage_bridge() -> None:
+    inventory, hits, database = _synthetic_features(
+        (
+            ("CDS", 100, 200, {"gene": ["mqsR"]}),
+            ("CDS", 2601, 2700, {"gene": ["mqsA"]}),
+            ("CDS", 5101, 5200, {"gene": ["mqsC"]}),
+            ("CDS", 6000, 6100, {"gene": ["mqsR"]}),
+            ("CDS", 6200, 6300, {"gene": ["mqsA"]}),
+            ("CDS", 6400, 6500, {"gene": ["mqsC"]}),
+        )
+    )
+
+    hypotheses = [
+        item
+        for item in infer_replicon_hypotheses(inventory, hits, database)
+        if item.rule_id == "mqsrac_module_candidate"
+    ]
+
+    assert len(hypotheses) == 1
+    assert {
+        hit_id.split(":f")[1].split(":")[0]
+        for hit_id in hypotheses[0].supporting_hit_ids
+    } == {
+        "4",
+        "5",
+        "6",
+    }
+
+
+def test_ambiguous_marker_hits_use_a_deterministic_full_matching() -> None:
+    inventory, hits, database = _synthetic_features(
+        (
+            ("CDS", 100, 200, {"product": ["MqsR MqsA fusion protein"]}),
+            ("CDS", 300, 400, {"product": ["MqsA MqsC fusion protein"]}),
+            ("CDS", 500, 600, {"gene": ["mqsC"]}),
+        )
+    )
+
+    hypotheses = [
+        item
+        for item in infer_replicon_hypotheses(inventory, hits, database)
+        if item.rule_id == "mqsrac_module_candidate"
+    ]
+
+    assert len(hypotheses) == 1
+    assert hypotheses[0].supporting_hit_ids == (
+        "r1:f1:mmqsr",
+        "r1:f2:mmqsa",
+        "r1:f3:mmqsc",
+    )
+
+
+def test_two_complete_compact_modules_remain_two_selected_modules() -> None:
+    inventory, hits, database = _synthetic_features(
+        (
+            ("CDS", 100, 200, {"gene": ["mqsR"]}),
+            ("CDS", 300, 400, {"gene": ["mqsA"]}),
+            ("CDS", 500, 600, {"gene": ["mqsC"]}),
+            ("CDS", 1000, 1100, {"gene": ["mqsR"]}),
+            ("CDS", 1200, 1300, {"gene": ["mqsA"]}),
+            ("CDS", 1400, 1500, {"gene": ["mqsC"]}),
+        )
+    )
+
+    hypotheses = [
+        item
+        for item in infer_replicon_hypotheses(inventory, hits, database)
+        if item.rule_id == "mqsrac_module_candidate"
+    ]
+
+    assert len(hypotheses) == 2
+    assert [item.supporting_hit_ids for item in hypotheses] == [
+        ("r1:f1:mmqsr", "r1:f2:mmqsa", "r1:f3:mmqsc"),
+        ("r1:f4:mmqsr", "r1:f5:mmqsa", "r1:f6:mmqsc"),
+    ]
+
+
+def test_compact_module_span_accepts_exact_boundary_and_rejects_boundary_plus_one() -> (
+    None
+):
+    exact_inventory, exact_hits, exact_database = _synthetic_features(
+        (
+            ("CDS", 100, 100, {"gene": ["mqsR"]}),
+            ("CDS", 1100, 1100, {"gene": ["mqsA"]}),
+            ("CDS", 3099, 3099, {"gene": ["mqsC"]}),
+        )
+    )
+    over_inventory, over_hits, over_database = _synthetic_features(
+        (
+            ("CDS", 100, 100, {"gene": ["mqsR"]}),
+            ("CDS", 1100, 1100, {"gene": ["mqsA"]}),
+            ("CDS", 3100, 3100, {"gene": ["mqsC"]}),
+        )
+    )
+
+    exact = infer_replicon_hypotheses(exact_inventory, exact_hits, exact_database)
+    over = infer_replicon_hypotheses(over_inventory, over_hits, over_database)
+
+    assert any(item.rule_id == "mqsrac_module_candidate" for item in exact)
+    assert not any(item.rule_id == "mqsrac_module_candidate" for item in over)
+
+
+def test_origin_straddling_compact_module_uses_circular_covering_arc() -> None:
+    inventory, hits, database = _synthetic_features(
+        (
+            ("CDS", 9900, 9950, {"gene": ["mqsR"]}),
+            ("CDS", 1, 50, {"gene": ["mqsA"]}),
+            ("CDS", 100, 150, {"gene": ["mqsC"]}),
+        ),
+        topology="circular",
+        length=10_000,
+    )
+
+    hypotheses = infer_replicon_hypotheses(inventory, hits, database)
+
+    assert (
+        len([item for item in hypotheses if item.rule_id == "mqsrac_module_candidate"])
+        == 1
+    )
+
+
+def test_structural_policies_are_applied_to_the_selected_assignment() -> None:
+    inventory, hits, database, features = _synthetic_features(
+        (
+            ("CDS", 100, 200, {"gene": ["mqsR"]}),
+            ("CDS", 300, 400, {"gene": ["mqsA"]}),
+            ("CDS", 500, 600, {"gene": ["mqsC"]}),
+        ),
+        return_features=True,
+    )
+    base_rule = database.inference_rule_map["mqsrac_module_candidate"]
+    structural_rule = replace(
+        base_rule,
+        strand_policy="same",
+        allowed_orders=(("mqsr", "mqsa", "mqsc"),),
+        max_intervening_features=0,
+        intervening_feature_types=("CDS",),
+    )
+    database = replace(
+        database,
+        inference_rules=tuple(
+            structural_rule if rule.id == structural_rule.id else rule
+            for rule in database.inference_rules
+        ),
+    )
+
+    hypotheses = infer_replicon_hypotheses(
+        inventory,
+        hits,
+        database,
+        features=features,
+    )
+    module = next(
+        item for item in hypotheses if item.rule_id == "mqsrac_module_candidate"
+    )
+
+    assert any("strand policy (same) passed" in item for item in module.limitations)
+    assert any("biological-order policy passed" in item for item in module.limitations)
+    assert any(
+        "intervening-feature policy passed" in item for item in module.limitations
+    )
+
+
+def test_unknown_strand_fails_a_non_any_structural_policy() -> None:
+    inventory, hits, database, features = _synthetic_features(
+        (
+            ("CDS", 100, 200, {"gene": ["mqsR"]}),
+            ("CDS", 300, 400, {"gene": ["mqsA"]}),
+            ("CDS", 500, 600, {"gene": ["mqsC"]}),
+        ),
+        strands=(1, None, 1),
+        return_features=True,
+    )
+    base_rule = database.inference_rule_map["mqsrac_module_candidate"]
+    structural_rule = replace(base_rule, strand_policy="same")
+    database = replace(
+        database,
+        inference_rules=tuple(
+            structural_rule if rule.id == structural_rule.id else rule
+            for rule in database.inference_rules
+        ),
+    )
+
+    hypotheses = infer_replicon_hypotheses(
+        inventory,
+        hits,
+        database,
+        features=features,
+    )
+
+    assert not any(item.rule_id == "mqsrac_module_candidate" for item in hypotheses)
+
+
+def test_reverse_strand_order_and_interveners_are_normalized() -> None:
+    inventory, hits, database, features = _synthetic_features(
+        (
+            ("CDS", 100, 200, {"gene": ["mqsC"]}),
+            ("CDS", 250, 260, {"gene": ["unrelated"]}),
+            ("CDS", 300, 400, {"gene": ["mqsA"]}),
+            ("CDS", 500, 600, {"gene": ["mqsR"]}),
+        ),
+        strands=(-1, -1, -1, -1),
+        return_features=True,
+    )
+    base_rule = database.inference_rule_map["mqsrac_module_candidate"]
+    structural_rule = replace(
+        base_rule,
+        strand_policy="same",
+        allowed_orders=(("mqsr", "mqsa", "mqsc"),),
+        max_intervening_features=1,
+        intervening_feature_types=("CDS",),
+    )
+    database = replace(
+        database,
+        inference_rules=tuple(
+            structural_rule if rule.id == structural_rule.id else rule
+            for rule in database.inference_rules
+        ),
+    )
+
+    hypotheses = infer_replicon_hypotheses(
+        inventory,
+        hits,
+        database,
+        features=features,
+    )
+    module = next(
+        item for item in hypotheses if item.rule_id == "mqsrac_module_candidate"
+    )
+
+    assert any("biological-order policy passed" in item for item in module.limitations)
+    assert any("maximum observed: 1" in item for item in module.limitations)

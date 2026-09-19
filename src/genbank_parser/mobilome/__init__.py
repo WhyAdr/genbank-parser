@@ -188,10 +188,16 @@ def analyze_mobilome(
     )
     all_assessments: list[RepliconAssessment] = []
     for member in inventory:
+        record_features = document.records[member.record_index - 1].features
         record_hits = tuple(
             hit for hit in hits if hit.feature.record_index == member.record_index
         )
-        limitations = record_inference_limitations(member, record_hits, active_database)
+        limitations = record_inference_limitations(
+            member,
+            record_hits,
+            active_database,
+            features=record_features,
+        )
         if limitations:
             member = replace(
                 member,
@@ -202,7 +208,10 @@ def analyze_mobilome(
                 inventory=member,
                 hits=record_hits,
                 hypotheses=infer_replicon_hypotheses(
-                    member, record_hits, active_database
+                    member,
+                    record_hits,
+                    active_database,
+                    features=record_features,
                 ),
             )
         )

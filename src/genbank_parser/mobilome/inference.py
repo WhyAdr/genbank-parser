@@ -3,8 +3,15 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 
-from ..spatial import circular_feature_distance_bp, intervening_gap_bp
+from ..model import GenBankFeature
+from ..spatial import (
+    CoveringArc,
+    circular_feature_distance_bp,
+    intervening_gap_bp,
+    minimum_feature_covering_arc,
+)
 from .models import (
     HypothesisParticipant,
     InferenceComponent,
@@ -16,6 +23,13 @@ from .models import (
     RepliconAssessment,
     RepliconInventory,
 )
+
+_MAX_COMPACT_ASSIGNMENTS = 512
+_MAX_PACKING_STATES = 100_000
+
+
+class _CandidateLimitExceeded(RuntimeError):
+    """Internal signal for fail-closed compact-module enumeration."""
 
 
 def _functional_hits(hits: Sequence[MobilomeHit]) -> tuple[MobilomeHit, ...]:
@@ -32,6 +46,10 @@ def _functional_hits(hits: Sequence[MobilomeHit]) -> tuple[MobilomeHit, ...]:
 
 def _feature_key(hit: MobilomeHit) -> tuple[int, int]:
     return hit.feature.record_index, hit.feature.feature_index
+
+
+def _hit_sort_key(hit: MobilomeHit) -> tuple[object, ...]:
+    return (*_feature_key(hit), hit.marker_id, hit.hit_id)
 
 
 def _facet_hits(hits: Sequence[MobilomeHit], facet: str) -> tuple[MobilomeHit, ...]:
@@ -273,7 +291,10 @@ def _ta_rule_hits(
     hits: Sequence[MobilomeHit], rule: InferenceRule
 ) -> list[MobilomeHit]:
     marker_ids = frozenset(rule.required_marker_ids)
-    return [hit for hit in _functional_hits(hits) if hit.marker_id in marker_ids]
+    return sorted(
+        (hit for hit in _functional_hits(hits) if hit.marker_id in marker_ids),
+        key=_hit_sort_key,
+    )
 
 
 def _cluster_span_bp(
@@ -322,7 +343,7 @@ def _connected_marker_clusters(
         else:
             parent[left_root] = right_root
 
-    max_gap = rule.max_circular_gap_bp
+    max_gap = rule.max_edge_gap_bp
     for left in range(total):
         for right in range(left + 1, total):
             first, second = rule_hits[left], rule_hits[right]
@@ -347,25 +368,27 @@ def _connected_marker_clusters(
         )
         for _, indices in sorted(grouped.items())
     ]
-    return tuple(clusters)
+    return tuple(
+        sorted(
+            clusters,
+            key=lambda cluster: tuple(_hit_sort_key(hit) for hit in cluster),
+        )
+    )
 
 
-def _infer_toxin_antitoxin_clusters(
+def _infer_pair_candidate_clusters(
     inventory: RepliconInventory,
     hits: Sequence[MobilomeHit],
     database: MobilomeDatabase,
 ) -> tuple[MobilomeHypothesis, ...]:
-    """Emit one hypothesis per complete marker cluster (finding C4/C5).
-
-    A cluster is emitted only when it contains at least one eligible hit of
-    every required marker, so an isolated toxin or antitoxin never produces a
-    hypothesis, and tandem arrays collapse into one aggregate hypothesis
-    instead of one hypothesis per cross product pair.
-    """
+    """Preserve aggregate tandem-array semantics for two-marker rules."""
 
     hypotheses: list[MobilomeHypothesis] = []
     for rule in database.inference_rules:
-        if rule.kind != "toxin_antitoxin" or len(rule.required_marker_ids) < 2:
+        if (
+            rule.inference_mode != "spatial_marker_cluster"
+            or len(rule.required_marker_ids) != 2
+        ):
             continue
         rule_hits = _ta_rule_hits(hits, rule)
         if len(rule_hits) < len(rule.required_marker_ids):
@@ -375,18 +398,20 @@ def _infer_toxin_antitoxin_clusters(
             present = {hit.marker_id for hit in cluster}
             if not required <= present:
                 continue
+            if _find_marker_assignment(cluster, rule) is None:
+                continue
             feature_indices = sorted({hit.feature.feature_index for hit in cluster})
             observed = _cluster_span_bp(cluster, inventory)
             extra_limitations: list[str] = []
             if len(feature_indices) == 2:
                 extra_limitations.append(
-                    f"Configured maximum gap ({inventory.topology}): "
-                    f"{rule.max_circular_gap_bp} bp; observed gap: {observed} bp."
+                    f"Configured maximum edge gap ({inventory.topology}): "
+                    f"{rule.max_edge_gap_bp} bp; observed gap: {observed} bp."
                 )
             else:
                 extra_limitations.append(
-                    f"Configured maximum gap ({inventory.topology}): "
-                    f"{rule.max_circular_gap_bp} bp; observed cluster span: "
+                    f"Configured maximum edge gap ({inventory.topology}): "
+                    f"{rule.max_edge_gap_bp} bp; observed cluster span: "
                     f"{observed} bp."
                 )
                 extra_limitations.append(
@@ -408,19 +433,490 @@ def _infer_toxin_antitoxin_clusters(
     return tuple(hypotheses)
 
 
+def _enumerate_marker_assignments(
+    cluster: Sequence[MobilomeHit],
+    rule: InferenceRule,
+) -> tuple[tuple[MobilomeHit, ...], ...]:
+    """Enumerate deterministic full marker-role assignments for one cluster."""
+
+    candidates_by_marker = _marker_candidates(cluster, rule)
+    if any(not candidates for candidates in candidates_by_marker):
+        return ()
+
+    assignments: list[tuple[MobilomeHit, ...]] = []
+
+    def visit(
+        marker_index: int,
+        selected: tuple[MobilomeHit, ...],
+        used_features: frozenset[tuple[int, int]],
+    ) -> None:
+        if len(assignments) >= _MAX_COMPACT_ASSIGNMENTS:
+            raise _CandidateLimitExceeded
+        if marker_index == len(candidates_by_marker):
+            assignments.append(selected)
+            return
+        for hit in candidates_by_marker[marker_index]:
+            key = _feature_key(hit)
+            if rule.distinct_features and key in used_features:
+                continue
+            visit(
+                marker_index + 1,
+                (*selected, hit),
+                used_features | ({key} if rule.distinct_features else set()),
+            )
+
+    visit(0, (), frozenset())
+    return tuple(assignments)
+
+
+def _marker_candidates(
+    cluster: Sequence[MobilomeHit], rule: InferenceRule
+) -> tuple[tuple[MobilomeHit, ...], ...]:
+    return tuple(
+        tuple(
+            sorted(
+                (hit for hit in cluster if hit.marker_id == marker_id),
+                key=_hit_sort_key,
+            )
+        )
+        for marker_id in rule.required_marker_ids
+    )
+
+
+def _find_marker_assignment(
+    cluster: Sequence[MobilomeHit], rule: InferenceRule
+) -> tuple[MobilomeHit, ...] | None:
+    """Find one deterministic full assignment without enumerating alternatives."""
+
+    candidates_by_marker = _marker_candidates(cluster, rule)
+    if any(not candidates for candidates in candidates_by_marker):
+        return None
+
+    def visit(
+        marker_index: int,
+        selected: tuple[MobilomeHit, ...],
+        used_features: frozenset[tuple[int, int]],
+    ) -> tuple[MobilomeHit, ...] | None:
+        if marker_index == len(candidates_by_marker):
+            return selected
+        for hit in candidates_by_marker[marker_index]:
+            key = _feature_key(hit)
+            if rule.distinct_features and key in used_features:
+                continue
+            result = visit(
+                marker_index + 1,
+                (*selected, hit),
+                used_features | ({key} if rule.distinct_features else set()),
+            )
+            if result is not None:
+                return result
+        return None
+
+    return visit(0, (), frozenset())
+
+
+def _linear_covering_arc(segments: Sequence[tuple[int, int]]) -> CoveringArc:
+    if not segments:
+        raise ValueError("segments must not be empty")
+    if any(start < 1 or end < start for start, end in segments):
+        raise ValueError("segments must be one-based inclusive intervals")
+    start = min(item[0] for item in segments)
+    end = max(item[1] for item in segments)
+    return CoveringArc(
+        span_bp=end - start + 1,
+        start=start,
+        end=end,
+        wraps_origin=False,
+    )
+
+
+def _assignment_covering_arc(
+    assignment: Sequence[MobilomeHit],
+    inventory: RepliconInventory,
+) -> CoveringArc | None:
+    segments = tuple(segment for hit in assignment for segment in hit.feature.segments)
+    if not segments:
+        return None
+    try:
+        if inventory.topology == "circular":
+            return minimum_feature_covering_arc(
+                segments,
+                record_length=inventory.length,
+            )
+        return _linear_covering_arc(segments)
+    except ValueError:
+        return None
+
+
+def _biological_anchor(hit: MobilomeHit) -> int:
+    if not hit.feature.segments:
+        raise ValueError("unlocatable hit has no biological anchor")
+    if hit.feature.strand == -1:
+        return hit.feature.segments[0][1]
+    return hit.feature.segments[0][0]
+
+
+def _ordered_assignment(
+    assignment: Sequence[MobilomeHit],
+) -> tuple[MobilomeHit, ...] | None:
+    strands = {hit.feature.strand for hit in assignment}
+    if strands == {1}:
+        return tuple(
+            sorted(
+                assignment,
+                key=lambda hit: (_biological_anchor(hit), _hit_sort_key(hit)),
+            )
+        )
+    if strands == {-1}:
+        return tuple(
+            sorted(
+                assignment,
+                key=lambda hit: (-_biological_anchor(hit), _hit_sort_key(hit)),
+            )
+        )
+    return None
+
+
+def _circular_rotation_matches(
+    observed: tuple[str, ...], expected: tuple[str, ...]
+) -> bool:
+    if len(observed) != len(expected):
+        return False
+    return any(
+        observed[index:] + observed[:index] == expected
+        for index in range(len(observed))
+    )
+
+
+def _feature_segments_for_policy(
+    feature: GenBankFeature,
+) -> tuple[tuple[int, int], ...]:
+    if feature.is_compound and feature.join_segments:
+        return tuple(feature.join_segments)
+    if feature.end >= feature.start:
+        return ((feature.start, feature.end),)
+    return ()
+
+
+def _biological_boundaries(
+    segments: Sequence[tuple[int, int]], strand: int | None
+) -> tuple[int, int] | None:
+    """Return the biological 5-prime and 3-prime boundary coordinates."""
+
+    if not segments or strand not in (-1, 1):
+        return None
+    if strand == -1:
+        return segments[0][1], segments[-1][0]
+    return segments[0][0], segments[-1][1]
+
+
+def _open_clockwise_arc_intervals(
+    start: int,
+    end: int,
+    *,
+    record_length: int,
+) -> tuple[tuple[int, int], ...]:
+    """Return one-based integer intervals strictly inside a circular arc."""
+
+    distance = (end - start) % record_length
+    if distance == 0:
+        return ()
+    if start < end:
+        intervals = ((start + 1, end - 1),)
+    else:
+        intervals = ((start + 1, record_length), (1, end - 1))
+    return tuple((left, right) for left, right in intervals if left <= right)
+
+
+def _intervening_feature_count(
+    left: MobilomeHit,
+    right: MobilomeHit,
+    *,
+    inventory: RepliconInventory,
+    features: Sequence[GenBankFeature],
+    feature_types: frozenset[str],
+    reverse: bool,
+) -> int:
+    selected = {_feature_key(left), _feature_key(right)}
+    count = 0
+    left_boundaries = _biological_boundaries(left.feature.segments, left.feature.strand)
+    right_boundaries = _biological_boundaries(
+        right.feature.segments, right.feature.strand
+    )
+    if left_boundaries is None or right_boundaries is None:
+        return 0
+    _, left_after = left_boundaries
+    right_before, _ = right_boundaries
+    if inventory.topology != "circular":
+        interval_start = min(left_after, right_before) + 1
+        interval_end = max(left_after, right_before) - 1
+        if interval_start > interval_end:
+            return 0
+        for feature in features:
+            key = (feature.record_index, feature.feature_index)
+            if key in selected or feature.record_index != inventory.record_index:
+                continue
+            if feature.type.casefold() not in feature_types:
+                continue
+            if any(
+                start <= interval_end and end >= interval_start
+                for start, end in _feature_segments_for_policy(feature)
+            ):
+                count += 1
+        return count
+
+    arc_start, arc_end = left_after, right_before
+    if reverse:
+        arc_start, arc_end = arc_end, arc_start
+    intervals = _open_clockwise_arc_intervals(
+        arc_start,
+        arc_end,
+        record_length=inventory.length,
+    )
+    for feature in features:
+        key = (feature.record_index, feature.feature_index)
+        if key in selected or feature.record_index != inventory.record_index:
+            continue
+        if feature.type.casefold() not in feature_types:
+            continue
+        if any(
+            segment_start <= interval_end and segment_end >= interval_start
+            for segment_start, segment_end in _feature_segments_for_policy(feature)
+            for interval_start, interval_end in intervals
+        ):
+            count += 1
+    return count
+
+
+def _structural_evidence(
+    assignment: Sequence[MobilomeHit],
+    rule: InferenceRule,
+    inventory: RepliconInventory,
+    features: Sequence[GenBankFeature],
+) -> tuple[bool, tuple[str, ...]]:
+    strands = {hit.feature.strand for hit in assignment}
+    if rule.strand_policy != "any":
+        if not strands <= {-1, 1}:
+            return False, ()
+        if rule.strand_policy == "same" and len(strands) != 1:
+            return False, ()
+        if rule.strand_policy == "opposite" and not (
+            len(assignment) == 2 and strands == {-1, 1}
+        ):
+            return False, ()
+
+    ordered = _ordered_assignment(assignment)
+    if rule.allowed_orders:
+        if ordered is None:
+            return False, ()
+        observed = tuple(hit.marker_id for hit in ordered)
+        if inventory.topology == "circular":
+            matches = any(
+                _circular_rotation_matches(observed, expected)
+                for expected in rule.allowed_orders
+            )
+        else:
+            matches = observed in rule.allowed_orders
+        if not matches:
+            return False, ()
+
+    limitations: list[str] = []
+    if rule.strand_policy != "any":
+        limitations.append(
+            f"Structural strand policy ({rule.strand_policy}) passed for the selected assignment."
+        )
+    if rule.allowed_orders:
+        limitations.append(
+            "Structural biological-order policy passed for the selected assignment."
+        )
+
+    if rule.max_intervening_features is not None:
+        if not features:
+            return False, ()
+        if ordered is None or len(ordered) < 2:
+            return False, ()
+        reverse = all(hit.feature.strand == -1 for hit in ordered)
+        feature_types = frozenset(
+            feature_type.casefold() for feature_type in rule.intervening_feature_types
+        )
+        counts = [
+            _intervening_feature_count(
+                left,
+                right,
+                inventory=inventory,
+                features=features,
+                feature_types=feature_types,
+                reverse=reverse,
+            )
+            for left, right in zip(ordered, (*ordered[1:], ordered[0]))
+        ]
+        if inventory.topology != "circular":
+            counts = counts[:-1]
+        if any(count > rule.max_intervening_features for count in counts):
+            return False, ()
+        limitations.append(
+            "Structural intervening-feature policy passed "
+            f"(maximum observed: {max(counts, default=0)}; "
+            f"counted types: {', '.join(rule.intervening_feature_types)})."
+        )
+    return True, tuple(limitations)
+
+
+@dataclass(frozen=True)
+class _CompactCandidate:
+    assignment: tuple[MobilomeHit, ...]
+    span_bp: int
+    feature_keys: tuple[tuple[int, int], ...]
+    hit_ids: tuple[str, ...]
+    structural_limitations: tuple[str, ...]
+
+
+def _candidate_sort_key(candidate: _CompactCandidate) -> tuple[object, ...]:
+    return (
+        candidate.feature_keys,
+        candidate.hit_ids,
+        candidate.span_bp,
+    )
+
+
+def _select_non_overlapping_candidates(
+    candidates: Sequence[_CompactCandidate],
+) -> tuple[_CompactCandidate, ...]:
+    ordered = tuple(sorted(candidates, key=_candidate_sort_key))
+    best: tuple[_CompactCandidate, ...] = ()
+    best_score: tuple[object, ...] | None = None
+    states = 0
+
+    def score(selection: Sequence[_CompactCandidate]) -> tuple[object, ...]:
+        normalized = tuple(sorted(selection, key=_candidate_sort_key))
+        return (
+            -len(normalized),
+            sum(item.span_bp for item in normalized),
+            max((item.span_bp for item in normalized), default=0),
+            tuple(item.feature_keys for item in normalized),
+            tuple(item.hit_ids for item in normalized),
+        )
+
+    def visit(
+        start: int,
+        selection: tuple[_CompactCandidate, ...],
+        used_features: frozenset[tuple[int, int]],
+    ) -> None:
+        nonlocal best, best_score, states
+        states += 1
+        if states > _MAX_PACKING_STATES:
+            raise _CandidateLimitExceeded
+        current_score = score(selection)
+        if best_score is None or current_score < best_score:
+            best, best_score = selection, current_score
+        for index in range(start, len(ordered)):
+            candidate = ordered[index]
+            if used_features.intersection(candidate.feature_keys):
+                continue
+            visit(
+                index + 1,
+                (*selection, candidate),
+                used_features | frozenset(candidate.feature_keys),
+            )
+
+    visit(0, (), frozenset())
+    return tuple(sorted(best, key=_candidate_sort_key))
+
+
+def _infer_compact_marker_modules(
+    inventory: RepliconInventory,
+    hits: Sequence[MobilomeHit],
+    database: MobilomeDatabase,
+    *,
+    features: Sequence[GenBankFeature] = (),
+) -> tuple[MobilomeHypothesis, ...]:
+    """Infer bounded, injective assignments for compact three-or-more-marker rules."""
+
+    hypotheses: list[MobilomeHypothesis] = []
+    for rule in database.inference_rules:
+        if (
+            rule.inference_mode != "spatial_marker_cluster"
+            or len(rule.required_marker_ids) < 3
+        ):
+            continue
+        rule_hits = _ta_rule_hits(hits, rule)
+        if len(rule_hits) < len(rule.required_marker_ids):
+            continue
+        rule_candidates: list[_CompactCandidate] = []
+        try:
+            for cluster in _connected_marker_clusters(rule_hits, rule, inventory):
+                for assignment in _enumerate_marker_assignments(cluster, rule):
+                    arc = _assignment_covering_arc(assignment, inventory)
+                    if arc is None or (
+                        rule.max_cluster_span_bp is not None
+                        and arc.span_bp > rule.max_cluster_span_bp
+                    ):
+                        continue
+                    structural_ok, structural_limitations = _structural_evidence(
+                        assignment,
+                        rule,
+                        inventory,
+                        features,
+                    )
+                    if not structural_ok:
+                        continue
+                    rule_candidates.append(
+                        _CompactCandidate(
+                            assignment=assignment,
+                            span_bp=arc.span_bp,
+                            feature_keys=tuple(_feature_key(hit) for hit in assignment),
+                            hit_ids=tuple(hit.hit_id for hit in assignment),
+                            structural_limitations=structural_limitations,
+                        )
+                    )
+            selected = _select_non_overlapping_candidates(rule_candidates)
+        except _CandidateLimitExceeded:
+            continue
+        for candidate in selected:
+            feature_indices = sorted(
+                {hit.feature.feature_index for hit in candidate.assignment}
+            )
+            limitations = list(rule.limitations)
+            limitations.append(
+                f"Configured maximum edge gap ({inventory.topology}): "
+                f"{rule.max_edge_gap_bp} bp; configured maximum cluster span: "
+                f"{rule.max_cluster_span_bp} bp; observed selected-assignment extent: "
+                f"{candidate.span_bp} bp."
+            )
+            limitations.extend(candidate.structural_limitations)
+            hypotheses.append(
+                _hypothesis(
+                    hypothesis_id=(
+                        f"h:{rule.id}:{inventory.record_index}:"
+                        + ":".join(str(index) for index in feature_indices)
+                    ),
+                    rule=rule,
+                    inventory=inventory,
+                    supporting=candidate.assignment,
+                    limitations=tuple(limitations),
+                )
+            )
+    return tuple(hypotheses)
+
+
 def record_inference_limitations(
     inventory: RepliconInventory,
     hits: Sequence[MobilomeHit],
     database: MobilomeDatabase,
+    *,
+    features: Sequence[GenBankFeature] = (),
 ) -> tuple[str, ...]:
-    """Return record-level limits that cannot be represented by a pair hit."""
+    """Return record-level limits that cannot be represented by a hypothesis."""
 
     limitations: list[str] = []
     local_hits = tuple(
         hit for hit in hits if hit.feature.record_index == inventory.record_index
     )
     for rule in database.inference_rules:
-        if rule.kind != "toxin_antitoxin" or len(rule.required_marker_ids) < 2:
+        if (
+            rule.inference_mode != "spatial_marker_cluster"
+            or len(rule.required_marker_ids) < 2
+        ):
             continue
         rule_hits = _ta_rule_hits(local_hits, rule)
         present_markers = {hit.marker_id for hit in rule_hits}
@@ -428,8 +924,26 @@ def record_inference_limitations(
             continue
         if any(not hit.feature.segments for hit in rule_hits):
             limitations.append(
-                f"{rule.id}: at least one same-record toxin/antitoxin candidate is unlocatable; spatial pairing was skipped."
+                f"{rule.id}: at least one same-record candidate is unlocatable; "
+                "spatial inference was skipped."
             )
+        if rule.max_intervening_features is not None and not features:
+            limitations.append(
+                f"{rule.id}: structural intervening-feature policy requires full "
+                "record feature context; spatial inference was skipped."
+            )
+        if len(rule.required_marker_ids) < 3:
+            continue
+        for cluster in _connected_marker_clusters(rule_hits, rule, inventory):
+            try:
+                _enumerate_marker_assignments(cluster, rule)
+            except _CandidateLimitExceeded:
+                limitations.append(
+                    f"{rule.id}: compact marker assignment candidate limit "
+                    f"({_MAX_COMPACT_ASSIGNMENTS}) was exceeded; spatial inference "
+                    "was skipped for this record."
+                )
+                break
     return tuple(sorted(set(limitations)))
 
 
@@ -437,6 +951,8 @@ def infer_replicon_hypotheses(
     replicon: RepliconInventory,
     hits: Sequence[MobilomeHit],
     database: MobilomeDatabase,
+    *,
+    features: Sequence[GenBankFeature] = (),
 ) -> tuple[MobilomeHypothesis, ...]:
     """Infer cautious record-local assessments from one record's retained hits."""
 
@@ -452,7 +968,15 @@ def infer_replicon_hypotheses(
         hypothesis = _infer_component_rule(replicon, local_hits, database, rule_id)
         if hypothesis is not None:
             hypotheses.append(hypothesis)
-    hypotheses.extend(_infer_toxin_antitoxin_clusters(replicon, local_hits, database))
+    hypotheses.extend(_infer_pair_candidate_clusters(replicon, local_hits, database))
+    hypotheses.extend(
+        _infer_compact_marker_modules(
+            replicon,
+            local_hits,
+            database,
+            features=features,
+        )
+    )
     return tuple(
         sorted(
             hypotheses,

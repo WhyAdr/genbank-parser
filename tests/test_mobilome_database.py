@@ -27,7 +27,7 @@ def test_packaged_database_is_versioned_hashed_and_schema_valid() -> None:
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
     assert database.catalog_version == "1.5.0"
-    assert database.inference_version == "1.5.0"
+    assert database.inference_version == "1.6.0"
     assert database.provenance_version == "1.5.0"
     assert database.database_source == "packaged"
     assert database.source_paths == ()
@@ -203,22 +203,26 @@ def test_ta_and_mobility_rules_carry_their_configured_sources() -> None:
         "qiu-2022-ta-classification",
     )
     assert rules["omega_epsilon_zeta_module_candidate"].required_marker_ids == (
+        "zeta",
         "epsilon",
         "omega",
-        "zeta",
     )
     assert rules["mqsrac_module_candidate"].required_marker_ids == (
+        "mqsr",
         "mqsa",
         "mqsc",
-        "mqsr",
     )
     assert rules["higba_tac_module_candidate"].required_marker_ids == (
-        "higa",
         "higb",
+        "higa",
         "tac_chaperone",
     )
+    assert rules["mqsrac_module_candidate"].inference_mode == "spatial_marker_cluster"
+    assert rules["mqsrac_module_candidate"].max_edge_gap_bp == 3000
     assert rules["mqsrac_module_candidate"].max_circular_gap_bp == 3000
-    assert rules["retron_rt_msdna_module_candidate"].sources == ("bobonis-2022-retron",)
+    assert rules["mqsrac_module_candidate"].max_cluster_span_bp == 3000
+    assert rules["retron_core_annotation_candidate"].kind == "retron"
+    assert rules["retron_core_annotation_candidate"].sources == ("bobonis-2022-retron",)
     assert rules["omega_epsilon_zeta_module_candidate"].sources == (
         "brzozowska-2014-epsilon-clpx",
         "camacho-2002-oez",
@@ -273,6 +277,7 @@ def test_aggregate_candidate_claims_are_explicitly_disabled() -> None:
     assert disabled == {
         "phage_module_bearing_plasmid_candidate",
         "pxo_like_annotation_pattern_candidate",
+        "retron_ta_module_candidate",
     }
     assert not disabled & executable
 
@@ -393,8 +398,8 @@ def _mutated_database(
             "inference.yaml",
             lambda p: next(
                 rule for rule in p["rules"] if rule.get("kind") == "toxin_antitoxin"
-            ).pop("max_circular_gap_bp"),
-            "must declare max_circular_gap_bp",
+            ).pop("max_edge_gap_bp"),
+            "must declare max_edge_gap_bp",
         ),
         (
             "inference.yaml",
@@ -429,6 +434,116 @@ def test_database_rejects_fail_closed_matrix(
     message: str,
 ) -> None:
     _mutated_database(tmp_path, resource_name, mutate)
+
+    with pytest.raises(MobilomeDatabaseError, match=message):
+        load_mobilome_database(tmp_path)
+
+
+def test_legacy_gap_alias_is_accepted_as_topology_neutral_edge_gap(
+    tmp_path: Path,
+) -> None:
+    _copy_custom_database(tmp_path)
+    path = tmp_path / "inference.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    rule = next(rule for rule in payload["rules"] if rule.get("required_marker_ids"))
+    gap = rule.pop("max_edge_gap_bp")
+    rule["max_circular_gap_bp"] = gap
+    path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    database = load_mobilome_database(tmp_path)
+
+    assert database.inference_rule_map[rule["id"]].max_edge_gap_bp == gap
+
+
+def test_conflicting_gap_aliases_fail_closed(tmp_path: Path) -> None:
+    _copy_custom_database(tmp_path)
+    path = tmp_path / "inference.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    rule = next(rule for rule in payload["rules"] if rule.get("required_marker_ids"))
+    rule["max_circular_gap_bp"] = rule["max_edge_gap_bp"] + 1
+    path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(MobilomeDatabaseError, match="conflicting"):
+        load_mobilome_database(tmp_path)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (
+            lambda p: next(
+                rule for rule in p["rules"] if rule.get("required_marker_ids")
+            ).pop("inference_mode"),
+            "must declare inference_mode",
+        ),
+        (
+            lambda p: next(
+                rule
+                for rule in p["rules"]
+                if rule.get("id") == "mqsrac_module_candidate"
+            ).pop("max_cluster_span_bp"),
+            "must declare max_cluster_span_bp",
+        ),
+        (
+            lambda p: next(
+                rule
+                for rule in p["rules"]
+                if rule.get("id") == "mqsrac_module_candidate"
+            ).update({"strand_policy": "sideways"}),
+            "unsupported strand_policy",
+        ),
+        (
+            lambda p: next(
+                rule for rule in p["rules"] if rule.get("required_marker_ids")
+            ).update({"inference_mode": "not_a_mode"}),
+            "unsupported inference_mode",
+        ),
+        (
+            lambda p: next(
+                rule
+                for rule in p["rules"]
+                if rule.get("id") == "mqsrac_module_candidate"
+            ).update({"allowed_orders": [["mqsr", "mqsa", "not_a_marker"]]}),
+            "must contain each required marker",
+        ),
+        (
+            lambda p: next(
+                rule
+                for rule in p["rules"]
+                if rule.get("id") == "mqsrac_module_candidate"
+            ).update({"max_intervening_features": 0}),
+            "requires intervening_feature_types",
+        ),
+        (
+            lambda p: next(
+                rule
+                for rule in p["rules"]
+                if rule.get("id") == "mqsrac_module_candidate"
+            ).update(
+                {
+                    "max_intervening_features": True,
+                    "intervening_feature_types": ["CDS"],
+                }
+            ),
+            "non-negative integer",
+        ),
+        (
+            lambda p: p["rules"][0].update(
+                {
+                    "inference_mode": "component",
+                    "required_marker_ids": ["toxn"],
+                }
+            ),
+            "cannot declare spatial marker fields",
+        ),
+    ],
+)
+def test_new_spatial_rule_fields_fail_closed(
+    tmp_path: Path,
+    mutate: Callable[[dict], None],
+    message: str,
+) -> None:
+    _mutated_database(tmp_path, "inference.yaml", mutate)
 
     with pytest.raises(MobilomeDatabaseError, match=message):
         load_mobilome_database(tmp_path)

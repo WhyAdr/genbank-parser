@@ -393,7 +393,7 @@ def test_toxin_antitoxin_gap_wording_reports_record_topology() -> None:
         if item.kind == "toxin_antitoxin"
     )
     assert any(
-        limitation.startswith("Configured maximum gap (linear):")
+        limitation.startswith("Configured maximum edge gap (linear):")
         for limitation in pair.limitations
     )
 

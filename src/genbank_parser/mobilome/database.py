@@ -55,6 +55,8 @@ _FIELD_STRENGTH_CEILINGS = {
 }
 _VALID_MODES = frozenset({"exact", "casefold_exact", "regex"})
 _VALID_STATUSES = frozenset({"supported", "tentative", "insufficient", "conflicting"})
+_VALID_INFERENCE_MODES = frozenset({"component", "spatial_marker_cluster"})
+_VALID_STRAND_POLICIES = frozenset({"any", "same", "opposite"})
 _VALID_SOURCE_TYPES = frozenset(
     {"primary_article", "official_documentation", "curated_database", "local_rule"}
 )
@@ -143,6 +145,12 @@ def _positive_int(value: Any, owner: str) -> int:
     return value
 
 
+def _nonnegative_int(value: Any, owner: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise MobilomeDatabaseError(f"{owner} must be a non-negative integer")
+    return value
+
+
 def _unique_ids(items: list[dict[str, Any]], owner: str) -> None:
     ids = [_string(item.get("id"), f"{owner}.id") for item in items]
     duplicates = sorted({item_id for item_id in ids if ids.count(item_id) > 1})
@@ -205,15 +213,21 @@ def _resource_bytes(
     return payload, paths
 
 
-def _load_yaml(raw: bytes, name: str) -> dict[str, Any]:
+def _load_yaml(
+    raw: bytes,
+    name: str,
+    *,
+    expected_schema_version: int = 1,
+) -> dict[str, Any]:
     try:
         loaded = yaml.load(raw.decode("utf-8"), Loader=_UniqueKeyLoader)
     except (UnicodeDecodeError, yaml.YAMLError) as exc:
         raise MobilomeDatabaseError(f"Could not load {name}: {exc}") from exc
     payload = _expect_mapping(loaded, name)
-    if payload.get("schema_version") != 1:
+    if payload.get("schema_version") != expected_schema_version:
         raise MobilomeDatabaseError(
-            f"Unsupported {name} schema_version: {payload.get('schema_version')!r}"
+            f"Unsupported {name} schema_version: {payload.get('schema_version')!r}; "
+            f"expected {expected_schema_version}"
         )
     return payload
 
@@ -578,9 +592,16 @@ def _parse_inference_rules(
         "kind",
         "required_components",
         "required_marker_ids",
+        "inference_mode",
         "same_record",
         "distinct_features",
+        "max_edge_gap_bp",
+        "max_cluster_span_bp",
         "max_circular_gap_bp",
+        "strand_policy",
+        "allowed_orders",
+        "max_intervening_features",
+        "intervening_feature_types",
         "status",
         "wording",
         "limitations",
@@ -623,23 +644,152 @@ def _parse_inference_rules(
             raise MobilomeDatabaseError(
                 f"Rule {rule_id} has unsupported status {status!r}"
             )
-        raw_gap = raw_rule.get("max_circular_gap_bp")
-        max_gap = (
+        raw_edge_gap = raw_rule.get("max_edge_gap_bp")
+        raw_legacy_gap = raw_rule.get("max_circular_gap_bp")
+        if (
+            raw_edge_gap is not None
+            and raw_legacy_gap is not None
+            and raw_edge_gap != raw_legacy_gap
+        ):
+            raise MobilomeDatabaseError(
+                f"Rule {rule_id} provides conflicting max_edge_gap_bp and "
+                "max_circular_gap_bp values"
+            )
+        raw_gap = raw_edge_gap if raw_edge_gap is not None else raw_legacy_gap
+        gap_field = (
+            "max_edge_gap_bp" if raw_edge_gap is not None else "max_circular_gap_bp"
+        )
+        max_edge_gap = (
             None
             if raw_gap is None
-            else _positive_int(raw_gap, f"rule {rule_id}.max_circular_gap_bp")
+            else _positive_int(raw_gap, f"rule {rule_id}.{gap_field}")
+        )
+        raw_span = raw_rule.get("max_cluster_span_bp")
+        max_cluster_span = (
+            None
+            if raw_span is None
+            else _positive_int(raw_span, f"rule {rule_id}.max_cluster_span_bp")
         )
         rule_kind = _string(raw_rule.get("kind"), f"rule {rule_id}.kind")
-        if rule_kind == "toxin_antitoxin":
+        if "inference_mode" not in raw_rule:
+            if required_marker_ids:
+                raise MobilomeDatabaseError(
+                    f"Rule {rule_id} with required_marker_ids must declare "
+                    "inference_mode: spatial_marker_cluster"
+                )
+            inference_mode = "component"
+        else:
+            inference_mode = _string(
+                raw_rule.get("inference_mode"),
+                f"rule {rule_id}.inference_mode",
+            )
+            if inference_mode not in _VALID_INFERENCE_MODES:
+                raise MobilomeDatabaseError(
+                    f"Rule {rule_id} has unsupported inference_mode {inference_mode!r}"
+                )
+
+        same_record = _bool(
+            raw_rule.get("same_record", False), f"rule {rule_id}.same_record"
+        )
+        distinct_features = _bool(
+            raw_rule.get("distinct_features", False),
+            f"rule {rule_id}.distinct_features",
+        )
+        strand_policy = _string(
+            raw_rule.get("strand_policy", "any"),
+            f"rule {rule_id}.strand_policy",
+        )
+        if strand_policy not in _VALID_STRAND_POLICIES:
+            raise MobilomeDatabaseError(
+                f"Rule {rule_id} has unsupported strand_policy {strand_policy!r}"
+            )
+        raw_orders = raw_rule.get("allowed_orders", [])
+        if not isinstance(raw_orders, list) or not all(
+            isinstance(item, list) for item in raw_orders
+        ):
+            raise MobilomeDatabaseError(
+                f"rule {rule_id}.allowed_orders must be a list of marker-order lists"
+            )
+        allowed_orders: list[tuple[str, ...]] = []
+        for order_index, raw_order in enumerate(raw_orders):
+            order = _string_list(
+                raw_order,
+                f"rule {rule_id}.allowed_orders[{order_index}]",
+            )
+            if len(order) != len(required_marker_ids) or set(order) != set(
+                required_marker_ids
+            ):
+                raise MobilomeDatabaseError(
+                    f"Rule {rule_id}.allowed_orders[{order_index}] must contain "
+                    "each required marker exactly once"
+                )
+            allowed_orders.append(order)
+        if len(set(allowed_orders)) != len(allowed_orders):
+            raise MobilomeDatabaseError(
+                f"Rule {rule_id}.allowed_orders must not contain duplicate orders"
+            )
+        raw_max_intervening = raw_rule.get("max_intervening_features")
+        max_intervening_features = (
+            None
+            if raw_max_intervening is None
+            else _nonnegative_int(
+                raw_max_intervening,
+                f"rule {rule_id}.max_intervening_features",
+            )
+        )
+        raw_intervening_types = raw_rule.get("intervening_feature_types", [])
+        intervening_feature_types = _string_list(
+            raw_intervening_types,
+            f"rule {rule_id}.intervening_feature_types",
+            allow_empty=True,
+        )
+
+        if inference_mode == "component":
+            marker_only = (
+                required_marker_ids
+                or max_edge_gap is not None
+                or max_cluster_span is not None
+                or strand_policy != "any"
+                or allowed_orders
+                or max_intervening_features is not None
+                or intervening_feature_types
+            )
+            if marker_only:
+                raise MobilomeDatabaseError(
+                    f"Component rule {rule_id} cannot declare spatial marker fields"
+                )
+        else:
+            if parsed_components:
+                raise MobilomeDatabaseError(
+                    f"Spatial marker rule {rule_id} cannot declare required_components"
+                )
             if len(required_marker_ids) < 2:
                 raise MobilomeDatabaseError(
-                    f"Rule {rule_id} is a toxin-antitoxin rule and must declare "
-                    "at least two required_marker_ids"
+                    f"Spatial marker rule {rule_id} requires at least two "
+                    "required_marker_ids"
                 )
-            if max_gap is None:
+            if not same_record:
                 raise MobilomeDatabaseError(
-                    f"Rule {rule_id} is a toxin-antitoxin rule and must declare "
-                    "max_circular_gap_bp"
+                    f"Spatial marker rule {rule_id} must declare same_record: true"
+                )
+            if max_edge_gap is None:
+                raise MobilomeDatabaseError(
+                    f"Spatial marker rule {rule_id} must declare max_edge_gap_bp"
+                )
+            if len(required_marker_ids) >= 3 and max_cluster_span is None:
+                raise MobilomeDatabaseError(
+                    f"Spatial marker rule {rule_id} with three or more markers "
+                    "must declare max_cluster_span_bp"
+                )
+            if max_intervening_features is None and intervening_feature_types:
+                raise MobilomeDatabaseError(
+                    f"Rule {rule_id}.intervening_feature_types requires "
+                    "max_intervening_features"
+                )
+            if max_intervening_features is not None and not intervening_feature_types:
+                raise MobilomeDatabaseError(
+                    f"Rule {rule_id}.max_intervening_features requires "
+                    "intervening_feature_types"
                 )
         rules.append(
             InferenceRule(
@@ -656,15 +806,16 @@ def _parse_inference_rules(
                     raw_rule.get("limitations"), f"rule {rule_id}.limitations"
                 ),
                 required_components=tuple(sorted(parsed_components)),
-                required_marker_ids=tuple(sorted(required_marker_ids)),
-                same_record=_bool(
-                    raw_rule.get("same_record", False), f"rule {rule_id}.same_record"
-                ),
-                distinct_features=_bool(
-                    raw_rule.get("distinct_features", False),
-                    f"rule {rule_id}.distinct_features",
-                ),
-                max_circular_gap_bp=max_gap,
+                required_marker_ids=tuple(required_marker_ids),
+                inference_mode=inference_mode,  # type: ignore[arg-type]
+                same_record=same_record,
+                distinct_features=distinct_features,
+                max_edge_gap_bp=max_edge_gap,
+                max_cluster_span_bp=max_cluster_span,
+                strand_policy=strand_policy,  # type: ignore[arg-type]
+                allowed_orders=tuple(allowed_orders),
+                max_intervening_features=max_intervening_features,
+                intervening_feature_types=intervening_feature_types,
             )
         )
     return tuple(rules)
@@ -842,7 +993,11 @@ def load_mobilome_database(database_dir: str | Path | None = None) -> MobilomeDa
     raw_resources, source_paths = _resource_bytes(custom_dir)
     markers_data = _load_yaml(raw_resources["markers.yaml"], "markers.yaml")
     provenance_data = _load_yaml(raw_resources["provenance.yaml"], "provenance.yaml")
-    inference_data = _load_yaml(raw_resources["inference.yaml"], "inference.yaml")
+    inference_data = _load_yaml(
+        raw_resources["inference.yaml"],
+        "inference.yaml",
+        expected_schema_version=2,
+    )
     _load_schema(raw_resources[_REPORT_SCHEMA_NAME])
     _expect_keys(
         inference_data,

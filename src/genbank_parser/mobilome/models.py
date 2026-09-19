@@ -20,6 +20,8 @@ MatchMode = Literal["exact", "casefold_exact", "regex"]
 HandoffStatus = Literal["not_run"]
 ParticipantRole = Literal["subject", "target", "helper"]
 DatabaseSource = Literal["packaged", "custom"]
+InferenceMode = Literal["component", "spatial_marker_cluster"]
+StrandPolicy = Literal["any", "same", "opposite"]
 
 
 class MobilomeError(Exception):
@@ -317,9 +319,21 @@ class InferenceRule:
     limitations: tuple[str, ...]
     required_components: tuple[tuple[str, tuple[str, ...]], ...] = ()
     required_marker_ids: tuple[str, ...] = ()
+    inference_mode: InferenceMode = "component"
     same_record: bool = False
     distinct_features: bool = False
-    max_circular_gap_bp: int | None = None
+    max_edge_gap_bp: int | None = None
+    max_cluster_span_bp: int | None = None
+    strand_policy: StrandPolicy = "any"
+    allowed_orders: tuple[tuple[str, ...], ...] = ()
+    max_intervening_features: int | None = None
+    intervening_feature_types: tuple[str, ...] = ()
+
+    @property
+    def max_circular_gap_bp(self) -> int | None:
+        """Deprecated compatibility alias for the topology-neutral edge gap."""
+
+        return self.max_edge_gap_bp
 
     @property
     def components_by_role(self) -> dict[str, tuple[str, ...]]:
@@ -376,6 +390,7 @@ __all__ = [
     "HandoffStatus",
     "HypothesisParticipant",
     "InferenceComponent",
+    "InferenceMode",
     "InferenceRule",
     "MarkerMatcher",
     "MatchMode",
@@ -399,4 +414,5 @@ __all__ = [
     "RepliconInventory",
     "RepliconTopology",
     "SourceQualifier",
+    "StrandPolicy",
 ]

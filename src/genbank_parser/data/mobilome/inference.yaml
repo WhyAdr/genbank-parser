@@ -1,5 +1,5 @@
-schema_version: 1
-inference_version: "1.5.0"
+schema_version: 2
+inference_version: "1.6.0"
 
 components:
   replication_candidate:
@@ -66,10 +66,11 @@ rules:
     sources: [garcillan-barcia-2025-extended-mobility, smillie-2010-mobility]
   - id: type_iii_toxin_antitoxin_pair_candidate
     kind: toxin_antitoxin
+    inference_mode: spatial_marker_cluster
     required_marker_ids: [toxn, toxi]
     same_record: true
     distinct_features: true
-    max_circular_gap_bp: 2000
+    max_edge_gap_bp: 2000
     status: tentative
     wording: Type III ToxIN annotation-pair candidate
     limitations:
@@ -78,10 +79,11 @@ rules:
     sources: [blower-2012-toxin, qiu-2022-ta-classification]
   - id: hepn_mnt_annotation_pair_candidate
     kind: toxin_antitoxin
+    inference_mode: spatial_marker_cluster
     required_marker_ids: [hept, mnta]
     same_record: true
     distinct_features: true
-    max_circular_gap_bp: 2000
+    max_edge_gap_bp: 2000
     status: tentative
     wording: HEPN/MNT annotation-pair candidate
     limitations:
@@ -92,10 +94,11 @@ rules:
 
   - id: type_iii_tenpin_annotation_pair_candidate
     kind: toxin_antitoxin
+    inference_mode: spatial_marker_cluster
     required_marker_ids: [tenpn, tenpi]
     same_record: true
     distinct_features: true
-    max_circular_gap_bp: 2000
+    max_edge_gap_bp: 2000
     status: tentative
     wording: Type III TenpIN annotation-pair candidate
     limitations:
@@ -104,10 +107,11 @@ rules:
     sources: [blower-2012-toxin, qiu-2022-ta-classification]
   - id: type_iii_cptin_annotation_pair_candidate
     kind: toxin_antitoxin
+    inference_mode: spatial_marker_cluster
     required_marker_ids: [cptn, cpti]
     same_record: true
     distinct_features: true
-    max_circular_gap_bp: 2000
+    max_edge_gap_bp: 2000
     status: tentative
     wording: Type III CptIN annotation-pair candidate
     limitations:
@@ -116,10 +120,12 @@ rules:
     sources: [blower-2012-toxin, qiu-2022-ta-classification]
   - id: higba_tac_module_candidate
     kind: toxin_antitoxin
+    inference_mode: spatial_marker_cluster
     required_marker_ids: [higb, higa, tac_chaperone]
     same_record: true
     distinct_features: true
-    max_circular_gap_bp: 3000
+    max_edge_gap_bp: 3000
+    max_cluster_span_bp: 3000
     status: tentative
     wording: Toxin-antitoxin-chaperone (TAC) HigBA-module annotation candidate
     limitations:
@@ -129,10 +135,12 @@ rules:
     sources: [bordes-2011-tac, mansour-2022-tac, mets-2024-tac-phage-sensing, nakamoto-2026-tac-diversity]
   - id: omega_epsilon_zeta_module_candidate
     kind: toxin_antitoxin
+    inference_mode: spatial_marker_cluster
     required_marker_ids: [zeta, epsilon, omega]
     same_record: true
     distinct_features: true
-    max_circular_gap_bp: 3000
+    max_edge_gap_bp: 3000
+    max_cluster_span_bp: 3000
     status: tentative
     wording: Omega-epsilon-zeta annotation-module candidate
     limitations:
@@ -141,28 +149,31 @@ rules:
     sources: [brzozowska-2014-epsilon-clpx, camacho-2002-oez, chan-2023-type2-ta, dmowski-2016-omega-parb]
   - id: mqsrac_module_candidate
     kind: toxin_antitoxin
+    inference_mode: spatial_marker_cluster
     required_marker_ids: [mqsr, mqsa, mqsc]
     same_record: true
     distinct_features: true
-    max_circular_gap_bp: 3000
+    max_edge_gap_bp: 3000
+    max_cluster_span_bp: 3000
     status: tentative
     wording: MqsRAC tripartite annotation-module candidate
     limitations:
       - Proximity is a versioned engineering heuristic, not proof of an operon.
       - Tripartite co-occurrence does not establish chaperone function or phage defense.
     sources: [chan-2023-type2-ta, fernandez-garcia-2024-mqsrac]
-  - id: retron_rt_msdna_module_candidate
-    kind: toxin_antitoxin
+  - id: retron_core_annotation_candidate
+    kind: retron
+    inference_mode: spatial_marker_cluster
     required_marker_ids: [retron_rt, msdna]
     same_record: true
     distinct_features: true
-    max_circular_gap_bp: 3000
+    max_edge_gap_bp: 3000
     status: tentative
-    wording: Retron RT-msDNA annotation-module candidate
+    wording: Retron RT-msr/msd core annotation candidate
     limitations:
-      - Proximity is a versioned engineering heuristic, not proof of a retron operon.
-      - The system-specific effector toxin of retron antiphage systems is not required by this annotation rule.
-      - Antiphage defense function is untested.
+      - Proximity is an engineering heuristic, not proof of a functional retron.
+      - No cognate effector toxin is required; this is not a toxin-antitoxin call.
+      - msDNA production and antiphage activity are untested.
     sources: [bobonis-2022-retron]
 
 disabled_aggregate_rules:
@@ -190,6 +201,14 @@ disabled_aggregate_rules:
       - Versioned minimum distinct-module policy.
       - Source-declared plasmid and eligible replication evidence.
     sources: [local-disabled-aggregate-policy]
+  - id: retron_ta_module_candidate
+    reason: No curated cognate-effector marker/correspondence contract is implemented.
+    evidence_retained_as: [retron_rt, msdna]
+    enablement_requirements:
+      - Curated retron-family-specific effector marker(s), including negative controls.
+      - Cognate RT-msr/msd-effector correspondence policy.
+      - Versioned sequence/domain evidence and operating thresholds.
+    sources: [bobonis-2022-retron]
 
 handoffs:
   - id: plasmid_typing
