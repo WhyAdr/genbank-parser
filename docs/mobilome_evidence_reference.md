@@ -16,6 +16,14 @@ The command inventories every input record. Source `/plasmid` and `/chromosome` 
 
 The versioned inference policy emits only configured annotation candidates. Component rules cover possible helper-dependent mobilization when separate records satisfy the required oriT/relaxase and T4CP/MPF patterns. Spatial marker-cluster rules cover ToxN/ToxI, HepT/MntA, TenpIN, CptIN, and selected compact tripartite modules under explicit edge and assignment-span heuristics. These outputs are nomination evidence, not autonomous counts of functional toxin-antitoxin systems. The report lists untested compatibility, cognate oriT-relaxase relationship, same-cell affiliation, expression, transfer, and co-transfer conditions.
 
+Compact-module search limits are applied per connected marker cluster. A dense
+cluster that exceeds assignment-enumeration or set-packing limits is skipped
+fail-closed and recorded in the replicon's spatial limitations; independent
+clusters remain eligible for inference. Custom catalogs from the v0.8.1
+schema-1 format are migrated in memory: the legacy topology-neutral gap field
+becomes the edge gap, and compact three-or-more-marker rules receive that gap
+as a conservative span bound.
+
 Generic Rep, pXO-numbered products, and phage-module observations do not select a replication mechanism or element identity. The pXO-like and phage-module aggregate rules remain intentionally disabled, with their future enablement requirements carried in every report. Generic AMR-like, virulence-associated, Zot-like, and AimR/AimP/AimX annotations remain candidates only.
 
 ## Source correspondence
@@ -133,8 +141,11 @@ runtime, rendered output volume, and the section 16.9 calibration
 expectations. `tests/test_mobilome_real_genome.py` performs the same checks as
 an opt-in test that skips clearly when the file is absent and rejects altered
 bytes before analysis. The fixture is a reproducibility/calibration input,
-not a positive/negative biological truth set or a performance benchmark, and
-neither path ever stages the real input. The standalone mobilome-parser prototype remains an
+not a positive/negative biological truth set or a performance benchmark. Its
+manifest records the local record ID and explicitly marks transformation
+provenance incomplete because the public accession and exact reorientation
+command are not currently recoverable from this repository. Neither path ever
+stages the real input. The standalone mobilome-parser prototype remains an
 audit-time comparison artifact in its own repository; the native
 `genbank_parser.mobilome` engine is canonical, and any archival of the
 prototype happens in that repository in a separate commit.

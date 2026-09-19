@@ -31,7 +31,15 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 - **Calibration provenance**: the optional real-genome check is user-facing as
   a real-genome calibration, verifies the local fixture against a committed
   SHA-256 manifest, and explicitly does not claim a biological truth-set
-  benchmark. Mobilome v2 golden files are LF-stable.
+  benchmark. The manifest distinguishes the local record ID from a public
+  accession and marks the unreconstructable transformation provenance as
+  incomplete. Mobilome v2 golden files are LF-stable.
+- **Residual hardening**: compact-module assignment and packing guards now
+  apply independently within connected marker clusters and surface skipped
+  clusters as record-level spatial limitations. Circular structural policies
+  follow the selected minimum covering arc without inspecting the complementary
+  chromosome arc, and real v0.8.1 schema-1 custom inference catalogs migrate
+  in memory during the v0.8.2 compatibility window.
 - **Version bumps**: package 0.8.2 and mobilome inference resource 1.6.0;
   catalog and provenance resources remain 1.5.0.
 

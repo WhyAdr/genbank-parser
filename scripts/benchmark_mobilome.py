@@ -52,8 +52,19 @@ def load_calibration_manifest(path: Path = DEFAULT_MANIFEST) -> dict[str, object
         raise ValueError(f"Calibration manifest {path} must use schema_version 1")
     fixture_id = payload.get("fixture_id")
     expected = payload.get("sha256")
+    source_record_id = payload.get("source_record_id")
+    transformation_provenance = payload.get("transformation_provenance")
     if not isinstance(fixture_id, str) or not fixture_id:
         raise ValueError("Calibration manifest fixture_id must be a non-empty string")
+    if not isinstance(source_record_id, str) or not source_record_id:
+        raise ValueError(
+            "Calibration manifest source_record_id must be a non-empty string"
+        )
+    if transformation_provenance not in {"complete", "incomplete"}:
+        raise ValueError(
+            "Calibration manifest transformation_provenance must be "
+            "'complete' or 'incomplete'"
+        )
     if not isinstance(expected, str) or len(expected) != 64:
         raise ValueError(
             "Calibration manifest sha256 must be a 64-character hex string"
@@ -137,6 +148,11 @@ def calibrate(
     print(f"calibration fixture:    {metadata['fixture_id']}")
     print(f"input:                  {path}")
     print("hash verification:      verified")
+    print(f"source record ID:       {metadata['source_record_id']}")
+    print(
+        "transformation provenance: "
+        f"{metadata['transformation_provenance']}"
+    )
     print(f"input SHA-256:          {metadata['observed_sha256']}")
     print(f"records inventoried:    {len(inventories)}")
     print(f"source-level plasmids:  {len(plasmid_evidence)}")

@@ -2,15 +2,15 @@
   "schema_version": 1,
   "fixture_id": "PF_NNT_reoriented",
   "sha256": "af3754e1a70ce7e9898bb349cfa974265a9ff1cb5a3aa377232e4f8c03c95430",
-  "source_accession": "contig_1",
-  "source_version": "contig_1",
+  "source_record_id": "contig_1",
+  "transformation_provenance": "incomplete",
   "annotation_pipeline": {
     "name": "Bakta",
     "version": "1.12.0",
     "database_version": "6.0, full"
   },
   "transformations": [
-    "Canonical local bytes are supplied under PF_NNT_reoriented.gbff; the exact reorientation command is not recorded in this repository.",
+    "Canonical local bytes are supplied under PF_NNT_reoriented.gbff; the public source accession and exact reorientation command are not recorded in this repository.",
     "Observed coordinate anchor: contig_1 position 1 begins dnaA (PFNNT_000005), followed by the annotated rep_origin at 1342..1519; annotations were present in the supplied Bakta output."
   ]
 }

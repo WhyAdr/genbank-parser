@@ -22,6 +22,7 @@ if _SCRIPT_SPEC is None or _SCRIPT_SPEC.loader is None:
 _SCRIPT_MODULE = importlib.util.module_from_spec(_SCRIPT_SPEC)
 _SCRIPT_SPEC.loader.exec_module(_SCRIPT_MODULE)
 main = _SCRIPT_MODULE.main
+load_calibration_manifest = _SCRIPT_MODULE.load_calibration_manifest
 verify_calibration_input = _SCRIPT_MODULE.verify_calibration_input
 
 REAL_GENOME = Path("PF_NNT_reoriented.gbff")
@@ -41,6 +42,15 @@ FORBIDDEN_CLAIMS = (
     "confirmed phagemid",
     "oriv",
 )
+
+
+def test_calibration_manifest_labels_unreconstructable_local_provenance() -> None:
+    manifest = load_calibration_manifest(MANIFEST)
+
+    assert manifest["source_record_id"] == "contig_1"
+    assert manifest["transformation_provenance"] == "incomplete"
+    assert "source_accession" not in manifest
+    assert "source_version" not in manifest
 
 
 @REAL_GENOME_SKIP
