@@ -4,6 +4,37 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.8.2] - 2026-09-19
+
+### TA/retron inference hardening and calibration reproducibility
+
+- **Explicit spatial inference contract**: marker-cluster rules now declare
+  `inference_mode: spatial_marker_cluster`; component rules cannot silently
+  acquire marker-only fields, and legacy `max_circular_gap_bp` remains only a
+  topology-neutral compatibility alias for one minor release cycle.
+- **Injective compact-module selection**: tripartite and larger marker rules
+  require deterministic marker-role-to-feature assignments, a globally
+  coherent linear or circular covering extent, and deterministic
+  non-overlapping compact modules. Valid submodules survive unrelated
+  single-linkage bridges, while two-marker tandem arrays retain their
+  documented aggregate behavior.
+- **Structural policy framework**: custom catalogs can fail closed on strand,
+  biological order, and typed intervening-feature policies; passing structural
+  evidence is retained in hypothesis limitations. No speculative structural
+  policy is activated in the packaged catalog.
+- **Retron semantic split**: RT-msr/msd evidence is emitted as the tentative
+  `retron_core_annotation_candidate` with `kind: retron`; the future retron TA
+  aggregate remains disabled until a curated effector-correspondence contract
+  exists. This replaces the 0.8.1
+  `retron_rt_msdna_module_candidate` identifier without emitting a compatibility
+  duplicate.
+- **Calibration provenance**: the optional real-genome check is user-facing as
+  a real-genome calibration, verifies the local fixture against a committed
+  SHA-256 manifest, and explicitly does not claim a biological truth-set
+  benchmark. Mobilome v2 golden files are LF-stable.
+- **Version bumps**: package 0.8.2 and mobilome inference resource 1.6.0;
+  catalog and provenance resources remain 1.5.0.
+
 ## [0.8.1] - 2026-09-07
 
 ### Mobilome Spatial Clustering, Tripartite Modules, and repL Curation

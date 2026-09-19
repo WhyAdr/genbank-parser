@@ -14,9 +14,9 @@ Strength is an ordinal annotation-specificity label, not a probability, activity
 
 The command inventories every input record. Source `/plasmid` and `/chromosome` declarations support the inventory class; bounded record-name or description tokens are tentative, and a circular record without a declaration remains unresolved. Topology, length, GC content, Rep labels, and pXO labels do not classify a record.
 
-The v1 inference policy can emit only configured annotation candidates, including a ToxN/ToxI proximity pair, a HepT/MntA proximity pair, and possible helper-dependent mobilization when separate records satisfy the required oriT/relaxase and T4CP/MPF component patterns. The report lists untested compatibility, cognate oriT-relaxase relationship, same-cell affiliation, expression, transfer, and co-transfer conditions.
+The versioned inference policy emits only configured annotation candidates. Component rules cover possible helper-dependent mobilization when separate records satisfy the required oriT/relaxase and T4CP/MPF patterns. Spatial marker-cluster rules cover ToxN/ToxI, HepT/MntA, TenpIN, CptIN, and selected compact tripartite modules under explicit edge and assignment-span heuristics. These outputs are nomination evidence, not autonomous counts of functional toxin-antitoxin systems. The report lists untested compatibility, cognate oriT-relaxase relationship, same-cell affiliation, expression, transfer, and co-transfer conditions.
 
-Generic Rep, pXO-numbered products, and phage-module observations do not select a replication mechanism or element identity. The pXO-like and phage-module aggregate rules are intentionally disabled in v1, with their future enablement requirements carried in every report. Generic AMR-like, virulence-associated, Zot-like, and AimR/AimP/AimX annotations remain candidates only.
+Generic Rep, pXO-numbered products, and phage-module observations do not select a replication mechanism or element identity. The pXO-like and phage-module aggregate rules remain intentionally disabled, with their future enablement requirements carried in every report. Generic AMR-like, virulence-associated, Zot-like, and AimR/AimP/AimX annotations remain candidates only.
 
 ## Source correspondence
 
@@ -47,7 +47,7 @@ rows readable, trailing empty cells are omitted from individual data rows;
 consumers should map fields by the header and tolerate these deterministic
 ragged rows.
 
-The catalog intentionally has no TPR-specific marker in v1. Generic RepA/RepB,
+The current catalog intentionally has no TPR-specific marker. Generic RepA/RepB,
 replication-relaxation, and pXO annotations therefore remain observations and
 do not select theta, rolling-circle, or another replication mechanism.
 
@@ -76,8 +76,8 @@ antitoxin annotations of the latter two families, and their pair rules mirror
 the ToxIN rule. An annotation match still does not establish Type III
 activity, abortive infection, or phage resistance.
 
-Tripartite (N-marker) toxin-antitoxin modules are now supported by spatial
-cluster rules: toxin-antitoxin-chaperone (TAC) systems with HigBA plus a
+Tripartite (N-marker) annotation-module candidates are supported by explicit
+spatial-cluster rules: toxin-antitoxin-chaperone (TAC) systems with HigBA plus a
 SecB-like chaperone ([Bordes et al. 2011](https://pmc.ncbi.nlm.nih.gov/articles/PMC3100995/);
 [Mets et al. 2024](https://doi.org/10.1016/j.chom.2024.05.003);
 [Nakamoto et al. 2026](https://doi.org/10.1016/j.celrep.2026.117024)),
@@ -87,19 +87,27 @@ the omega-epsilon-zeta addiction module of pSM19035
 [Dmowski et al. 2016](https://doi.org/10.1099/mic.0.000308)), and the MqsRAC
 tripartite system, MqsR (RNase toxin) / MqsA (antitoxin) / MqsC (SecB-type
 chaperone) ([Fernández-García et al. 2024](https://pmc.ncbi.nlm.nih.gov/articles/PMC10783111/)).
-Retron antiphage modules pair the retron-encoded reverse transcriptase with
+Retron-core candidates pair the retron-encoded reverse transcriptase with
 the msDNA region; the effector toxin is system-specific (RcaT in Retron-Sen2)
-and is deliberately not required by the annotation rule
+and is deliberately not required by the annotation rule. RT plus msDNA is
+therefore reported as `kind: retron`, never as a toxin-antitoxin hypothesis,
+without evidence of a functional retron, effector correspondence, or defense
+activity
 ([Bobonis et al. 2022](https://pmc.ncbi.nlm.nih.gov/articles/PMC11938430/)).
 
-Toxin-antitoxin spatial inference is cluster-based rather than combinatorial:
-eligible hits of one rule's markers are joined by single-linkage proximity
-edges (different markers, within the configured same-record gap), and one
-aggregate hypothesis is emitted per cluster that contains every required
-marker. A tandem array therefore collapses into one cluster hypothesis with
-all supporting hits instead of one hypothesis per cross-product pair, an
-isolated toxin without a cognate emits nothing, and two-feature clusters keep
-the previous pair wording and observed-gap limitation.
+Spatial inference is explicit rather than inferred from the biological
+category. Two-marker rules retain aggregate tandem-array behavior: eligible
+hits are joined by single-linkage proximity edges (different markers, within
+the configured same-record gap), and one aggregate hypothesis is emitted per
+cluster containing every required marker. Compact rules instead enumerate
+injective marker-role assignments, enforce one globally coherent linear or
+circular covering extent, and select a deterministic non-overlapping set.
+Thus a tandem array remains one aggregate candidate, while a dense bridged
+neighborhood can retain multiple compact submodules without turning an
+unrelated bridge into a module. Supporting hit IDs refer only to the selected
+compact assignment. All such spatial outputs remain tentative engineering
+heuristics; they do not establish operon structure, expression, activity,
+antiphage defense, or validated sensitivity/specificity.
 
 The repL gene-name pattern now has dedicated curation
 (Catchpole and Dyke 1992, FEMS Microbiol Lett, PMID 1577254: repL disruption
@@ -118,12 +126,15 @@ online-first on 2025-12-31 and is assigned to the 2026 volume 50 print issue;
 the provenance record carries the 2026 print year while keeping its
 `christie-2025-t4ss` stable identifier.
 
-An optional real-genome benchmark (`scripts/benchmark_mobilome.py`) runs the
-packaged analysis over a local, gitignored `PF_NNT_reoriented.gbff` and
-reports runtime, rendered output volume, and the section 16.9 calibration
-expectations; `tests/test_mobilome_real_genome.py` performs the same checks
-as an opt-in test that skips clearly when the file is absent. Neither ever
-stages the real input. The standalone mobilome-parser prototype remains an
+An optional real-genome calibration (`scripts/benchmark_mobilome.py`) runs the
+packaged analysis over a local, gitignored `PF_NNT_reoriented.gbff`, verifies
+its bytes against `tests/data/PF_NNT_reoriented.manifest.json`, and reports
+runtime, rendered output volume, and the section 16.9 calibration
+expectations. `tests/test_mobilome_real_genome.py` performs the same checks as
+an opt-in test that skips clearly when the file is absent and rejects altered
+bytes before analysis. The fixture is a reproducibility/calibration input,
+not a positive/negative biological truth set or a performance benchmark, and
+neither path ever stages the real input. The standalone mobilome-parser prototype remains an
 audit-time comparison artifact in its own repository; the native
 `genbank_parser.mobilome` engine is canonical, and any archival of the
 prototype happens in that repository in a separate commit.
