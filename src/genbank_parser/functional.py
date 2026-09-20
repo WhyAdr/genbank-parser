@@ -7,11 +7,9 @@ import csv
 import io
 import json
 from pathlib import Path
-import sys
 from typing import Any
 
-from .io import extract_xrefs, get_qual, read_genbank
-from .model import GenBankFeature
+from .io import extract_xrefs, read_genbank
 
 COG_CATEGORIES = {
     'J': 'Translation, ribosomal structure and biogenesis',
@@ -79,9 +77,8 @@ PATHWAYS = {
 }
 
 
-def analyze_functional(
+def build_functional_report(
     filepath: str | Path,
-    format_type: str = 'tsv',
     pathways_only: bool = False,
     cog_only: bool = False,
 ) -> dict[str, Any]:
@@ -135,32 +132,54 @@ def analyze_functional(
         'unique_kos': len(all_kos),
         'unique_ecs': len(all_ecs),
         'total_cogs': len(all_cogs),
+        'cog_counts': dict(sorted(cog_counts.items())),
         'pathways': pathway_results,
+        'pathways_only': pathways_only,
+        'cog_only': cog_only,
     }
+    return report
 
-    if format_type == 'json':
-        print(json.dumps(report, indent=2))
-        return report
+def render_functional(report: dict[str, Any], format_type: str = "text") -> str:
+    if format_type == "json":
+        return json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    if format_type == "tsv":
+        output = io.StringIO(newline="")
+        writer = csv.writer(output, delimiter="\t", lineterminator="\n")
+        writer.writerow(("schema_version", "row_type", "pathway", "step", "status", "matched_refs", "steps_present", "steps_total", "completeness_pct", "cog_id", "cog_count"))
+        if not report.get("cog_only"):
+            for pathway, data in report["pathways"].items():
+                writer.writerow(("gbparse.functional.v1", "pathway", pathway, "", "", "", data["steps_present"], data["steps_total"], data["completeness_pct"], "", ""))
+                for step in data["steps"]:
+                    writer.writerow(("gbparse.functional.v1", "pathway_step", pathway, step["name"], step["status"], ";".join(step["matched"]), "", "", "", "", ""))
+        if not report.get("pathways_only"):
+            for cog_id, count in report.get("cog_counts", {}).items():
+                writer.writerow(("gbparse.functional.v1", "cog", "", "", "", "", "", "", "", cog_id, count))
+        return output.getvalue()
 
-    # Formatted TSV / Text
-    if not pathways_only:
-        print("=" * 70)
-        print("  FUNCTIONAL ANNOTATION SUMMARY")
-        print("=" * 70)
-        print(f"  File         : {filepath}")
-        print(f"  Total CDSs   : {len(cdss):,}")
-        print(f"  Unique KOs   : {len(all_kos):,}")
-        print(f"  Unique ECs   : {len(all_ecs):,}")
-        print(f"  COG entries  : {len(all_cogs):,}")
-        print()
+    # Human-readable report
+    lines: list[str] = []
+    if not report.get("pathways_only"):
+        lines.extend(["=" * 70, "  FUNCTIONAL ANNOTATION SUMMARY", "=" * 70, f"  File         : {report['file']}", f"  Total CDSs   : {report['total_cds']:,}", f"  Unique KOs   : {report['unique_kos']:,}", f"  Unique ECs   : {report['unique_ecs']:,}", f"  COG entries  : {report['total_cogs']:,}", ""])
 
-    if not cog_only:
-        print("-- Pathway Completeness Profiles --")
-        for p_name, p_data in pathway_results.items():
+    if not report.get("cog_only"):
+        lines.append("-- Pathway Completeness Profiles --")
+        for p_name, p_data in report["pathways"].items():
             bar = '#' * int(p_data['completeness_pct'] / 10)
-            print(f"  {p_name:35s} {p_data['steps_present']:2d}/{p_data['steps_total']:2d} ({p_data['completeness_pct']:>5.1f}%)  {bar}")
-        print("=" * 70)
+            lines.append(f"  {p_name:35s} {p_data['steps_present']:2d}/{p_data['steps_total']:2d} ({p_data['completeness_pct']:>5.1f}%)  {bar}")
+        lines.append("=" * 70)
+    return "\n".join(lines) + ("\n" if lines else "")
 
+
+def analyze_functional(
+    filepath: str | Path,
+    format_type: str = 'tsv',
+    pathways_only: bool = False,
+    cog_only: bool = False,
+) -> dict[str, Any]:
+    """Compatibility wrapper that prints the requested functional report."""
+
+    report = build_functional_report(filepath, pathways_only=pathways_only, cog_only=cog_only)
+    print(render_functional(report, format_type), end="")
     return report
 
 

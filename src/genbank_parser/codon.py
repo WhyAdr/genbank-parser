@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import collections
 import csv
+import io
 import sys
 from pathlib import Path
 from typing import Any
@@ -241,6 +242,49 @@ def analyze_codon_usage(
         "rscu": rscu,
         "rscu_by_table": rscu_by_table,
     }
+
+
+def render_codon_tsv(report: dict[str, Any]) -> str:
+    """Render the machine-readable codon table without performing I/O."""
+
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(
+        output,
+        fieldnames=[
+            "TranslationTable",
+            "AminoAcid",
+            "Codon",
+            "Count",
+            "PerThousand",
+            "RSCU",
+        ],
+        delimiter="\t",
+        lineterminator="\n",
+    )
+    writer.writeheader()
+    total_codons = int(report.get("total_codons", 0))
+    counts_by_table = report.get("codon_counts_by_table", {})
+    rscu_by_table = report.get("rscu_by_table", {})
+    for raw_table_id in sorted(counts_by_table, key=lambda value: int(value)):
+        table_id = int(raw_table_id)
+        table = CodonTable.unambiguous_dna_by_id[table_id]
+        table_counts = counts_by_table[raw_table_id]
+        table_rscu = rscu_by_table.get(raw_table_id, {})
+        for amino_acid, synonyms in sorted(_synonymous_codons(table).items()):
+            for codon in sorted(synonyms):
+                count = int(table_counts.get(codon, 0))
+                per_thousand = count / total_codons * 1000 if total_codons else 0.0
+                writer.writerow(
+                    {
+                        "TranslationTable": table_id,
+                        "AminoAcid": amino_acid,
+                        "Codon": codon,
+                        "Count": count,
+                        "PerThousand": f"{per_thousand:.2f}",
+                        "RSCU": f"{float(table_rscu.get(codon, 0.0)):.3f}",
+                    }
+                )
+    return output.getvalue()
 
 
 def main() -> None:

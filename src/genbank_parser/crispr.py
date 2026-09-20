@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import io
+import json
 from pathlib import Path
 from typing import Any
 
@@ -51,9 +53,9 @@ def _feature_summary(feature: GenBankFeature) -> dict[str, Any]:
     return {
         "record": feature.record_id,
         "type": feature.type,
-        "locus_tag": feature.locus_tag or "-",
-        "gene": feature.gene or "-",
-        "product": feature.product or "-",
+        "locus_tag": feature.locus_tag or None,
+        "gene": feature.gene or None,
+        "product": feature.product or None,
         "start": feature.start,
         "end": feature.end,
         "strand": feature.strand_symbol,
@@ -74,6 +76,69 @@ def _is_crispr_array(f: GenBankFeature) -> bool:
     notes = " ".join(f.qualifiers.get("note", [])).lower()
     text = f"{product} {notes}"
     return any(kw in text for kw in REPEAT_KEYWORDS)
+
+
+def build_crispr_report(filepath: str | Path, window: int = 15000) -> dict[str, Any]:
+    """Build a CRISPR/Cas annotation report without printing."""
+
+    doc = read_genbank(filepath)
+    arrays = [feature for feature in doc.all_features if _is_crispr_array(feature)]
+    cas_cdss = [feature for feature in doc.all_features if feature.type == "CDS" and _is_cas(feature)]
+    colocalized: list[dict[str, Any]] = []
+    for array in arrays:
+        nearby = [
+            cas
+            for cas in cas_cdss
+            if cas.record_id == array.record_id
+            and interval_distance(array.start, array.end, cas.start, cas.end) <= window
+        ]
+        if nearby:
+            colocalized.append(
+                {
+                    "array": _feature_summary(array),
+                    "cas_genes": [_feature_summary(cas) for cas in nearby],
+                }
+            )
+    return {
+        "schema_version": "gbparse.crispr.v1",
+        "source": str(filepath),
+        "window": window,
+        "arrays": [_feature_summary(array) for array in arrays],
+        "cas_genes": [_feature_summary(cas) for cas in cas_cdss],
+        "colocalized": colocalized,
+        "colocalized_count": len(colocalized),
+    }
+
+
+def render_crispr_report(report: dict[str, Any], format_type: str = "text") -> str:
+    if format_type == "json":
+        return json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    if format_type == "tsv":
+        output = io.StringIO(newline="")
+        output.write("row_type\trecord\ttype\tlocus_tag\tgene\tproduct\tstart\tend\tstrand\tarray_record\tarray_start\tarray_end\n")
+        def write_row(values: tuple[object, ...]) -> None:
+            output.write("\t".join("" if value is None else str(value) for value in values) + "\n")
+
+        for array in report["arrays"]:
+            write_row(("array", array["record"], array["type"], array["locus_tag"], array["gene"], array["product"], array["start"], array["end"], array["strand"], "", "", ""))
+        for cas in report["cas_genes"]:
+            write_row(("cas", cas["record"], cas["type"], cas["locus_tag"], cas["gene"], cas["product"], cas["start"], cas["end"], cas["strand"], "", "", ""))
+        for pair in report["colocalized"]:
+            array = pair["array"]
+            for cas in pair["cas_genes"]:
+                write_row(("link", cas["record"], cas["type"], cas["locus_tag"], cas["gene"], cas["product"], cas["start"], cas["end"], cas["strand"], array["record"], array["start"], array["end"]))
+        return output.getvalue()
+    lines = [
+        "=" * 70,
+        "  CRISPR/Cas ANNOTATION SCANNER",
+        "=" * 70,
+        f"  File          : {report['source']}",
+        f"  CRISPR arrays : {len(report['arrays'])}",
+        f"  Cas CDSs      : {len(report['cas_genes'])}",
+        f"  Co-localized  : {report['colocalized_count']}",
+        "=" * 70,
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def detect_crispr(filepath: str | Path, window: int = 15000) -> dict[str, Any]:

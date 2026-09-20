@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import argparse
 import collections
+import io
 import json
-import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -26,6 +26,31 @@ class ValidationFinding:
     message: str
 
 
+@dataclass(frozen=True)
+class ValidationReport:
+    """Renderer-independent validation result and summary statistics."""
+
+    source: str
+    record_count: int
+    feature_count: int
+    total_length: int
+    type_counts: dict[str, int]
+    strand_counts: dict[str, int]
+    cds_count: int
+    named_gene_count: int
+    hypothetical_count: int
+    locus_tag_count: int
+    unique_locus_tag_count: int
+    findings: tuple[ValidationFinding, ...]
+
+    @property
+    def severity_counts(self) -> dict[str, int]:
+        return {
+            severity: sum(1 for finding in self.findings if finding.severity == severity)
+            for severity in ("ERROR", "WARNING", "INFO")
+        }
+
+
 def _translation_table_id(feature: GenBankFeature) -> int | None:
     """Return a known NCBI translation-table ID, or ``None`` if invalid."""
     raw = feature.get_qual("transl_table")
@@ -38,16 +63,14 @@ def _translation_table_id(feature: GenBankFeature) -> int | None:
     return table_id if table_id in CodonTable.unambiguous_dna_by_id else None
 
 
-def validate(filepath: str | Path, json_mode: bool = False) -> list[ValidationFinding]:
+def build_validation_report(filepath: str | Path) -> ValidationReport:
     doc = read_genbank(filepath)
     if len(doc.records) == 0:
-        print("ERROR: No records parsed. Check file format.", file=sys.stderr)
-        sys.exit(1)
+        raise ValueError("No records parsed. Check file format.")
 
     all_features = doc.all_features
     if not all_features:
-        print("ERROR: No features parsed. Check file format.", file=sys.stderr)
-        sys.exit(1)
+        raise ValueError("No features parsed. Check file format.")
 
     type_counts = collections.Counter(f.type for f in all_features)
     strand_counts = collections.Counter(f.strand_symbol for f in all_features)
@@ -56,9 +79,6 @@ def validate(filepath: str | Path, json_mode: bool = False) -> list[ValidationFi
         all_quals.update(f.qualifiers.keys())
 
     cdss = [f for f in all_features if f.type == "CDS"]
-
-    # CDS lengths
-    cds_lens = [f.length for f in cdss]
 
     # Locus tag indexing
     locus_tags: list[str] = []
@@ -112,6 +132,65 @@ def validate(filepath: str | Path, json_mode: bool = False) -> list[ValidationFi
             coords_str = f"{rec.id}:{f.start}..{f.end}({f.strand_symbol})"
             tag = f.locus_tag or "-"
 
+            if f.start < 1:
+                findings.append(
+                    ValidationFinding(
+                        severity="ERROR",
+                        code="FEATURE_START_BELOW_ONE",
+                        record_id=rec.id,
+                        locus_tag=tag,
+                        feature_type=f.type,
+                        coordinates=coords_str,
+                        message=f"Feature start ({f.start}) is below one",
+                    )
+                )
+
+            parts = list(getattr(f.location, "parts", (f.location,))) if f.location is not None else []
+            if not parts:
+                findings.append(
+                    ValidationFinding(
+                        severity="ERROR",
+                        code="EMPTY_LOCATION",
+                        record_id=rec.id,
+                        locus_tag=tag,
+                        feature_type=f.type,
+                        coordinates=coords_str,
+                        message="Feature has no location segments",
+                    )
+                )
+            for part in parts:
+                try:
+                    part_start = int(part.start) + 1
+                    part_end = int(part.end)
+                except (AttributeError, TypeError, ValueError):
+                    findings.append(
+                        ValidationFinding(
+                            severity="ERROR",
+                            code="INVALID_LOCATION_SEGMENT",
+                            record_id=rec.id,
+                            locus_tag=tag,
+                            feature_type=f.type,
+                            coordinates=coords_str,
+                            message="Feature contains an invalid location segment",
+                        )
+                    )
+                    continue
+                if rec.length > 0 and (part_start < 1 or part_end > rec.length):
+                    findings.append(
+                        ValidationFinding(
+                            severity="ERROR",
+                            code="COMPOUND_SEGMENT_OUT_OF_BOUNDS",
+                            record_id=rec.id,
+                            locus_tag=tag,
+                            feature_type=f.type,
+                            coordinates=coords_str,
+                            message=(
+                                f"Location segment ({part_start}..{part_end}) exceeds "
+                                f"record bounds (1..{rec.length})"
+                            ),
+                        )
+                    )
+
             # Out of bounds check
             if rec.length > 0 and f.end > rec.length:
                 findings.append(
@@ -142,6 +221,25 @@ def validate(filepath: str | Path, json_mode: bool = False) -> list[ValidationFi
             if f.type == "CDS":
                 is_pseudo = f.is_pseudo
                 is_partial = f.is_partial
+
+                raw_codon_start = f.get_qual("codon_start")
+                if raw_codon_start:
+                    try:
+                        codon_start = int(raw_codon_start)
+                    except ValueError:
+                        codon_start = None
+                    if codon_start not in (1, 2, 3):
+                        findings.append(
+                            ValidationFinding(
+                                severity="ERROR",
+                                code="INVALID_CODON_START",
+                                record_id=rec.id,
+                                locus_tag=tag,
+                                feature_type="CDS",
+                                coordinates=coords_str,
+                                message=f"/codon_start must be 1, 2, or 3, got {raw_codon_start!r}",
+                            )
+                        )
 
                 if not f.product:
                     findings.append(
@@ -294,62 +392,111 @@ def validate(filepath: str | Path, json_mode: bool = False) -> list[ValidationFi
                             )
                         )
 
-    if json_mode:
-        print(json.dumps([asdict(f) for f in findings], indent=2))
-        return findings
+    severity_order = {"ERROR": 0, "WARNING": 1, "INFO": 2}
+    findings.sort(
+        key=lambda finding: (
+            finding.record_id,
+            finding.coordinates,
+            severity_order.get(finding.severity, 99),
+            finding.code,
+            finding.message,
+        )
+    )
+    return ValidationReport(
+        source=str(filepath),
+        record_count=len(doc.records),
+        feature_count=len(all_features),
+        total_length=doc.total_length,
+        type_counts=dict(sorted(type_counts.items())),
+        strand_counts=dict(sorted(strand_counts.items())),
+        cds_count=len(cdss),
+        named_gene_count=len(named_genes),
+        hypothetical_count=len(hypothetical),
+        locus_tag_count=len(locus_tags),
+        unique_locus_tag_count=len(unique_tags),
+        findings=tuple(findings),
+    )
 
-    # Pretty-print report
-    print("=" * 70)
-    print("  GENBANK FEATURE TABLE -- STRUCTURAL & BIOLOGICAL REPORT")
-    print("=" * 70)
-    print(f"  File                  : {filepath}")
-    print(f"  Total records         : {len(doc.records)}")
-    print(f"  Total features        : {len(all_features)}")
-    print(f"  Total genome length   : {doc.total_length:,} bp")
-    print()
-    print("-- Feature type counts --")
-    for ft, c in type_counts.most_common():
-        print(f"  {ft:20s}  {c}")
-    print()
-    print("-- Strand distribution --")
-    for s, c in strand_counts.items():
-        print(f"  {s}  {c}")
-    print()
-    print("-- CDS statistics --")
-    print(f"  Count                 : {len(cdss)}")
-    if cds_lens:
-        print(f"  Min length            : {min(cds_lens):,} bp")
-        print(f"  Max length            : {max(cds_lens):,} bp")
-        print(f"  Mean length           : {sum(cds_lens) / len(cds_lens):,.0f} bp")
-        print(f"  Median length         : {sorted(cds_lens)[len(cds_lens) // 2]:,} bp")
-    print(f"  Named genes           : {len(named_genes)}")
-    print(f"  Hypothetical / DUF    : {len(hypothetical)}")
-    print()
-    print("-- Locus tags --")
-    print(f"  Total occurrences     : {len(locus_tags)}")
-    print(f"  Unique tags           : {len(unique_tags)}")
-    if unique_tags:
-        tags_sorted = sorted(unique_tags)
-        print(f"  First tag             : {tags_sorted[0]}")
-        print(f"  Last tag              : {tags_sorted[-1]}")
-    print()
-    print("-- Validation findings --")
-    error_cnt = sum(1 for finding in findings if finding.severity == "ERROR")
-    warn_cnt = sum(1 for finding in findings if finding.severity == "WARNING")
-    info_cnt = sum(1 for finding in findings if finding.severity == "INFO")
-    print(f"  Errors: {error_cnt} | Warnings: {warn_cnt} | Info: {info_cnt}")
-    if findings:
-        for finding in findings[:25]:
-            print(
+
+def render_validation_json(report: ValidationReport) -> str:
+    # Keep the legacy JSON top-level array in v0.8.5.
+    return json.dumps(
+        [asdict(finding) for finding in report.findings],
+        ensure_ascii=False,
+        allow_nan=False,
+        sort_keys=True,
+        indent=2,
+    ) + "\n"
+
+
+def render_validation_tsv(report: ValidationReport) -> str:
+    output = io.StringIO(newline="")
+    output.write("severity\tcode\trecord_id\tlocus_tag\tfeature_type\tcoordinates\tmessage\n")
+    for finding in report.findings:
+        values = (
+            finding.severity,
+            finding.code,
+            finding.record_id,
+            finding.locus_tag,
+            finding.feature_type,
+            finding.coordinates,
+            finding.message,
+        )
+        output.write("\t".join(str(value).replace("\t", " ") for value in values) + "\n")
+    return output.getvalue()
+
+
+def render_validation_text(report: ValidationReport, *, max_display: int = 25) -> str:
+    counts = report.severity_counts
+    lines = [
+        "=" * 70,
+        "  GENBANK FEATURE TABLE -- STRUCTURAL & BIOLOGICAL REPORT",
+        "=" * 70,
+        f"  File                  : {report.source}",
+        f"  Total records         : {report.record_count}",
+        f"  Total features        : {report.feature_count}",
+        f"  Total genome length   : {report.total_length:,} bp",
+        "",
+        "-- Feature type counts --",
+    ]
+    lines.extend(f"  {feature_type:20s}  {count}" for feature_type, count in report.type_counts.items())
+    lines.extend(["", "-- Strand distribution --"])
+    lines.extend(f"  {strand}  {count}" for strand, count in report.strand_counts.items())
+    lines.extend(
+        [
+            "",
+            "-- CDS statistics --",
+            f"  Count                 : {report.cds_count}",
+            f"  Named genes           : {report.named_gene_count}",
+            f"  Hypothetical / DUF    : {report.hypothetical_count}",
+            "",
+            "-- Locus tags --",
+            f"  Total occurrences     : {report.locus_tag_count}",
+            f"  Unique tags           : {report.unique_locus_tag_count}",
+            "",
+            "-- Validation findings --",
+            f"  Errors: {counts['ERROR']} | Warnings: {counts['WARNING']} | Info: {counts['INFO']}",
+        ]
+    )
+    if report.findings:
+        for finding in report.findings[:max_display]:
+            lines.append(
                 f"  [{finding.severity}] {finding.code} ({finding.coordinates}) - {finding.message}"
             )
-        if len(findings) > 25:
-            print(f"  ... and {len(findings) - 25} more findings.")
+        if len(report.findings) > max_display:
+            lines.append(f"  ... and {len(report.findings) - max_display} more findings.")
     else:
-        print("  [OK] Clean: No structural or translation abnormalities detected.")
-    print("=" * 70)
+        lines.append("  [OK] Clean: No structural or translation abnormalities detected.")
+    lines.append("=" * 70)
+    return "\n".join(lines) + "\n"
 
-    return findings
+
+def validate(filepath: str | Path, json_mode: bool = False) -> list[ValidationFinding]:
+    """Compatibility wrapper retaining the historical printing behavior."""
+
+    report = build_validation_report(filepath)
+    print(render_validation_json(report) if json_mode else render_validation_text(report), end="")
+    return list(report.findings)
 
 
 def main() -> None:

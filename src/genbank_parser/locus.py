@@ -2,12 +2,100 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
+import io
+import json
 import sys
+from pathlib import Path
 from typing import Any
 
-from .io import extract_xrefs, get_qual, read_genbank
+from .io import extract_xrefs, read_genbank
 from .model import GenBankFeature
+
+
+def build_locus_report(filepath: str | Path, locus_tag: str) -> dict[str, Any]:
+    """Return a JSON-safe locus report without printing or exiting."""
+
+    doc = read_genbank(filepath)
+    match = doc.find_locus(locus_tag)
+    if match is None:
+        for rec in doc.records:
+            for feature in rec.features:
+                if feature.gene and feature.gene.casefold() == locus_tag.casefold():
+                    match = (rec, feature)
+                    break
+            if match:
+                break
+    if match is None:
+        raise ValueError(f"Locus tag or gene '{locus_tag}' not found in {filepath}")
+    record, feature = match
+    xrefs = extract_xrefs(feature)
+    return {
+        "query": locus_tag,
+        "record": record.id,
+        "record_length": record.length,
+        "type": feature.type,
+        "feature_index": feature.feature_index,
+        "locus_tag": feature.locus_tag or None,
+        "gene": feature.gene or None,
+        "product": feature.product or None,
+        "start": feature.start,
+        "end": feature.end,
+        "strand": feature.strand_symbol,
+        "strand_value": feature.strand,
+        "length": feature.length,
+        "genomic_span": feature.genomic_span,
+        "compound": feature.is_compound,
+        "segments": [{"start": start, "end": end} for start, end in (feature.join_segments if feature.is_compound else [(feature.start, feature.end)])],
+        "partial_start": feature.is_partial_start,
+        "partial_end": feature.is_partial_end,
+        "pseudo": feature.is_pseudo,
+        "codon_start": feature.codon_start,
+        "transl_table": feature.transl_table,
+        "xrefs": xrefs,
+        "qualifiers": {key: list(values) for key, values in sorted(feature.qualifiers.items())},
+    }
+
+
+def render_locus_report(report: dict[str, Any], format_type: str = "text") -> str:
+    if format_type == "json":
+        return json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    if format_type == "tsv":
+        output = io.StringIO(newline="")
+        output.write("field\tvalue\n")
+        for key in sorted(report):
+            value = report[key]
+            if isinstance(value, (dict, list)):
+                value = json.dumps(value, ensure_ascii=False, sort_keys=True)
+            output.write(f"{key}\t{str(value if value is not None else '') .replace(chr(9), ' ')}\n")
+        return output.getvalue()
+    lines = [
+        "=" * 70,
+        f"  FEATURE DEEP-DIVE: {report['query']}",
+        "=" * 70,
+        f"  Record / Contig   : {report['record']} (length: {report['record_length']:,} bp)",
+        f"  Feature type      : {report['type']}",
+        f"  Coordinates       : {report['start']:,} .. {report['end']:,} ({report['strand']})",
+        f"  Biological length : {report['length']:,} bp",
+        f"  Genomic span      : {report['genomic_span']:,} bp",
+        f"  Compound / Join   : {report['compound']}",
+        f"  Partial coords    : start={report['partial_start']}, end={report['partial_end']}",
+        f"  Pseudogene        : {report['pseudo']}",
+        "",
+        "-- Standard Qualifiers --",
+    ]
+    for key in ("gene", "product", "locus_tag"):
+        if report[key]:
+            lines.append(f"  {key:16s} : {report[key]}")
+    lines.extend(["", "-- Cross-References --"])
+    for key, values in report["xrefs"].items():
+        if values:
+            lines.append(f"  {key:16s} : {', '.join(values)}")
+    lines.extend(["", "-- All Qualifiers --"])
+    for key, values in report["qualifiers"].items():
+        for value in values:
+            lines.append(f"  /{key:16s} : {value}")
+    lines.append("=" * 70)
+    return "\n".join(lines) + "\n"
 
 
 def inspect_locus(filepath: str | Path, locus_tag: str) -> GenBankFeature | None:

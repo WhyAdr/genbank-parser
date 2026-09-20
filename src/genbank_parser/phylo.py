@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import io
+import json
 import re
 from pathlib import Path
 
@@ -73,6 +75,91 @@ def _match_marker(f: GenBankFeature, marker_name: str, desc: str) -> bool:
             return True
 
     return False
+
+
+def build_phylogenomic_report(
+    filepath: str | Path,
+    marker_set: str = "all",
+    min_length: int = MIN_TRANSLATION_AA,
+) -> dict[str, object]:
+    """Return annotation-based marker candidates without printing."""
+
+    doc = read_genbank(filepath)
+    cdss = [feature for feature in doc.all_features if feature.type == "CDS"]
+    targets: dict[str, str] = {}
+    if marker_set in ("core", "all"):
+        targets.update(RIBOSOMAL)
+    if marker_set in ("housekeeping", "all"):
+        targets.update(HOUSEKEEPING)
+    found: dict[str, list[dict[str, object]]] = {}
+    for marker, description in targets.items():
+        found[marker] = [
+            {
+                "record": feature.record_id,
+                "feature_index": feature.feature_index,
+                "locus_tag": feature.locus_tag or None,
+                "gene": feature.gene or None,
+                "product": feature.product or None,
+                "start": feature.start,
+                "end": feature.end,
+                "strand": feature.strand_symbol,
+                "translation_length": len(feature.translation),
+                "translation": feature.translation,
+                "gene_product_mismatch": bool(
+                    feature.gene.casefold() == marker.casefold()
+                    and feature.product
+                    and feature.product.casefold() != description.casefold()
+                ),
+            }
+            for feature in cdss
+            if feature.translation
+            and len(feature.translation) >= min_length
+            and _match_marker(feature, marker, description)
+        ]
+    return {
+        "schema_version": "gbparse.phylo.v1",
+        "source": str(filepath),
+        "marker_set": marker_set,
+        "min_length": min_length,
+        "target_count": len(targets),
+        "recovered_count": sum(1 for hits in found.values() if hits),
+        "multi_copy_count": sum(1 for hits in found.values() if len(hits) > 1),
+        "markers": {
+            marker: {"description": targets[marker], "hits": found[marker]}
+            for marker in sorted(targets)
+        },
+    }
+
+
+def render_phylogenomic_report(report: dict[str, object], format_type: str = "text") -> str:
+    if format_type == "json":
+        return json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    if format_type == "tsv":
+        output = io.StringIO(newline="")
+        output.write("marker\tstatus\trecord\tfeature_index\tlocus_tag\tgene\tproduct\tstart\tend\tstrand\ttranslation_length\n")
+        for marker, marker_data in report["markers"].items():
+            hits = marker_data["hits"]
+            if not hits:
+                output.write(f"{marker}\tABSENT\t\t\t\t\t\t\t\t\t\n")
+            else:
+                status = "MULTI_COPY" if len(hits) > 1 else "SINGLE_COPY"
+                for hit in hits:
+                    values = (marker, status, hit["record"], hit["feature_index"], hit["locus_tag"] or "", hit["gene"] or "", hit["product"] or "", hit["start"], hit["end"], hit["strand"], hit["translation_length"])
+                    output.write("\t".join(str(value) for value in values) + "\n")
+        return output.getvalue()
+    lines = [
+        "=" * 70,
+        "  ANNOTATION-BASED PHYLOGENETIC MARKER CANDIDATES",
+        "=" * 70,
+        f"  File              : {report['source']}",
+        f"  Markers recovered : {report['recovered_count']} / {report['target_count']}",
+        f"  Multi-copy review  : {report['multi_copy_count']}",
+    ]
+    for marker, marker_data in report["markers"].items():
+        hits = marker_data["hits"]
+        lines.append(f"  {marker:10s}  {'ABSENT' if not hits else ('MULTI_COPY' if len(hits) > 1 else 'SINGLE_COPY')}")
+    lines.append("=" * 70)
+    return "\n".join(lines) + "\n"
 
 
 def extract_phylogenomic_markers(

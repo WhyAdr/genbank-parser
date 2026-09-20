@@ -2,12 +2,87 @@
 from __future__ import annotations
 
 import argparse
+import io
 from pathlib import Path
-import sys
 from typing import Any
 
 from .io import read_genbank
-from .model import GenBankDocument, GenBankRecord
+
+
+def build_metadata_report(filepath: str | Path) -> dict[str, Any]:
+    """Return record metadata without printing."""
+
+    doc = read_genbank(filepath)
+    records_info: list[dict[str, Any]] = []
+    for rec in doc.records:
+        strain = ""
+        for feature in rec.features:
+            if feature.type == "source":
+                strain = feature.get_qual("strain") or feature.get_qual("isolate")
+                if strain:
+                    break
+        records_info.append(
+            {
+                "locus": rec.id,
+                "length": rec.length,
+                "mol_type": rec.molecule_type or rec.annotations.get("molecule_type", "DNA"),
+                "topology": rec.topology or "linear",
+                "division": rec.division or rec.annotations.get("data_file_division", ""),
+                "date": rec.date or rec.annotations.get("date", ""),
+                "definition": rec.description,
+                "accession": rec.annotations.get("accessions", [""])[0]
+                if rec.annotations.get("accessions")
+                else "",
+                "organism": rec.annotations.get("organism", ""),
+                "source": rec.annotations.get("source", ""),
+                "strain": strain,
+            }
+        )
+    return {
+        "source": str(filepath),
+        "record_count": len(records_info),
+        "total_length": sum(int(record["length"]) for record in records_info),
+        "records": records_info,
+    }
+
+
+def render_metadata(report: dict[str, Any], format_type: str = "text") -> str:
+    if format_type == "json":
+        import json
+
+        return json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    if format_type == "tsv":
+        columns = ("locus", "length", "mol_type", "topology", "division", "date", "definition", "accession", "organism", "source", "strain")
+        output = io.StringIO(newline="")
+        output.write("\t".join(columns) + "\n")
+        for record in report["records"]:
+            output.write("\t".join(str(record.get(column, "")).replace("\t", " ") for column in columns) + "\n")
+        return output.getvalue()
+    lines = [
+        "=" * 70,
+        "  GENBANK METADATA REPORT",
+        "=" * 70,
+        f"  File    : {report['source']}",
+        f"  Records : {report['record_count']}",
+        "",
+    ]
+    for index, record in enumerate(report["records"], 1):
+        lines.extend(
+            [
+                f"  Record {index}: {record['locus']}",
+                f"    Length     : {record['length']:,} bp",
+                f"    Topology   : {record['topology']}",
+                f"    Mol. type  : {record['mol_type']}",
+                f"    Definition : {str(record['definition'])[:80]}",
+            ]
+        )
+        if record["organism"]:
+            lines.append(f"    Organism   : {record['organism']}")
+        if record["strain"]:
+            lines.append(f"    Strain     : {record['strain']}")
+        lines.append("")
+    lines.extend([f"  Total: {report['record_count']} record(s), {report['total_length']:,} bp", "=" * 70])
+    return "\n".join(lines) + "\n"
 
 
 def extract_metadata(filepath: str | Path) -> list[dict[str, Any]]:
