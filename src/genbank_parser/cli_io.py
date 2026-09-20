@@ -214,6 +214,60 @@ def write_text(
         handle.write(rendered)
 
 
+@contextlib.contextmanager
+def atomic_bytes_writer(
+    path: str | Path,
+    *,
+    force: bool = False,
+    inputs: Iterable[str | Path | None] = (),
+) -> Iterator[object]:
+    """Yield a binary handle and atomically replace ``path`` on success."""
+
+    output = Path(path)
+    reject_input_output_collision(inputs, output)
+    if output.exists() and not force:
+        raise OutputError(f"output already exists; use --force: {output}")
+    if output.exists() and output.is_dir():
+        raise OutputError(f"output path is a directory: {output}")
+    temporary_name: str | None = None
+    try:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            mode="wb",
+            delete=False,
+            dir=output.parent,
+            prefix=f".{output.name}.",
+            suffix=".tmp",
+        ) as handle:
+            temporary_name = handle.name
+            yield handle
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_name, output)
+        temporary_name = None
+    except OSError as exc:
+        raise OutputError(f"could not publish output {output}: {exc}") from exc
+    finally:
+        if temporary_name:
+            try:
+                Path(temporary_name).unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+def write_bytes(
+    rendered: bytes,
+    output: str | Path,
+    *,
+    force: bool = False,
+    inputs: Iterable[str | Path | None] = (),
+) -> None:
+    """Write bytes atomically to a file."""
+
+    with atomic_bytes_writer(output, force=force, inputs=inputs) as handle:
+        handle.write(rendered)  # type: ignore[union-attr]
+
+
 def _write_staged_file(path: Path, payload: str | bytes) -> None:
     mode = "wb" if isinstance(payload, bytes) else "w"
     kwargs = {"encoding": "utf-8", "newline": ""} if mode == "w" else {}
@@ -303,6 +357,50 @@ def publish_directory(
                 pass
 
 
+def publish_directory_tree(
+    staging_dir: str | Path,
+    output_dir: str | Path,
+    *,
+    force: bool = False,
+    inputs: Iterable[str | Path | None] = (),
+) -> Path:
+    """Atomically install an already assembled directory tree."""
+
+    staging = Path(staging_dir)
+    destination = Path(output_dir)
+    if not staging.is_dir():
+        raise OutputError(f"staging directory does not exist: {staging}")
+    reject_input_output_collision(inputs, destination)
+    if destination.exists() and not destination.is_dir():
+        raise OutputError(f"output directory is not a directory: {destination}")
+    if destination.exists() and not force:
+        raise OutputError(f"output directory already exists; use --force: {destination}")
+    backup: Path | None = None
+    try:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.exists():
+            backup = Path(
+                tempfile.mkdtemp(prefix=f".{destination.name}.backup.", dir=destination.parent)
+            )
+            backup.rmdir()
+            os.replace(destination, backup)
+        os.replace(staging, destination)
+        if backup is not None:
+            shutil.rmtree(backup)
+        return destination
+    except OSError as exc:
+        if backup is not None and backup.exists() and not destination.exists():
+            try:
+                os.replace(backup, destination)
+                backup = None
+            except OSError:
+                pass
+        raise OutputError(f"could not publish output directory {destination}: {exc}") from exc
+    finally:
+        if backup is not None and backup.exists() and not destination.exists():
+            shutil.rmtree(backup, ignore_errors=True)
+
+
 def json_text(value: object) -> str:
     """Serialize JSON with stable ordering and a final newline."""
 
@@ -327,12 +425,15 @@ __all__ = [
     "InputSource",
     "OutputError",
     "SerializationError",
+    "atomic_bytes_writer",
     "atomic_text_writer",
     "eprint",
     "json_text",
     "open_input",
     "paths_same",
     "publish_directory",
+    "publish_directory_tree",
     "reject_input_output_collision",
+    "write_bytes",
     "write_text",
 ]
