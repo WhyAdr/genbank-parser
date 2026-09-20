@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://whyadr.github.io/genbank-parser/schemas/operons-v1.schema.json",
+  "title": "gbparse operon candidates v1",
+  "type": "object",
+  "required": ["schema_version", "parameters", "records", "pair_count", "cluster_count", "interpretation"],
+  "properties": {
+    "schema_version": {"const": "gbparse.operons.v1"},
+    "parameters": {"type": "object"},
+    "record_count": {"type": "integer", "minimum": 0},
+    "pair_count": {"type": "integer", "minimum": 0},
+    "cluster_count": {"type": "integer", "minimum": 0},
+    "records": {"type": "array", "items": {"type": "object"}},
+    "interpretation": {"type": "string"}
+  },
+  "additionalProperties": true
+}

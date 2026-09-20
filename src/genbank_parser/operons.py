@@ -3,12 +3,32 @@
 from __future__ import annotations
 
 import argparse
+import csv
+import io
+import json
 from dataclasses import dataclass
 from itertools import pairwise
 from pathlib import Path
 
 from .io import read_genbank
 from .model import GenBankFeature
+
+SCHEMA_VERSION = "gbparse.operons.v1"
+TSV_COLUMNS = (
+    "row_type",
+    "record",
+    "candidate_id",
+    "strand",
+    "first_feature_index",
+    "second_feature_index",
+    "feature_index",
+    "locus_tag",
+    "gene",
+    "start",
+    "end",
+    "gap",
+    "candidate",
+)
 
 
 @dataclass(frozen=True)
@@ -38,6 +58,230 @@ class OperonResult:
     clusters: tuple[OperonCluster, ...]
 
 
+def _feature_dict(feature: GenBankFeature) -> dict[str, object]:
+    return {
+        "record": feature.record_id,
+        "record_index": feature.record_index,
+        "feature_index": feature.feature_index,
+        "locus_tag": feature.locus_tag or None,
+        "gene": feature.gene or None,
+        "product": feature.product or None,
+        "start": feature.start,
+        "end": feature.end,
+        "strand": feature.strand_symbol,
+        "strand_value": feature.strand,
+        "length": feature.length,
+        "segments": [
+            {"start": start, "end": end}
+            for start, end in (feature.join_segments if feature.is_compound else [(feature.start, feature.end)])
+        ],
+    }
+
+
+def build_operon_report(
+    document: object,
+    *,
+    max_gap: int = 150,
+    min_gap: int = -50,
+    min_genes: int = 3,
+) -> dict[str, object]:
+    """Build a complete record-level candidate-operon report."""
+
+    if min_genes < 2:
+        raise ValueError("min_genes must be at least 2")
+    records: list[dict[str, object]] = []
+    total_pairs = 0
+    total_clusters = 0
+    for record in getattr(document, "records", ()):
+        result = build_operon_result(
+            record.features,
+            max_gap=max_gap,
+            min_gap=min_gap,
+            circular=record.topology == "circular",
+            record_length=record.length,
+            min_genes=min_genes,
+        )
+        clusters = [
+            cluster
+            for cluster in result.clusters
+            if len(cluster.features) >= min_genes
+        ]
+        pair_payload = [
+            {
+                "first": _feature_dict(pair.first),
+                "second": _feature_dict(pair.second),
+                "gap": pair.gap,
+                "candidate": True,
+            }
+            for pair in result.pairs
+        ]
+        cluster_payload = [
+            {
+                "candidate_id": f"{record.id}:candidate_operon_{index}",
+                "record": record.id,
+                "strand": cluster.strand,
+                "strand_symbol": "+" if cluster.strand == 1 else "-",
+                "gaps": list(cluster.gaps),
+                "features": [_feature_dict(feature) for feature in cluster.features],
+                "candidate": True,
+            }
+            for index, cluster in enumerate(clusters, 1)
+        ]
+        total_pairs += len(pair_payload)
+        total_clusters += len(cluster_payload)
+        records.append(
+            {
+                "record": record.id,
+                "record_index": record.features[0].record_index if record.features else None,
+                "length": record.length,
+                "topology": record.topology or "linear",
+                "pairs": pair_payload,
+                "clusters": cluster_payload,
+            }
+        )
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "parameters": {
+            "max_gap": max_gap,
+            "min_gap": min_gap,
+            "min_genes": min_genes,
+        },
+        "record_count": len(records),
+        "pair_count": total_pairs,
+        "cluster_count": total_clusters,
+        "records": records,
+        "interpretation": "Proximity-based operon candidates; not evidence of transcription or co-expression.",
+    }
+
+
+def render_operons(report: dict[str, object], format_type: str = "text") -> str:
+    """Render a candidate-operon report without performing I/O."""
+
+    if format_type == "json":
+        return json.dumps(report, ensure_ascii=False, allow_nan=False, sort_keys=True, indent=2) + "\n"
+    if format_type == "tsv":
+        output = io.StringIO(newline="")
+        writer = csv.DictWriter(output, fieldnames=TSV_COLUMNS, delimiter="\t", lineterminator="\n")
+        writer.writeheader()
+        for record in report["records"]:  # type: ignore[index]
+            for pair in record["pairs"]:  # type: ignore[index]
+                first = pair["first"]
+                second = pair["second"]
+                writer.writerow(
+                    {
+                        "row_type": "pair",
+                        "record": record["record"],
+                        "candidate_id": "",
+                        "strand": first["strand"],
+                        "first_feature_index": first["feature_index"],
+                        "second_feature_index": second["feature_index"],
+                        "feature_index": "",
+                        "locus_tag": f"{first['locus_tag'] or ''};{second['locus_tag'] or ''}",
+                        "gene": f"{first['gene'] or ''};{second['gene'] or ''}",
+                        "start": min(first["start"], second["start"]),
+                        "end": max(first["end"], second["end"]),
+                        "gap": pair["gap"],
+                        "candidate": "true",
+                    }
+                )
+            for cluster in record["clusters"]:  # type: ignore[index]
+                for feature in cluster["features"]:
+                    writer.writerow(
+                        {
+                            "row_type": "cluster_member",
+                            "record": record["record"],
+                            "candidate_id": cluster["candidate_id"],
+                            "strand": cluster["strand_symbol"],
+                            "first_feature_index": "",
+                            "second_feature_index": "",
+                            "feature_index": feature["feature_index"],
+                            "locus_tag": feature["locus_tag"] or "",
+                            "gene": feature["gene"] or "",
+                            "start": feature["start"],
+                            "end": feature["end"],
+                            "gap": "",
+                            "candidate": "true",
+                        }
+                    )
+        return output.getvalue()
+    if format_type != "text":
+        raise ValueError("operon format must be text, tsv, json, or gff3")
+    lines = [
+        "=" * 80,
+        "  OPERON PROXIMITY CANDIDATES",
+        "=" * 80,
+        f"  Candidate pairs   : {report['pair_count']}",
+        f"  Candidate clusters: {report['cluster_count']}",
+        "  Interpretation    : proximity candidates, not evidence of transcription or co-expression.",
+        "",
+    ]
+    for record in report["records"]:  # type: ignore[index]
+        lines.append(f"-- Record {record['record']} --")
+        for pair in record["pairs"]:  # type: ignore[index]
+            first = pair["first"]
+            second = pair["second"]
+            lines.append(
+                f"  candidate pair {first['locus_tag'] or '?'} -> {second['locus_tag'] or '?'} "
+                f"gap={pair['gap']} strand={first['strand']}"
+            )
+        for cluster in record["clusters"]:  # type: ignore[index]
+            tags = ", ".join(feature["locus_tag"] or "?" for feature in cluster["features"])
+            lines.append(f"  candidate cluster {cluster['candidate_id']}: {tags}")
+    lines.append("=" * 80)
+    return "\n".join(lines) + "\n"
+
+
+def render_operons_gff3(report: dict[str, object]) -> str:
+    """Render candidate clusters as GFF3 parent/child annotations."""
+
+    lines = ["##gff-version 3"]
+    for record in report["records"]:  # type: ignore[index]
+        lines.append(f"##sequence-region {record['record']} 1 {record['length']}")
+        clusters = record["clusters"]  # type: ignore[index]
+        if not clusters:
+            continue
+        for cluster in clusters:
+            features = cluster["features"]
+            start = min(feature["start"] for feature in features)
+            end = max(feature["end"] for feature in features)
+            candidate_id = str(cluster["candidate_id"])
+            strand = str(cluster["strand_symbol"])
+            lines.append(
+                "\t".join(
+                    (
+                        str(record["record"]),
+                        "gbparse",
+                        "operon_candidate",
+                        str(start),
+                        str(end),
+                        ".",
+                        strand,
+                        ".",
+                        f"ID={candidate_id};candidate=true",
+                    )
+                )
+            )
+            for feature in features:
+                child_id = f"{candidate_id}:feature:{feature['feature_index']}"
+                attrs = f"ID={child_id};Parent={candidate_id};locus_tag={feature['locus_tag'] or ''};candidate=true"
+                lines.append(
+                    "\t".join(
+                        (
+                            str(record["record"]),
+                            "gbparse",
+                            "CDS",
+                            str(feature["start"]),
+                            str(feature["end"]),
+                            ".",
+                            str(feature["strand"]),
+                            ".",
+                            attrs,
+                        )
+                    )
+                )
+    return "\n".join(lines) + "\n"
+
+
 def find_operon_pairs(
     features: list[GenBankFeature],
     max_gap: int = 150,
@@ -58,15 +302,25 @@ def find_operon_pairs(
     if circular and len(cdss) > 1:
         adjacent.append((cdss[-1], cdss[0]))
 
-    for first, second in adjacent:
-        if first.strand == second.strand and first.strand in (1, -1):
-            if circular and second.feature_index == cdss[0].feature_index:
+    for genomic_first, genomic_second in adjacent:
+        if genomic_first.strand == genomic_second.strand and genomic_first.strand in (1, -1):
+            is_origin_edge = circular and genomic_second.feature_index == cdss[0].feature_index
+            if is_origin_edge:
                 assert record_length is not None
-                gap = second.start + record_length - first.end - 1
+                gap = genomic_second.start + record_length - genomic_first.end - 1
             else:
-                gap = second.start - first.end - 1
+                # The two intervals are sorted by genomic coordinate.  The
+                # physical gap is therefore the same on either strand; only
+                # the reported pair order changes for reverse-strand CDSs.
+                gap = genomic_second.start - genomic_first.end - 1
             if min_gap <= gap <= max_gap:
-                pairs.append((first, second, gap))
+                if genomic_first.strand == -1:
+                    # A reverse-strand candidate is reported in biological
+                    # 5'->3' order.  The gap is symmetric for the two
+                    # adjacent intervals, including the circular edge.
+                    pairs.append((genomic_second, genomic_first, gap))
+                else:
+                    pairs.append((genomic_first, genomic_second, gap))
     return pairs
 
 
@@ -77,8 +331,11 @@ def build_operon_result(
     *,
     circular: bool = False,
     record_length: int | None = None,
+    min_genes: int = 3,
 ) -> OperonResult:
-    """Return structured candidate pairs and connected three-CDS clusters."""
+    """Return structured candidate pairs and connected CDS clusters."""
+    if min_genes < 2:
+        raise ValueError("min_genes must be at least 2")
     raw_pairs = find_operon_pairs(
         features,
         max_gap=max_gap,
@@ -120,7 +377,7 @@ def build_operon_result(
             component.add(index)
             stack.extend(undirected.get(index, ()))
         visited.update(component)
-        if len(component) < 3:
+        if len(component) < min_genes:
             continue
 
         starts = [index for index in component if index not in incoming]
@@ -137,11 +394,12 @@ def build_operon_result(
                 break
             gaps.append(pair.gap)
             current = pair.second.feature_index
-        for index in sorted(
-            component - set(ordered_indices),
-            key=lambda item: feature_by_index[item].start,
-        ):
-            ordered_indices.append(index)
+        ordered_indices.extend(
+            sorted(
+                component - set(ordered_indices),
+                key=lambda item: feature_by_index[item].start,
+            )
+        )
 
         ordered_features = tuple(feature_by_index[index] for index in ordered_indices)
         clusters.append(
