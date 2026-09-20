@@ -11,6 +11,15 @@ from .io import extract_xref_sources, extract_xrefs
 from .model import GenBankFeature, GenBankRecord
 
 FEATURE_SCHEMA_VERSION = "gbparse.feature.v1"
+XREF_NAMESPACES = (
+    "cog_ids",
+    "db_xrefs",
+    "ec_numbers",
+    "go_terms",
+    "kegg_kos",
+    "pfam",
+    "rfam",
+)
 
 # These are the long-standing ``extract`` columns.  The unified exporter
 # reuses them so downstream annotation tables do not need a migration merely
@@ -115,8 +124,8 @@ class FeatureRow:
                 key: tuple(str(value) for value in values)
                 for key, values in sorted(feature.qualifiers.items())
             },
-            xrefs={key: tuple(values) for key, values in sorted(xrefs.items())},
-            xref_sources={key: value for key, value in sorted(source_map.items())},
+            xrefs={key: tuple(xrefs.get(key, ())) for key in XREF_NAMESPACES},
+            xref_sources={key: tuple(source_map.get(key, ())) for key in XREF_NAMESPACES},
         )
 
     def value(self, field: str) -> object:
@@ -206,6 +215,8 @@ class FeatureRow:
                 for key, values in self.xref_sources.items()
             },
         }
+        if self.sample_key is not None:
+            payload["sample_key"] = self.sample_key
         if selected is None:
             return payload
         selected_payload: dict[str, object] = {
@@ -342,6 +353,7 @@ def record_rows(record: GenBankRecord, *, source: str = "") -> tuple[FeatureRow,
 __all__ = [
     "ANNOTATION_COLUMNS",
     "FEATURE_SCHEMA_VERSION",
+    "XREF_NAMESPACES",
     "FeatureRow",
     "feature_rows",
     "record_rows",

@@ -75,6 +75,43 @@ _MAX_QUERY_DEPTH = 32
 _MAX_REGEX_LENGTH = 1_024
 _MAX_REGEX_COUNT = 32
 
+# Shared semantic metadata for direct and indexed execution.  The parser is
+# deliberately unchanged; this layer prevents SQLite affinity from deciding
+# whether an expression is meaningful.
+FIELD_TYPES: dict[str, str] = {
+    "record": "string",
+    "record_id": "string",
+    "record_index": "number",
+    "feature_index": "number",
+    "type": "string",
+    "locus_tag": "string",
+    "gene": "string",
+    "product": "string",
+    "protein_id": "string",
+    "start": "number",
+    "end": "number",
+    "strand": "string",
+    "strand_value": "number",
+    "length": "number",
+    "record_length": "number",
+    "topology": "string",
+    "pseudo": "boolean",
+    "partial": "boolean",
+    "ko": "string_many",
+    "kegg_ko": "string_many",
+    "ec": "string_many",
+    "ec_number": "string_many",
+    "cog": "string_many",
+    "pfam": "string_many",
+    "rfam": "string_many",
+    "go": "string_many",
+    "go_terms": "string_many",
+    "db_xref": "string_many",
+    "source": "string",
+    "sample": "string",
+    "sample_key": "string",
+}
+
 
 def _decode_query_string(text: str, position: int) -> str:
     """Decode the small quoted-string grammar without evaluating Python."""
@@ -331,6 +368,73 @@ def parse_query_ast(expression: str) -> QueryNode:
     return parse_query(expression)
 
 
+def _node_type(node: object) -> str:
+    kind = node[0]  # type: ignore[index]
+    if kind == "literal":
+        value = node[1]  # type: ignore[index]
+        if value is None:
+            return "null"
+        if isinstance(value, bool):
+            return "boolean"
+        if isinstance(value, (int, float)):
+            return "number"
+        if isinstance(value, str):
+            return "string"
+        return "unknown"
+    if kind == "field":
+        return FIELD_TYPES[str(node[1])]  # type: ignore[index]
+    if kind == "qualifier":
+        return "string_many"
+    if kind == "casefold":
+        inner = _node_type(node[1])  # type: ignore[index]
+        return "string_many" if inner.endswith("_many") else "string"
+    if kind == "list":
+        items = tuple(node[1])  # type: ignore[index]
+        return "list" if not items else "list:" + _node_type(items[0])
+    raise QueryExpressionError(f"invalid query operand node {kind!r}")
+
+
+def _comparison_type(node: object) -> str:
+    node_type = _node_type(node)
+    if node_type.startswith("list:"):
+        return node_type[5:]
+    if node_type == "list":
+        return "null"
+    return node_type
+
+
+def validate_query_types(tree: QueryNode) -> QueryNode:
+    """Validate operator/type compatibility shared by both query engines."""
+
+    kind = tree[0]  # type: ignore[index]
+    if kind in {"or", "and"}:
+        validate_query_types(tree[1])  # type: ignore[index]
+        validate_query_types(tree[2])  # type: ignore[index]
+    elif kind == "not":
+        validate_query_types(tree[1])  # type: ignore[index]
+    elif kind == "truth":
+        _node_type(tree[1])  # type: ignore[index]
+    elif kind == "compare":
+        operator = str(tree[1])  # type: ignore[index]
+        left_type = _comparison_type(tree[2])  # type: ignore[index]
+        right_type = _comparison_type(tree[3])  # type: ignore[index]
+        if operator in {"<", "<=", ">", ">="}:
+            non_null = {left_type, right_type} - {"null"}
+            if "boolean" in non_null:
+                raise QueryExpressionError("numeric comparisons do not accept booleans")
+            if non_null and (non_null != {"number"}):
+                raise QueryExpressionError("numeric comparisons require numeric operands")
+        elif operator == "contains":
+            if right_type not in {"string", "string_many", "null"}:
+                raise QueryExpressionError("contains requires a string right operand")
+        elif operator == "~=":
+            if right_type not in {"string", "string_many", "null"}:
+                raise QueryExpressionError("~= requires a string regular expression")
+    else:
+        raise QueryExpressionError(f"invalid query expression node {kind!r}")
+    return tree
+
+
 def _evaluate_operand(node: object, row: FeatureRow) -> object:
     kind = node[0]  # type: ignore[index]
     if kind == "literal":
@@ -432,7 +536,7 @@ def query_features(
 ) -> list[QueryMatch]:
     """Return all features satisfying a safe declarative expression."""
 
-    tree = parse_query(where)
+    tree = validate_query_types(parse_query_ast(where))
     document = read_genbank(source)
     source_label = document.source_label or str(document.path or "")
     matches: list[QueryMatch] = []
