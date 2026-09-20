@@ -10,6 +10,7 @@ from pathlib import Path
 
 from Bio.Seq import Seq
 
+from .cli_io import atomic_text_writer, paths_same
 from .io import read_genbank
 
 
@@ -28,6 +29,8 @@ def extract_sequences(
     filepath: str | Path,
     out_fna: str | Path | None = None,
     out_ffn: str | Path | None = None,
+    *,
+    force: bool = True,
 ) -> None:
     doc = read_genbank(filepath)
 
@@ -42,12 +45,14 @@ def extract_sequences(
         out_fna = base + ".fna"
     if out_ffn is None:
         out_ffn = base + ".ffn"
+    if paths_same(out_fna, out_ffn):
+        raise ValueError("FNA and FFN outputs must use different paths")
 
     total_acgt = 0
     total_gc = 0
     total_bp = 0
 
-    with open(out_fna, "w", encoding="utf-8") as fh:
+    with atomic_text_writer(out_fna, force=force, inputs=(filepath,)) as fh:
         for rec in doc.records:
             seq_str = str(rec.seq).upper()
             fh.write(f">{rec.id} len={len(seq_str)}\n")
@@ -68,7 +73,7 @@ def extract_sequences(
     cds_written = 0
     cds_total_bp = 0
 
-    with open(out_ffn, "w", encoding="utf-8") as fh:
+    with atomic_text_writer(out_ffn, force=force, inputs=(filepath,)) as fh:
         for rec in doc.records:
             rec_seq = rec.seq
             for f in rec.cds_features:

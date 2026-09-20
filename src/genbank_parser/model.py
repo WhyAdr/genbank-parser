@@ -354,8 +354,10 @@ class GenBankRecord:
 class GenBankDocument:
     """Represents an entire parsed GenBank file with one or more records."""
 
-    path: Path
+    path: Path | None
     records: list[GenBankRecord] = field(default_factory=list)
+    source_label: str = ""
+    source_kind: str = "path"
 
     def __len__(self) -> int:
         return len(self.records)

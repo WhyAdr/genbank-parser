@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import math
 from pathlib import Path
 
@@ -20,6 +21,16 @@ from .spatial import (
     resolve_target,
     select_cds_window,
 )
+
+
+def render_region_record(record: SeqRecord, output_path: str | Path) -> str:
+    """Serialize an extracted record without writing or printing."""
+
+    suffix = Path(output_path).suffix.casefold()
+    output_format = "fasta" if suffix in {".fasta", ".fna", ".fa"} else "genbank"
+    buffer = io.StringIO()
+    SeqIO.write(record, buffer, output_format)
+    return buffer.getvalue()
 
 
 def _combine_location(

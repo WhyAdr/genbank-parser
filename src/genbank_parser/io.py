@@ -2,9 +2,13 @@
 from __future__ import annotations
 
 import collections
-from pathlib import Path
+import gzip
+import io
 import re
-from typing import Any, Sequence
+import sys
+from collections.abc import Iterator
+from pathlib import Path
+from typing import Any, TextIO
 
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -21,40 +25,89 @@ _pfam_re = re.compile(r'^(?:Pfam:)?(PF\d+)')
 _rfam_re = re.compile(r'^(?:Rfam:)?(RF\d+)', re.IGNORECASE)
 
 
-def read_genbank(filepath: str | Path) -> GenBankDocument:
-    """Read a GenBank flatfile into a fully typed GenBankDocument."""
-    path = Path(filepath)
-    records: list[GenBankRecord] = []
-    global_feat_counter = 0
+class GenBankInputError(ValueError):
+    """Raised when a GenBank source cannot be decoded or parsed."""
 
-    with path.open('r', encoding='utf-8', errors='replace') as handle:
-        for rec_idx, rec in enumerate(SeqIO.parse(handle, "genbank"), 1):
-            contig = rec.id if (rec.id and rec.id != '.') else rec.name
-            topology = rec.annotations.get('topology')
-            mol_type = rec.annotations.get('molecule_type')
-            division = rec.annotations.get('data_file_division')
-            date = rec.annotations.get('date')
-            seq = rec.seq if rec.seq is not None else Seq("")
-            rec_len = len(seq)
-            if rec_len == 0 and 'length' in rec.annotations:
-                rec_len = int(rec.annotations['length'])
 
-            features: list[GenBankFeature] = []
-            for feat in rec.features:
-                global_feat_counter += 1
+def _read_source_text(source: str | Path | TextIO) -> tuple[str, Path | None, str, str]:
+    """Read a source once and return text plus source metadata."""
 
-                # Normalise qualifiers to dict[str, list[str]]
-                quals: dict[str, list[str]] = collections.defaultdict(list)
-                for k, v_list in feat.qualifiers.items():
-                    if isinstance(v_list, list):
-                        quals[k] = [str(x) for x in v_list]
-                    else:
-                        quals[k] = [str(v_list)]
+    if hasattr(source, "read"):
+        stream = source  # type: ignore[assignment]
+        label = str(getattr(stream, "name", "<stream>"))
+        raw_stream = getattr(stream, "buffer", None)
+        try:
+            raw = raw_stream.read() if raw_stream is not None else stream.read()
+        except (OSError, UnicodeError) as exc:
+            raise GenBankInputError(f"could not read input stream {label}: {exc}") from exc
+        source_kind = "stdin" if label in {"<stdin>", "-"} else "stream"
+        path = None
+    else:
+        source_text = str(source)
+        if source_text == "-":
+            stream = getattr(sys.stdin, "buffer", sys.stdin)
+            try:
+                raw = stream.read()
+            except (OSError, UnicodeError) as exc:
+                raise GenBankInputError(f"could not read stdin: {exc}") from exc
+            label = "-"
+            source_kind = "stdin"
+            path = None
+        else:
+            path = Path(source)
+            label = str(path)
+            source_kind = "path"
+            try:
+                raw = path.read_bytes()
+            except OSError as exc:
+                raise GenBankInputError(f"could not read input {path}: {exc}") from exc
 
-                gb_feat = GenBankFeature(
+    if isinstance(raw, str):
+        return raw, path, label, source_kind
+    if not isinstance(raw, (bytes, bytearray)):
+        raise GenBankInputError(f"input {label} did not produce text or bytes")
+    raw_bytes = bytes(raw)
+    if raw_bytes.startswith(b"\x1f\x8b"):
+        try:
+            raw_bytes = gzip.decompress(raw_bytes)
+        except (OSError, EOFError) as exc:
+            raise GenBankInputError(f"truncated or invalid gzip input: {label}") from exc
+    return raw_bytes.decode("utf-8", errors="replace"), path, label, source_kind
+
+
+def iter_genbank(source: str | Path | TextIO) -> Iterator[GenBankRecord]:
+    """Yield typed records from a GenBank path, gzip path, stdin, or stream."""
+
+    text, _path, _label, _source_kind = _read_source_text(source)
+    global_feature_index = 0
+    for rec_idx, rec in enumerate(SeqIO.parse(io.StringIO(text), "genbank"), 1):
+        contig = rec.id if (rec.id and rec.id != ".") else rec.name
+        topology = rec.annotations.get("topology")
+        mol_type = rec.annotations.get("molecule_type")
+        division = rec.annotations.get("data_file_division")
+        date = rec.annotations.get("date")
+        seq = rec.seq if rec.seq is not None else Seq("")
+        rec_len = len(seq)
+        if rec_len == 0 and "length" in rec.annotations:
+            try:
+                rec_len = int(rec.annotations["length"])
+            except (TypeError, ValueError):
+                rec_len = 0
+
+        features: list[GenBankFeature] = []
+        for feat in rec.features:
+            global_feature_index += 1
+            quals: dict[str, list[str]] = collections.defaultdict(list)
+            for key, values in feat.qualifiers.items():
+                if isinstance(values, list):
+                    quals[key] = [str(value) for value in values]
+                else:
+                    quals[key] = [str(values)]
+            features.append(
+                GenBankFeature(
                     record_id=contig,
                     record_index=rec_idx,
-                    feature_index=global_feat_counter,
+                    feature_index=global_feature_index,
                     type=feat.type,
                     location=feat.location,
                     qualifiers=dict(quals),
@@ -62,27 +115,52 @@ def read_genbank(filepath: str | Path) -> GenBankDocument:
                     topology=topology,
                     raw_feature=feat,
                 )
-                features.append(gb_feat)
-
-            gb_rec = GenBankRecord(
-                id=contig,
-                name=rec.name,
-                description=rec.description,
-                seq=seq,
-                length=rec_len,
-                topology=topology,
-                molecule_type=mol_type,
-                division=division,
-                date=date,
-                annotations=dict(rec.annotations),
-                features=features,
             )
-            records.append(gb_rec)
+        yield GenBankRecord(
+            id=contig,
+            name=rec.name,
+            description=rec.description,
+            seq=seq,
+            length=rec_len,
+            topology=topology,
+            molecule_type=mol_type,
+            division=division,
+            date=date,
+            annotations=dict(rec.annotations),
+            features=features,
+        )
 
-    return GenBankDocument(path=path, records=records)
+
+def read_genbank(source: str | Path | TextIO) -> GenBankDocument:
+    """Read a GenBank flatfile into a fully typed GenBankDocument.
+
+    The source may be a path, a gzip-compressed path regardless of suffix,
+    ``-`` for stdin, or a text/binary-backed stream.  The returned document
+    remains the canonical in-memory parser model used by every analyzer.
+    """
+
+    text, path, label, source_kind = _read_source_text(source)
+    records: list[GenBankRecord] = []
+    try:
+        records.extend(iter_genbank(io.StringIO(text)))
+    except (AttributeError, IndexError, KeyError, OSError, TypeError, ValueError) as exc:
+        raise GenBankInputError(f"could not parse GenBank input {label}: {exc}") from exc
+    # Feature indices historically were global across a document.  Keep that
+    # compatibility even though iter_genbank exposes record-local indices.
+    global_index = 0
+    for record in records:
+        for feature in record.features:
+            global_index += 1
+            feature.feature_index = global_index
+    return GenBankDocument(
+        path=path,
+        records=records,
+        source_label=label,
+        source_kind=source_kind,
+    )
 
 
-def parse_features(filepath: str | Path) -> list[GenBankFeature]:
+def parse_features(filepath: str | Path | TextIO) -> list[GenBankFeature]:
     """Parse GenBank file and return all features as a flat list."""
     doc = read_genbank(filepath)
     return doc.all_features
@@ -191,3 +269,37 @@ def extract_xrefs(
         'ec_numbers': list(dict.fromkeys(ec_numbers)),
         'db_xrefs': list(dict.fromkeys(db_xrefs)),
     }
+
+
+def extract_xref_sources(feature: Any) -> dict[str, list[dict[str, str]]]:
+    """Return typed xrefs with the qualifier field that supplied each value."""
+
+    if hasattr(feature, "qualifiers"):
+        qualifiers = feature.qualifiers
+    elif isinstance(feature, dict):
+        qualifiers = feature.get("qualifiers", {})
+    else:
+        qualifiers = {}
+    typed = extract_xrefs(feature, include_notes=True)
+    result: dict[str, list[dict[str, str]]] = {key: [] for key in typed}
+    fields = ("db_xref", "note", "EC_number")
+    raw_values = [(field, str(value)) for field in fields for value in qualifiers.get(field, [])]
+    for category, values in typed.items():
+        for value in values:
+            source_field = "EC_number" if category == "ec_numbers" and value in qualifiers.get("EC_number", []) else "db_xref"
+            if any(raw == value and field == "note" for field, raw in raw_values):
+                source_field = "note"
+            result[category].append({"value": value, "source_field": source_field})
+    return result
+
+
+__all__ = [
+    "GenBankInputError",
+    "extract_xref_sources",
+    "extract_xrefs",
+    "get_notes",
+    "get_qual",
+    "iter_genbank",
+    "parse_features",
+    "read_genbank",
+]

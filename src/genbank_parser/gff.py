@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .io import get_qual, read_genbank
-from .model import GenBankFeature
+from .model import GenBankDocument, GenBankFeature
 
 GFF3_HEADER = "##gff-version 3"
 _ENCODE_CHARS = re.compile(r"[;\s=%&,]")
@@ -86,13 +86,10 @@ def _gff3_line(
     )
 
 
-def convert_to_gff3(
-    filepath: str | Path,
-    output_path: str | Path | None = None,
-    include_fasta: bool = False,
-) -> str:
-    """Convert GenBank to GFF3, preserving compound segments and safe IDs."""
-    doc = read_genbank(filepath)
+def render_gff3_document(document: GenBankDocument, include_fasta: bool = False) -> str:
+    """Render a parsed document to GFF3, preserving the established hierarchy."""
+
+    doc = document
     lines: list[str] = [GFF3_HEADER]
     for rec in doc.records:
         rec_len = (
@@ -277,11 +274,21 @@ def convert_to_gff3(
                 seq_str = str(rec.seq)
                 lines.extend(seq_str[i : i + 60] for i in range(0, len(seq_str), 60))
 
-    output = "\n".join(lines) + "\n"
+    return "\n".join(lines) + "\n"
+
+
+def convert_to_gff3(
+    filepath: str | Path,
+    output_path: str | Path | None = None,
+    include_fasta: bool = False,
+) -> str:
+    """Convert GenBank to GFF3, preserving compound segments and safe IDs."""
+
+    output = render_gff3_document(read_genbank(filepath), include_fasta=include_fasta)
     if output_path:
         out_p = Path(output_path)
         out_p.write_text(output, encoding="utf-8")
-        feat_count = sum(1 for line in lines if line and not line.startswith("#"))
+        feat_count = sum(1 for line in output.splitlines() if line and not line.startswith("#"))
         print(f"Wrote {feat_count} GFF3 records to {output_path}")
     return output
 

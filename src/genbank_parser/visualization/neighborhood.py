@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -31,7 +33,14 @@ class VisualizationDependencyError(RuntimeError):
 def _load_plotting() -> tuple[type[Any], type[Any], Any]:
     try:
         from dna_features_viewer import GraphicFeature, GraphicRecord
-        import matplotlib.pyplot as pyplot
+        # CLI and test rendering must be headless on Windows as well as in CI;
+        # importing pyplot before selecting Agg makes Matplotlib fall back to
+        # the unavailable Tk backend on some Python installations.
+        os.environ.setdefault("MPLBACKEND", "Agg")
+        import matplotlib
+
+        matplotlib.use("Agg", force=True)
+        from matplotlib import pyplot
     except (ImportError, ModuleNotFoundError) as exc:
         raise VisualizationDependencyError(DEPENDENCY_MESSAGE) from exc
     return GraphicFeature, GraphicRecord, pyplot
@@ -79,6 +88,7 @@ def render_neighborhood(
     *,
     label_mode: str = "auto",
     color_mode: str = "default",
+    force: bool = False,
 ) -> Path:
     """Render one linear-unwrapped neighborhood and return the written path."""
     if color_mode not in {"default", "ruleset"}:
@@ -94,6 +104,9 @@ def render_neighborhood(
         raise ValueError(f"Unsupported visualization format {output.suffix!r}; use {supported}")
     if output.resolve() == result.input_path.resolve():
         raise ValueError("Visualization output cannot overwrite the input GenBank file")
+    if output.exists() and not force:
+        raise FileExistsError(f"visualization output already exists; use --force: {output}")
+    output.parent.mkdir(parents=True, exist_ok=True)
 
     GraphicFeature, GraphicRecord, pyplot = _load_plotting()
     graphic_features = []
@@ -186,7 +199,29 @@ def render_neighborhood(
                 label="Same-strand proximity link",
             )
         axis.legend(loc="upper right", frameon=False, fontsize="small")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    axis.figure.savefig(output, bbox_inches="tight", dpi=200)
-    pyplot.close(axis.figure)
+    temporary_name: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb",
+            suffix=output.suffix,
+            prefix=f".{output.name}.",
+            dir=output.parent,
+            delete=False,
+        ) as handle:
+            temporary_name = handle.name
+        axis.figure.savefig(
+            temporary_name,
+            format=output.suffix.lstrip("."),
+            bbox_inches="tight",
+            dpi=200,
+        )
+        os.replace(temporary_name, output)
+        temporary_name = None
+    finally:
+        pyplot.close(axis.figure)
+        if temporary_name:
+            try:
+                Path(temporary_name).unlink(missing_ok=True)
+            except OSError:
+                pass
     return output
