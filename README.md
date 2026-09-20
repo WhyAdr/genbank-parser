@@ -17,6 +17,7 @@ A Biopython-powered genome-annotation query engine, validation suite, and CLI to
 - **Unified CLI**: Provides `gbparse` subcommands for feature search, valid local sub-region extraction, annotation diffing, genetic-code-aware codon usage, annotation-based candidate phylogenetic markers, CRISPR/Cas annotation scanning, and declarative discovery.
 - **MEOR Evidence Engine**: Scans 48 curated markers across 9 hydrocarbon-degradation, biosurfactant, and bio-emulsifier categories; evaluates 7 genome-level pathway models; and reports same-contig, known-strand candidate clusters with at most N intervening bases.
 - **Mobilome Evidence Engine**: Inventories every parsed record and retains field-level mobilome evidence, replicon declarations, cautious component hypotheses, catalog provenance, and explicit external-analysis handoffs in text, JSON, or normalized TSV.
+- **Interoperability CLI (v0.8.5)**: Supports gzip/stdin input, safe declarative feature queries, deterministic JSONL/BED12/NCBI candidate exports, complete annotation diffs, evidence-preserving marker comparisons, and circular-aware operon proximity candidates.
 
 ---
 
@@ -108,7 +109,58 @@ gbparse meor input.gbff --min-weight 2 --format json --output meor.json
 
 # 20. Build a replicon-centric mobilome evidence report
 gbparse mobilome input.gbff --format json --min-evidence 2 --output mobilome.json
+
+# 21. Safe declarative feature query (no Python expression evaluation)
+gbparse query input.gbff \
+  --where 'type == "CDS" and (gene == "ladA" or ko == "K20938") and not pseudo' \
+  --select record,locus_tag,gene,product,start,end,strand,ko \
+  --format tsv
+
+# 22. Unified interoperable exports
+gbparse export input.gbff --format jsonl --output features.jsonl
+gbparse export input.gbff --format bed12 --output features.bed --force
+gbparse export input.gbff --format ncbi-table --output-dir table2asn-candidate
+
+# 23. Circular-aware proximity-based operon candidates
+gbparse operons input.gbff --max-gap 150 --min-gap -50 --format json --output operons.json
 ```
+
+### Structured output and safety contracts
+
+Machine-readable output is written as data only; diagnostics and warnings go
+to stderr. Use `--force` to replace an existing output, and outputs that alias
+an input are always rejected. Plain and gzip-compressed GenBank input are
+equivalent, and `-` reads stdin when a command does not need to reread or
+randomly access the source. JSON is deterministic UTF-8 with a final newline;
+JSONL, TSV, CSV, FASTA, BED12, and NCBI table output is never silently
+truncated.
+
+`gbparse query` accepts `==`, `!=`, `<`, `<=`, `>`, `>=`, `contains`, `~=`,
+`in`, `and`, `or`, `not`, parentheses, and explicit
+`qualifier("name")` access. In PowerShell, use a double-quoted argument with
+single-quoted string literals, for example `--where "type == 'CDS'"`; in Bash,
+use single quotes around the expression. Windows CMD users can escape inner
+double quotes, for example `--where "type == \"CDS\" and gene == \"ladA\""`.
+Query results use the canonical `gbparse.feature.v1` projection and biological
+`SeqFeature.extract()` semantics for FFN output.
+
+The CLI returns 0 for success, 1 when a requested validation threshold is
+reached after writing its report, 2 for argument errors, 3 for input/data
+errors, and 4 for output or serialization errors. `gbparse --version` reports
+the installed release.
+
+GenBank coordinates are one-based inclusive. GFF3 uses the same feature
+coordinate convention, BED12 uses zero-based half-open intervals, and PAF
+uses zero-based half-open mappings. Origin-spanning circular features are
+split into linked, bounded BED records with an explicit warning because BED
+intervals cannot wrap.
+
+`gbparse export --format ncbi-table` creates candidate `.fsa`, five-column
+`.tbl`, and `.export.json` files. It does not invoke `table2asn`, create
+submission metadata, or claim submission readiness. Operon results are
+annotation-derived proximity candidates and are not evidence of transcription
+or co-expression. The v0.8.5 exclusions are recorded in
+[`gbparse-v0.8.5-deferred-scope.md`](gbparse-v0.8.5-deferred-scope.md).
 
 ### MEOR confidence and interpretation
 

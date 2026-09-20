@@ -4,6 +4,29 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.8.5] - 2026-09-20
+
+### CLI interoperability, safe queries, and complete evidence outputs
+
+- Added source-aware plain/gzip/stdin parsing and shared atomic output
+  publication with input/output collision protection and documented CLI exit
+  statuses.
+- Added safe declarative `query`, unified `export`, and structured,
+  circular-aware `operons` commands. Query expressions use a bounded parser;
+  they never evaluate Python, shell, or SQL expressions.
+- Added canonical `gbparse.feature.v1` projections, JSONL, BED12, biological
+  FAA/FFN/FNA, and candidate table2asn input exports. NCBI exports report
+  unsupported qualifiers and retain the requirement for independent
+  `table2asn` validation.
+- Normalized summary, locus, CRISPR, phylogenomic, functional, and validation
+  structured modes. `functional --format tsv` now emits real declared TSV
+  rows, and `validate --fail-on` writes its report before returning status 1.
+- Removed hidden machine-output truncation from annotation diffs and added
+  typed compare evidence with count/presence/status modes.
+- Preserved the existing MEOR, mobilome, neighborhood, region, and GFF3
+  contracts. Scope exclusions are documented in
+  `gbparse-v0.8.5-deferred-scope.md`.
+
 ## [0.8.2] - 2026-09-19
 
 ### TA/retron inference hardening and calibration reproducibility
