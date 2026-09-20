@@ -393,6 +393,7 @@ def create_parser() -> argparse.ArgumentParser:
     p_index_build.add_argument("--jobs", type=_positive_int, default=1)
     p_index_build.add_argument("--on-error", choices=("fail", "skip"), default="fail")
     p_index_build.add_argument("--report")
+    p_index_build.add_argument("--report-force", action="store_true")
     p_index_build.add_argument("--force", action="store_true")
 
     p_index_update = index_actions.add_parser("update", help="Update an existing index")
@@ -402,6 +403,7 @@ def create_parser() -> argparse.ArgumentParser:
     p_index_update.add_argument("--jobs", type=_positive_int, default=1)
     p_index_update.add_argument("--on-error", choices=("fail", "skip"), default="fail")
     p_index_update.add_argument("--report")
+    p_index_update.add_argument("--report-force", action="store_true")
 
     p_index_query = index_actions.add_parser("query", help="Query indexed annotation projections")
     p_index_query.add_argument("database")
@@ -495,6 +497,8 @@ def _dispatch(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     if cmd == "records":
         selector = None if args.records_action == "extract" else _record_selector(args)
         document = read_genbank(args.input)
+        if not document.records:
+            raise GenBankInputError(f"no GenBank records were parsed from {args.input}")
         if args.records_action == "extract":
             selected = select_exact_records(document, tuple(args.record))
             payload = render_selected_records(selected, args.format)
@@ -540,6 +544,7 @@ def _dispatch(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
                 on_error=args.on_error,
                 force=args.force,
                 report_path=args.report,
+                report_force=args.report_force,
             )
             for item in result.skipped_sources:
                 eprint(f"WARNING: skipped index source {item['source']}: {item['error']}")
@@ -552,6 +557,7 @@ def _dispatch(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
                 jobs=args.jobs,
                 on_error=args.on_error,
                 report_path=args.report,
+                report_force=args.report_force,
             )
             for item in result.skipped_sources:
                 eprint(f"WARNING: skipped index source {item['source']}: {item['error']}")

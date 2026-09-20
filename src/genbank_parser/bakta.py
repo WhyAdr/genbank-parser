@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import csv
 import io
+import json
 import re
 import sys
 from collections import Counter
@@ -17,8 +18,7 @@ from .cli_io import (
     eprint,
     paths_same,
     publish_directory,
-    reject_input_output_collision,
-    write_text,
+    publish_file_set,
 )
 from .discovery import DISCOVERABLE_SUFFIXES, discover_inputs
 from .io import extract_xrefs, get_qual, read_genbank
@@ -237,8 +237,9 @@ def write_outputs(
     *,
     force: bool = False,
     inputs: Iterable[str | Path] = (),
+    failures: Iterable[dict[str, str]] = (),
 ) -> None:
-    """Render all tables first, then publish each file atomically."""
+    """Render and publish the legacy report set as one transaction."""
 
     inputs = tuple(inputs)
     rendered = {
@@ -246,16 +247,23 @@ def write_outputs(
         tsv_path: _render_delimited(rows, "\t"),
         md_path: _render_markdown(rows),
     }
+    failure_rows = tuple(failures)
+    if failure_rows:
+        rendered[md_path.with_name(f"{md_path.stem}.failures.json")] = (
+            json.dumps(
+                {"schema_version": "gbparse.batch-summary.v1", "failures": list(failure_rows)},
+                ensure_ascii=False,
+                allow_nan=False,
+                sort_keys=True,
+                indent=2,
+            )
+            + "\n"
+        )
     output_paths = tuple(rendered)
     for index, path in enumerate(output_paths):
         if any(paths_same(path, other) for other in output_paths[index + 1 :]):
             raise OutputError(f"batch-summary outputs must be distinct: {path}")
-    for path in rendered:
-        reject_input_output_collision(inputs, path)
-        if path.exists() and not force:
-            raise OutputError(f"output already exists; use --force: {path}")
-    for path, content in rendered.items():
-        write_text(content, path, force=force, inputs=inputs)
+    publish_file_set(rendered, force=force, inputs=inputs)
 
 
 def run_batch_summary(
@@ -292,18 +300,38 @@ def run_batch_summary(
     if not rows:
         eprint("ERROR: no usable GenBank summaries were produced")
         return BatchSummaryResult((), tuple(failures))
+    if failures and on_error == "fail":
+        eprint("ERROR: one or more GenBank summaries failed; no batch-summary outputs were published")
+        return BatchSummaryResult(tuple(rows), tuple(failures))
     if output_dir is not None:
         files_payload = {
             "bakta_summary.csv": _render_delimited(rows, ","),
             "bakta_summary.tsv": _render_delimited(rows, "\t"),
             "bakta_summary.md": _render_markdown(rows),
         }
+        if failures:
+            files_payload["bakta_summary.failures.json"] = (
+                json.dumps(
+                    {"schema_version": "gbparse.batch-summary.v1", "failures": failures},
+                    ensure_ascii=False,
+                    allow_nan=False,
+                    sort_keys=True,
+                    indent=2,
+                )
+                + "\n"
+            )
         publish_directory(files_payload, output_dir, force=force, inputs=inputs)
     else:
-        write_outputs(rows, Path(csv_out), Path(tsv_out), Path(md_out), force=force, inputs=inputs)
+        write_outputs(
+            rows,
+            Path(csv_out),
+            Path(tsv_out),
+            Path(md_out),
+            force=force,
+            inputs=inputs,
+            failures=failures,
+        )
     eprint(f"Generated summary across {len(rows)} isolate(s)")
-    if failures and on_error == "skip":
-        failures = []
     return BatchSummaryResult(tuple(rows), tuple(failures))
 
 

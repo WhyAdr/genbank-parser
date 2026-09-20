@@ -215,9 +215,14 @@ def select_exact_records(document: GenBankDocument, selectors: Sequence[str]) ->
         if not matches:
             raise ValueError(f"record selector not found: {selector}")
         if len(matches) > 1:
-            indices = [str(document.records.index(record) + 1) for record in matches]
+            match_ids = {id(record) for record in matches}
+            indices = [
+                str(index)
+                for index, record in enumerate(document.records, 1)
+                if id(record) in match_ids
+            ]
             raise ValueError(f"record selector {selector!r} is ambiguous at indices {', '.join(indices)}")
-        if matches[0] not in selected:
+        if all(id(matches[0]) != id(record) for record in selected):
             selected.append(matches[0])
     order = {id(record): index for index, record in enumerate(document.records)}
     return tuple(sorted(selected, key=lambda record: order[id(record)]))
@@ -292,13 +297,13 @@ def split_record_artifacts(
         "sha256",
     ]]
     for index, record in enumerate(records, 1):
-        record_index = record.record_index or index
+        record_index = record.record_index if record.record_index > 0 else index
         base = _safe_filename(record.id)
-        filename = f"{base}{extension}"
-        if filename.casefold() in used:
-            filename = f"{base}-r{index}{extension}"
+        # The source record index, not the selection-relative loop position,
+        # is part of every filename so filtering cannot rename an artifact.
+        filename = f"{base}-r{record_index}{extension}"
         while filename.casefold() in used:
-            filename = f"{base}-r{index}-{len(used)}{extension}"
+            filename = f"{base}-r{record_index}-{len(used)}{extension}"
         used.add(filename.casefold())
         payload = _serialize_records((record,), format_type)
         files[filename] = payload
