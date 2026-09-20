@@ -15,6 +15,7 @@ from Bio.SeqFeature import (
     CompoundLocation,
     FeatureLocation,
 )
+from Bio.SeqRecord import SeqRecord
 
 
 @dataclass
@@ -267,6 +268,12 @@ class GenBankRecord:
     date: str | None = None
     annotations: dict[str, Any] = field(default_factory=dict)
     features: list[GenBankFeature] = field(default_factory=list)
+    # Retain the canonical Biopython object so whole-record operations can
+    # serialize without attempting to reconstruct record-level metadata.
+    raw_record: SeqRecord | None = field(default=None, repr=False, compare=False)
+    # The source-order position is needed by whole-record manifests even when
+    # a record has no features from which it could be inferred.
+    record_index: int = 0
 
     @property
     def cds_features(self) -> list[GenBankFeature]:

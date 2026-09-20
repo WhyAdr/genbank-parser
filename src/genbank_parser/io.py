@@ -128,6 +128,8 @@ def iter_genbank(source: str | Path | TextIO) -> Iterator[GenBankRecord]:
             date=date,
             annotations=dict(rec.annotations),
             features=features,
+            raw_record=rec,
+            record_index=rec_idx,
         )
 
 
