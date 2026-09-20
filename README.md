@@ -17,7 +17,7 @@ A Biopython-powered genome-annotation query engine, validation suite, and CLI to
 - **Unified CLI**: Provides `gbparse` subcommands for feature search, valid local sub-region extraction, annotation diffing, genetic-code-aware codon usage, annotation-based candidate phylogenetic markers, CRISPR/Cas annotation scanning, and declarative discovery.
 - **MEOR Evidence Engine**: Scans 48 curated markers across 9 hydrocarbon-degradation, biosurfactant, and bio-emulsifier categories; evaluates 7 genome-level pathway models; and reports same-contig, known-strand candidate clusters with at most N intervening bases.
 - **Mobilome Evidence Engine**: Inventories every parsed record and retains field-level mobilome evidence, replicon declarations, cautious component hypotheses, catalog provenance, and explicit external-analysis handoffs in text, JSON, or normalized TSV.
-- **Cohort CLI (v0.9.0)**: Supports gzip/stdin input, lossless record selection, normalized SQLite cohort indexes, resumable single-input batch runs, safe declarative feature queries, deterministic JSONL/BED12/NCBI candidate exports, complete annotation diffs, evidence-preserving marker comparisons, and circular-aware operon proximity candidates.
+- **Cohort CLI (v0.9.1)**: Supports gzip/stdin input, lossless record selection, canonical-identity SQLite cohort indexes, snapshot-bound resumable batch runs, type-parity feature queries, deterministic JSONL/BED12/NCBI candidate exports, complete annotation diffs, evidence-preserving marker comparisons, and circular-aware operon proximity candidates.
 
 ---
 
@@ -159,14 +159,18 @@ Query results use the canonical `gbparse.feature.v1` projection and biological
 `SeqFeature.extract()` semantics for FFN output.
 
 `gbparse index` stores normalized annotation projections and raw source
-fingerprints; it does not archive sequence or GenBank blobs. Indexed results
-are only as current as the verified source fingerprint at build/update time,
-and indexed query is the same bounded declarative grammar, not arbitrary SQL.
+fingerprints; it does not archive sequence or GenBank blobs. Source identity is
+the normalized canonical path, while display spelling remains mutable metadata.
+Indexing parses the same byte snapshot that is fingerprinted, and database plus
+optional report publication is guarded as one outcome. Indexed results are
+only as current as the verified source fingerprint at build/update time, and
+indexed query is the same bounded declarative grammar, not arbitrary SQL.
 `gbparse batch` runs registered single-input `gbparse` commands only. Its
-manifest records exact argv, input/output hashes, and child diagnostics;
-partial job success never makes a partially failed run successful. Resume
-reruns changed, missing, or modified inputs and outputs. Record selection
-selects source records and does not rewrite or reconcile their annotations.
+manifest records canonical source identity, exact argv, input/output hashes,
+stderr hashes, and child diagnostics; partial job success never makes a
+partially failed run successful. Resume verifies the manifest, environment,
+output topology, and logs before reusing an artifact. Record selection selects
+source records and does not rewrite or reconcile their annotations.
 
 The CLI returns 0 for success, 1 when a requested validation threshold is
 reached after writing its report, 2 for argument errors, 3 for input/data

@@ -4,6 +4,25 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.9.1] - 2026-09-20
+
+### Cohort hardening and provenance boundaries
+
+- Preserved validation-threshold outcomes across verified batch resumes and
+  validated manifest, environment, output, and stderr provenance before reuse.
+- Keyed index sources and batch jobs by canonical resolved identity, with a
+  revision-2 index migration and stable record-split filenames.
+- Bound index and batch results to immutable source snapshots, implemented
+  measured index parsing parallelism, and kept known-good indexes intact when
+  no source was usable.
+- Restored direct/index query type parity, complete canonical xref projections,
+  bulk feature hydration, and cohort sample identity serialization.
+- Guarded database/report and legacy batch-summary publication as coherent
+  transactions, closed malformed zero-record and fail-policy paths, and
+  expanded installed-wheel and cross-platform cohort gates.
+
+---
+
 ## [0.9.0] - 2026-09-20
 
 ### Cohort records, persistent indexes, and resumable batch execution
