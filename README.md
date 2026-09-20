@@ -17,7 +17,7 @@ A Biopython-powered genome-annotation query engine, validation suite, and CLI to
 - **Unified CLI**: Provides `gbparse` subcommands for feature search, valid local sub-region extraction, annotation diffing, genetic-code-aware codon usage, annotation-based candidate phylogenetic markers, CRISPR/Cas annotation scanning, and declarative discovery.
 - **MEOR Evidence Engine**: Scans 48 curated markers across 9 hydrocarbon-degradation, biosurfactant, and bio-emulsifier categories; evaluates 7 genome-level pathway models; and reports same-contig, known-strand candidate clusters with at most N intervening bases.
 - **Mobilome Evidence Engine**: Inventories every parsed record and retains field-level mobilome evidence, replicon declarations, cautious component hypotheses, catalog provenance, and explicit external-analysis handoffs in text, JSON, or normalized TSV.
-- **Interoperability CLI (v0.8.5)**: Supports gzip/stdin input, safe declarative feature queries, deterministic JSONL/BED12/NCBI candidate exports, complete annotation diffs, evidence-preserving marker comparisons, and circular-aware operon proximity candidates.
+- **Cohort CLI (v0.9.0)**: Supports gzip/stdin input, lossless record selection, normalized SQLite cohort indexes, resumable single-input batch runs, safe declarative feature queries, deterministic JSONL/BED12/NCBI candidate exports, complete annotation diffs, evidence-preserving marker comparisons, and circular-aware operon proximity candidates.
 
 ---
 
@@ -123,6 +123,20 @@ gbparse export input.gbff --format ncbi-table --output-dir table2asn-candidate
 
 # 23. Circular-aware proximity-based operon candidates
 gbparse operons input.gbff --max-gap 150 --min-gap -50 --format json --output operons.json
+
+# 24. Inventory, filter, extract, or split whole records
+gbparse records list input.gbff --format tsv
+gbparse records filter input.gbff --topology circular --output circular.gbff
+gbparse records split input.gbff --output-dir records/
+
+# 25. Build and query a normalized annotation index
+gbparse index build ./isolates cohort.gbidx --jobs 4 --report cohort-index-report.json
+gbparse index query cohort.gbidx --where 'type == "CDS" and gene == "ladA"' --format jsonl
+gbparse index status cohort.gbidx --format json
+
+# 26. Apply a registered single-input command across a cohort
+gbparse batch ./isolates --command validate --output-dir validate-run --jobs 4 -- --format json
+gbparse batch ./isolates --command validate --output-dir validate-run --resume -- --format json
 ```
 
 ### Structured output and safety contracts
@@ -143,6 +157,16 @@ use single quotes around the expression. Windows CMD users can escape inner
 double quotes, for example `--where "type == \"CDS\" and gene == \"ladA\""`.
 Query results use the canonical `gbparse.feature.v1` projection and biological
 `SeqFeature.extract()` semantics for FFN output.
+
+`gbparse index` stores normalized annotation projections and raw source
+fingerprints; it does not archive sequence or GenBank blobs. Indexed results
+are only as current as the verified source fingerprint at build/update time,
+and indexed query is the same bounded declarative grammar, not arbitrary SQL.
+`gbparse batch` runs registered single-input `gbparse` commands only. Its
+manifest records exact argv, input/output hashes, and child diagnostics;
+partial job success never makes a partially failed run successful. Resume
+reruns changed, missing, or modified inputs and outputs. Record selection
+selects source records and does not rewrite or reconcile their annotations.
 
 The CLI returns 0 for success, 1 when a requested validation threshold is
 reached after writing its report, 2 for argument errors, 3 for input/data

@@ -43,6 +43,9 @@ Parse, validate, and analyze GenBank flatfiles (`.gb`, `.gbk`, `.gbff`, `.txt`) 
 | `batch-summary` | Bakta multi-isolate comparison tables | `gbparse batch-summary ./isolates/ --csv summary.csv` |
 | `meor` | MEOR, hydrocarbon-degradation, biosurfactant and bio-emulsifier genomic-potential analysis | `gbparse meor INPUT.gbff --min-weight 2 --format json` |
 | `mobilome` | Replicon-centric, annotation-supported mobilome evidence report | `gbparse mobilome INPUT.gbff --format json --min-evidence 2` |
+| `records` | List, select, extract, filter, or split whole GenBank records | `gbparse records list INPUT.gbff --format json` |
+| `index` | Build, update, query, and inspect a normalized SQLite cohort index | `gbparse index build ./isolates/ cohort.gbidx` |
+| `batch` | Apply a registered single-input command across a discovered cohort | `gbparse batch ./isolates/ --command validate --output-dir validate-run -- --format json` |
 
 ---
 
@@ -75,6 +78,29 @@ from genbank_parser.mobilome import analyze_mobilome
 
 report = analyze_mobilome("genome.gbff", include="all", min_evidence=2)
 ```
+
+Cohort and whole-record APIs:
+
+```python
+from genbank_parser.batch import execute_batch
+from genbank_parser.index import build_index, query_index
+from genbank_parser.records import RecordSelector, record_rows, select_records
+from genbank_parser import read_genbank
+
+document = read_genbank("assembly.gbff")
+rows = record_rows(document)
+circular = select_records(document, RecordSelector(topology="circular"))
+build_index(["isolates/"], "cohort.gbidx")
+hits = query_index("cohort.gbidx", 'type == "CDS" and gene == "ladA"')
+execute_batch(["isolates/"], command="validate", output_dir="validate-run", tail=("--format", "json"))
+```
+
+These cohort tools have deliberate boundaries: indexes store annotation
+projections and source fingerprints, not sequences or GenBank blobs; indexed
+queries use the bounded feature-query grammar rather than arbitrary SQL; batch
+runs cover only registered single-input `gbparse` commands; a partially failed
+batch remains non-successful even when other jobs succeeded; and record
+filtering selects records without rewriting or reconciling annotations.
 
 ---
 

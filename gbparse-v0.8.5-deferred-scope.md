@@ -5,6 +5,11 @@
 **Companion implementation plan:** `gbparse-v0.8.5-patch.md`  
 **Status:** binding exclusions for the v0.8.5 implementation  
 
+**Historical note:** The exclusions below remain the v0.8.5 boundary. The
+v0.9.0 plan (`gbparse-v0.9.0-patch.md`) deliberately promotes items 1, 2, and
+5 into a later, separately versioned release; this document is not a statement
+that those capabilities remain excluded from all future releases.
+
 ## Explicitly deferred and out of scope
 
 Do **not** implement, scaffold, advertise as imminent, or add placeholder CLI

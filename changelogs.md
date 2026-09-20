@@ -4,6 +4,30 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.9.0] - 2026-09-20
+
+### Cohort records, persistent indexes, and resumable batch execution
+
+- Added `gbparse records list|extract|filter|split` with schema-versioned
+  record projections, exact ID/name selection, lossless GenBank round trips,
+  gzip output, collision-safe split filenames, and an authoritative manifest.
+- Added deterministic plain/gzip cohort discovery and raw-byte fingerprints,
+  including symlink-safe duplicate suppression and collision-safe sample keys.
+- Added normalized `gbparse.index.v1` SQLite build/update/query/status
+  workflows with foreign-key/integrity validation, atomic replacement, and
+  parameterized compilation of the existing bounded feature-query grammar.
+- Added `gbparse batch` with explicit single-input adapters, isolated child
+  argv execution, atomic per-job artifacts, `gbparse.batch.v1` manifests,
+  hash-verified resume, and deterministic exit aggregation.
+- Hardened `batch-summary` to share discovery, render in memory, publish
+  atomically, report skipped inputs, and return nonzero for empty or wholly
+  failed cohorts.
+- Documented the v0.9.0 limits: no sequence archive, arbitrary SQL, shell
+  execution, remote fetching, annotation reconciliation, or workflow-manager
+  behavior.
+
+---
+
 ## [0.8.5] - 2026-09-20
 
 ### CLI interoperability, safe queries, and complete evidence outputs
