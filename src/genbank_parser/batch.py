@@ -11,10 +11,12 @@ import subprocess
 import sys
 import tempfile
 import time
+from argparse import Namespace
 from collections.abc import Callable, Iterable, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
+from importlib import resources
 from pathlib import Path
 from typing import Literal
 
@@ -30,7 +32,7 @@ from .discovery import (
     DiscoveredInput,
     assign_sample_keys,
     discover_inputs,
-    fingerprint_file,
+    snapshot_file,
 )
 
 OutputMode = Literal["file", "directory", "multi_file"]
@@ -53,11 +55,11 @@ class BatchCommandSpec:
     default_suffix: str | None = ".out"
     batchable: bool = True
     forbidden_options: tuple[str, ...] = ("--output", "--output-dir", "--force")
-    build_job_argv: Callable[[str, str, Sequence[str]], list[str]] = field(
-        default=lambda command, input_path, tail: [command, input_path, *tail]
+    build_job_argv: Callable[[str, str, Sequence[str], Namespace], list[str]] = field(
+        default=lambda command, input_path, tail, _options: [command, input_path, *tail]
     )
-    collect_outputs: Callable[[Path, str, Sequence[str]], tuple[ExpectedOutput, ...]] = field(
-        default=lambda sample_dir, input_path, tail: (ExpectedOutput("result.out"),)
+    collect_outputs: Callable[[Path, str, Sequence[str], Namespace], tuple[ExpectedOutput, ...]] = field(
+        default=lambda sample_dir, input_path, tail, _options: (ExpectedOutput("result.out"),)
     )
 
 
@@ -82,11 +84,24 @@ def _sha256(path: Path) -> tuple[str, int]:
     return digest.hexdigest(), size
 
 
-def _format_suffix(tail: Sequence[str], fallback: str) -> str:
-    try:
-        index = next(index for index, value in enumerate(tail) if value == "--format")
-        value = tail[index + 1]
-    except (StopIteration, IndexError):
+def _format_suffix(tail: Sequence[str], fallback: str, options: Namespace | None = None) -> str:
+    emit = getattr(options, "emit", None) if options is not None else None
+    if emit in {"faa", "ffn"}:
+        return "." + emit
+    value = getattr(options, "format", None) if options is not None else None
+    if options is not None and getattr(options, "json", False):
+        value = "json"
+    if value is None:
+        for index, token in enumerate(tail):
+            if token == "--format" and index + 1 < len(tail):
+                value = tail[index + 1]
+                break
+            if token.startswith("--format="):
+                value = token.split("=", 1)[1]
+                break
+        if value is None and "--json" in tail:
+            value = "json"
+    if value is None:
         return fallback
     return {
         "json": ".json",
@@ -103,6 +118,15 @@ def _format_suffix(tail: Sequence[str], fallback: str) -> str:
     }.get(value, fallback)
 
 
+def _option_value(tail: Sequence[str], name: str) -> str | None:
+    for index, token in enumerate(tail):
+        if token == name and index + 1 < len(tail):
+            return tail[index + 1]
+        if token.startswith(name + "="):
+            return token.split("=", 1)[1]
+    return None
+
+
 def _source_stem(input_path: str) -> str:
     name = Path(input_path).name
     if name.casefold().endswith(".gz"):
@@ -111,22 +135,22 @@ def _source_stem(input_path: str) -> str:
 
 
 def _file_spec(name: str, suffix: str) -> BatchCommandSpec:
-    def build(command: str, input_path: str, tail: Sequence[str]) -> list[str]:
-        output_name = f"result{_format_suffix(tail, suffix)}"
+    def build(command: str, input_path: str, tail: Sequence[str], options: Namespace) -> list[str]:
+        output_name = f"result{_format_suffix(tail, suffix, options)}"
         return [command, input_path, *tail, "--output", "{OUTPUT}/" + output_name]
 
-    def collect(sample_dir: Path, input_path: str, tail: Sequence[str]) -> tuple[ExpectedOutput, ...]:
-        return (ExpectedOutput(f"result{_format_suffix(tail, suffix)}"),)
+    def collect(sample_dir: Path, input_path: str, tail: Sequence[str], options: Namespace) -> tuple[ExpectedOutput, ...]:
+        return (ExpectedOutput(f"result{_format_suffix(tail, suffix, options)}"),)
 
     return BatchCommandSpec(name=name, default_suffix=suffix, build_job_argv=build, collect_outputs=collect)
 
 
 def _positional_spec(name: str, suffix: str) -> BatchCommandSpec:
-    def build(command: str, input_path: str, tail: Sequence[str]) -> list[str]:
-        return [command, input_path, *tail, "{OUTPUT}/result" + _format_suffix(tail, suffix)]
+    def build(command: str, input_path: str, tail: Sequence[str], options: Namespace) -> list[str]:
+        return [command, input_path, *tail, "{OUTPUT}/result" + _format_suffix(tail, suffix, options)]
 
-    def collect(sample_dir: Path, input_path: str, tail: Sequence[str]) -> tuple[ExpectedOutput, ...]:
-        return (ExpectedOutput("result" + _format_suffix(tail, suffix)),)
+    def collect(sample_dir: Path, input_path: str, tail: Sequence[str], options: Namespace) -> tuple[ExpectedOutput, ...]:
+        return (ExpectedOutput("result" + _format_suffix(tail, suffix, options)),)
 
     return BatchCommandSpec(
         name=name,
@@ -138,10 +162,10 @@ def _positional_spec(name: str, suffix: str) -> BatchCommandSpec:
 
 
 def _sequence_spec() -> BatchCommandSpec:
-    def build(command: str, input_path: str, tail: Sequence[str]) -> list[str]:
+    def build(command: str, input_path: str, tail: Sequence[str], options: Namespace) -> list[str]:
         return [command, input_path, *tail, "--fna", "{OUTPUT}/genome.fna", "--ffn", "{OUTPUT}/cds.ffn"]
 
-    def collect(sample_dir: Path, input_path: str, tail: Sequence[str]) -> tuple[ExpectedOutput, ...]:
+    def collect(sample_dir: Path, input_path: str, tail: Sequence[str], options: Namespace) -> tuple[ExpectedOutput, ...]:
         return (ExpectedOutput("genome.fna"), ExpectedOutput("cds.ffn"))
 
     return BatchCommandSpec(
@@ -155,14 +179,14 @@ def _sequence_spec() -> BatchCommandSpec:
 
 
 def _neighborhood_spec() -> BatchCommandSpec:
-    def build(command: str, input_path: str, tail: Sequence[str]) -> list[str]:
-        argv = [command, input_path, *tail, "--output", "{OUTPUT}/result" + _format_suffix(tail, ".json")]
+    def build(command: str, input_path: str, tail: Sequence[str], options: Namespace) -> list[str]:
+        argv = [command, input_path, *tail, "--output", "{OUTPUT}/result" + _format_suffix(tail, ".txt", options)]
         if "--visualize" in tail or "--viz-output" in tail:
             argv.extend(("--visualize", "--viz-output", "{OUTPUT}/neighborhood.svg"))
         return argv
 
-    def collect(sample_dir: Path, input_path: str, tail: Sequence[str]) -> tuple[ExpectedOutput, ...]:
-        result = [ExpectedOutput("result" + _format_suffix(tail, ".json"))]
+    def collect(sample_dir: Path, input_path: str, tail: Sequence[str], options: Namespace) -> tuple[ExpectedOutput, ...]:
+        result = [ExpectedOutput("result" + _format_suffix(tail, ".txt", options))]
         if "--visualize" in tail or "--viz-output" in tail:
             result.append(ExpectedOutput("neighborhood.svg"))
         return tuple(result)
@@ -178,11 +202,11 @@ def _neighborhood_spec() -> BatchCommandSpec:
 
 
 def _phylo_spec() -> BatchCommandSpec:
-    def build(command: str, input_path: str, tail: Sequence[str]) -> list[str]:
-        return [command, input_path, *tail, "--output", "{OUTPUT}/report" + _format_suffix(tail, ".json"), "--output-dir", "{OUTPUT}/markers"]
+    def build(command: str, input_path: str, tail: Sequence[str], options: Namespace) -> list[str]:
+        return [command, input_path, *tail, "--output", "{OUTPUT}/report" + _format_suffix(tail, ".txt", options), "--output-dir", "{OUTPUT}/markers"]
 
-    def collect(sample_dir: Path, input_path: str, tail: Sequence[str]) -> tuple[ExpectedOutput, ...]:
-        return (ExpectedOutput("report" + _format_suffix(tail, ".json")),)
+    def collect(sample_dir: Path, input_path: str, tail: Sequence[str], options: Namespace) -> tuple[ExpectedOutput, ...]:
+        return (ExpectedOutput("report" + _format_suffix(tail, ".txt", options)),)
 
     return BatchCommandSpec(
         name="phylo",
@@ -195,15 +219,17 @@ def _phylo_spec() -> BatchCommandSpec:
 
 
 def _export_spec() -> BatchCommandSpec:
-    def build(command: str, input_path: str, tail: Sequence[str]) -> list[str]:
-        if "ncbi-table" in tail:
+    def build(command: str, input_path: str, tail: Sequence[str], options: Namespace) -> list[str]:
+        if getattr(options, "format", None) == "ncbi-table" or _option_value(tail, "--format") == "ncbi-table":
             return [command, input_path, *tail, "--output-dir", "{OUTPUT}"]
-        return [command, input_path, *tail, "--output", "{OUTPUT}/result" + _format_suffix(tail, ".out")]
+        suffix = {"annotations-tsv": ".tsv", "jsonl": ".jsonl", "faa": ".faa", "ffn": ".ffn", "fna": ".fna", "gff3": ".gff3", "bed12": ".bed"}.get(getattr(options, "format", None), ".out")
+        return [command, input_path, *tail, "--output", "{OUTPUT}/result" + suffix]
 
-    def collect(sample_dir: Path, input_path: str, tail: Sequence[str]) -> tuple[ExpectedOutput, ...]:
-        if "ncbi-table" in tail:
+    def collect(sample_dir: Path, input_path: str, tail: Sequence[str], options: Namespace) -> tuple[ExpectedOutput, ...]:
+        if getattr(options, "format", None) == "ncbi-table" or _option_value(tail, "--format") == "ncbi-table":
             return tuple(ExpectedOutput(str(path.relative_to(sample_dir))) for path in sorted(sample_dir.rglob("*")) if path.is_file())
-        return (ExpectedOutput("result" + _format_suffix(tail, ".out")),)
+        suffix = {"annotations-tsv": ".tsv", "jsonl": ".jsonl", "faa": ".faa", "ffn": ".ffn", "fna": ".fna", "gff3": ".gff3", "bed12": ".bed"}.get(getattr(options, "format", None), ".out")
+        return (ExpectedOutput("result" + suffix),)
 
     return BatchCommandSpec(
         name="export",
@@ -272,7 +298,7 @@ def get_command_spec(command: str, tail: Sequence[str] = ()) -> BatchCommandSpec
         raise BatchUsageError(f"unsupported batch command {command!r}; use a registered single-input command") from exc
     if not spec.batchable:
         raise BatchUsageError(f"unsupported batch command {command!r}: {_UNSUPPORTED[command]}")
-    if command == "export" and "ncbi-table" in tail:
+    if command == "export" and _option_value(tail, "--format") == "ncbi-table":
         return replace(spec, output_mode="directory")
     return spec
 
@@ -286,20 +312,27 @@ def _validate_tail(spec: BatchCommandSpec, tail: Sequence[str]) -> None:
                 )
 
 
-def _validate_command_argv(command: str, argv: Sequence[str]) -> None:
+def _validate_command_argv(command: str, argv: Sequence[str]) -> Namespace:
     from .cli import create_command_parser
 
     parser = create_command_parser(command)
     try:
-        parser.parse_args(list(argv))
+        return parser.parse_args(list(argv))
     except SystemExit as exc:
         raise BatchUsageError(
             f"batch command {command!r} arguments failed pre-validation"
         ) from exc
 
 
-def _build_argv(spec: BatchCommandSpec, command: str, input_path: Path, sample_dir: Path, tail: Sequence[str]) -> list[str]:
-    raw = spec.build_job_argv(command, str(input_path), tail)
+def _build_argv(
+    spec: BatchCommandSpec,
+    command: str,
+    input_path: Path,
+    sample_dir: Path,
+    tail: Sequence[str],
+    options: Namespace,
+) -> list[str]:
+    raw = spec.build_job_argv(command, str(input_path), tail, options)
     return [
         sys.executable,
         "-m",
@@ -317,13 +350,35 @@ def _write_manifest(path: Path, manifest: dict[str, object]) -> None:
 
 
 def _job_id(source: DiscoveredInput) -> str:
-    return "job-" + hashlib.sha256(source.display_path.encode("utf-8")).hexdigest()[:16]
+    return "job-" + hashlib.sha256(source.source_identity.encode("utf-8")).hexdigest()[:16]
 
 
-def _input_payload(source: DiscoveredInput) -> dict[str, object]:
-    fp = fingerprint_file(source.resolved_path)
+def _input_payload(
+    source: DiscoveredInput,
+    fingerprint=None,
+    *,
+    fallback: dict[str, object] | None = None,
+) -> dict[str, object]:
+    if fingerprint is None:
+        try:
+            fingerprint = snapshot_file(source.resolved_path)[1]
+        except OSError:
+            if fallback is None:
+                raise
+            payload = dict(fallback)
+            payload.update(
+                {
+                    "requested_path": source.requested_path,
+                    "source_identity": source.source_identity,
+                    "display_path": source.display_path,
+                    "resolved_path": str(source.resolved_path),
+                }
+            )
+            return payload
+    fp = fingerprint
     return {
         "requested_path": source.requested_path,
+        "source_identity": source.source_identity,
         "display_path": source.display_path,
         "resolved_path": str(source.resolved_path),
         "sha256": fp.sha256,
@@ -358,31 +413,83 @@ def _outputs_payload(sample_root: Path, expected: Sequence[ExpectedOutput]) -> l
         if not path.is_file():
             raise OutputError(f"expected batch output is missing: {path}")
         digest, size = _sha256(path)
-        outputs.append({"path": str(path.relative_to(sample_root.parent.parent)).replace(os.sep, "/"), "relative_path": item.relative_path, "size_bytes": size, "sha256": digest})
+        relative_path = str(item.relative_path).replace("\\", "/")
+        outputs.append({"path": str(path.relative_to(sample_root.parent.parent)).replace(os.sep, "/"), "relative_path": relative_path, "size_bytes": size, "sha256": digest})
     return outputs
 
 
 def _all_outputs_payload(sample_root: Path) -> list[dict[str, object]]:
     files = [path for path in sorted(sample_root.rglob("*")) if path.is_file()]
-    return _outputs_payload(sample_root, tuple(ExpectedOutput(str(path.relative_to(sample_root))) for path in files))
+    return _outputs_payload(
+        sample_root,
+        tuple(ExpectedOutput(str(path.relative_to(sample_root)).replace(os.sep, "/")) for path in files),
+    )
 
 
-def _resume_valid(job: dict[str, object], source: DiscoveredInput, command: str, tail: Sequence[str], run_dir: Path) -> bool:
+def _resume_valid(
+    job: dict[str, object],
+    source: DiscoveredInput,
+    spec: BatchCommandSpec,
+    command: str,
+    tail: Sequence[str],
+    options: Namespace,
+    run_dir: Path,
+) -> bool:
     if job.get("status") not in {"succeeded", "threshold_failed"}:
         return False
-    if job.get("input", {}).get("display_path") != source.display_path:
+    input_payload = job.get("input", {})
+    if not isinstance(input_payload, dict):
         return False
-    if job.get("input", {}).get("sha256") != fingerprint_file(source.resolved_path).sha256:
+    stored_identity = input_payload.get("source_identity") or _legacy_identity(input_payload.get("resolved_path"))
+    if stored_identity not in {None, source.source_identity}:
         return False
-    for output in job.get("outputs", []):
+    current_fingerprint = snapshot_file(source.resolved_path)[1]
+    if input_payload.get("sha256") != current_fingerprint.sha256:
+        return False
+    outputs = job.get("outputs")
+    if not isinstance(outputs, list):
+        return False
+    sample_root = run_dir / "outputs" / str(job.get("sample_key", ""))
+    expected = spec.collect_outputs(sample_root, str(source.resolved_path), tail, options)
+    stored_relative = {
+        str(output.get("relative_path", "")).replace("\\", "/")
+        for output in outputs
+        if isinstance(output, dict)
+    }
+    expected_relative = {item.relative_path for item in expected}
+    if not expected_relative.issubset(stored_relative):
+        return False
+    if not outputs and spec.output_mode != "directory":
+        return False
+    actual_relative = {
+        str(path.relative_to(sample_root)).replace(os.sep, "/")
+        for path in sample_root.rglob("*")
+        if path.is_file()
+    }
+    if stored_relative != actual_relative:
+        return False
+    for output in outputs:
+        if not isinstance(output, dict):
+            return False
+        if not _safe_relative(output.get("relative_path")) or not _safe_relative(output.get("path")):
+            return False
+        relative = Path(str(output["relative_path"]))
         path = run_dir / str(output.get("path", ""))
+        if path != sample_root / relative:
+            return False
+        if not _within(path, sample_root):
+            return False
         if not path.is_file():
             return False
         digest, size = _sha256(path)
         if digest != output.get("sha256") or size != output.get("size_bytes"):
             return False
     log = run_dir / str(job.get("stderr_log", ""))
-    return bool(job.get("stderr_log")) and log.is_file()
+    if not bool(job.get("stderr_log")) or not log.is_file():
+        return False
+    if not _within(log, run_dir):
+        return False
+    return hashlib.sha256(log.read_bytes()).hexdigest() == job.get("stderr_sha256")
 
 
 def _run_one(
@@ -392,17 +499,24 @@ def _run_one(
     sample_key: str,
     stage_root: Path,
     tail: Sequence[str],
+    options: Namespace,
+    input_payload: dict[str, object] | None = None,
 ) -> dict[str, object]:
     sample_root = stage_root / "outputs" / sample_key
-    if not (command == "export" and "ncbi-table" in tail):
+    if spec.output_mode != "directory":
         sample_root.mkdir(parents=True, exist_ok=True)
     logs_root = stage_root / "logs"
     logs_root.mkdir(parents=True, exist_ok=True)
-    expected = spec.collect_outputs(sample_root, str(source.resolved_path), tail)
-    argv = _build_argv(spec, command, source.resolved_path, sample_root, tail)
+    expected = spec.collect_outputs(sample_root, str(source.resolved_path), tail, options)
+    snapshot_root = Path(tempfile.mkdtemp(prefix=".gbparse-input.", dir=stage_root.parent))
+    snapshot_path = snapshot_root / source.resolved_path.name
     started_clock = time.perf_counter()
     started = _now()
+    fingerprint = None
     try:
+        raw, fingerprint = snapshot_file(source.resolved_path)
+        snapshot_path.write_bytes(raw)
+        argv = _build_argv(spec, command, snapshot_path, sample_root, tail, options)
         completed = subprocess.run(argv, capture_output=True, text=True, shell=False, check=False)
         stderr = completed.stderr
         if completed.stdout:
@@ -411,6 +525,7 @@ def _run_one(
     except OSError as exc:
         stderr = str(exc)
         exit_code = 3
+        argv = _build_argv(spec, command, snapshot_path, sample_root, tail, options)
     log_name = f"{sample_key}.stderr.log"
     log_path = logs_root / log_name
     status = "succeeded" if exit_code == 0 else "threshold_failed" if exit_code == 1 else "failed"
@@ -420,7 +535,7 @@ def _run_one(
         try:
             outputs = (
                 _all_outputs_payload(sample_root)
-                if (command == "export" and "ncbi-table" in tail) or command == "phylo"
+                if spec.output_mode in {"directory", "multi_file"}
                 else _outputs_payload(sample_root, expected)
             )
         except OutputError as exc:
@@ -432,8 +547,13 @@ def _run_one(
         # A child may have created a partial file before failing. It is never
         # published as a plausible successful job artifact.
         shutil.rmtree(sample_root, ignore_errors=True)
-    log_path.write_text(stderr, encoding="utf-8")
-    return {
+    with log_path.open("w", encoding="utf-8", newline="") as log_handle:
+        log_handle.write(stderr)
+        log_handle.flush()
+        os.fsync(log_handle.fileno())
+    log_digest = hashlib.sha256(log_path.read_bytes()).hexdigest()
+    result = {
+        "input": _input_payload(source, fingerprint, fallback=input_payload),
         "status": status,
         "exit_code": exit_code,
         "exit_class": exit_class,
@@ -443,14 +563,20 @@ def _run_one(
         "duration_seconds": round(time.perf_counter() - started_clock, 6),
         "outputs": outputs,
         "stderr_log": str(log_path.relative_to(stage_root)).replace(os.sep, "/"),
-        "stderr_sha256": hashlib.sha256(stderr.encode("utf-8")).hexdigest(),
+        "stderr_sha256": log_digest,
     }
+    shutil.rmtree(snapshot_root, ignore_errors=True)
+    return result
 
 
 def _aggregate(manifest: dict[str, object]) -> tuple[int, int]:
     jobs = manifest.get("jobs", [])
     failed = sum(1 for job in jobs if job.get("status") == "failed")
-    codes = [int(job.get("exit_code", 0) or 0) for job in jobs if job.get("status") in {"failed", "threshold_failed"}]
+    codes = [
+        int(job.get("exit_code", 0) or 0)
+        for job in jobs
+        if job.get("status") in {"failed", "threshold_failed", "skipped_unchanged"}
+    ]
     if any(code == 4 for code in codes):
         return 4, failed
     if any(code == 3 for code in codes):
@@ -460,6 +586,136 @@ def _aggregate(manifest: dict[str, object]) -> tuple[int, int]:
     if any(code == 1 for code in codes):
         return 1, failed
     return 0, failed
+
+
+def _legacy_identity(value: object) -> str | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return os.path.normcase(os.fspath(Path(value).resolve(strict=False)))
+    except OSError:
+        return os.path.normcase(os.path.abspath(value))
+
+
+def _safe_relative(value: object) -> bool:
+    if not isinstance(value, str) or not value:
+        return False
+    path = Path(value)
+    return not path.is_absolute() and ".." not in path.parts
+
+
+def _within(path: Path, root: Path) -> bool:
+    try:
+        path.resolve(strict=False).relative_to(root.resolve(strict=False))
+    except ValueError:
+        return False
+    return True
+
+
+def _validate_manifest(manifest: object) -> dict[str, object]:
+    """Validate the persisted v1 manifest before trusting any resume state."""
+
+    try:
+        import jsonschema
+
+        schema = json.loads(
+            resources.files("genbank_parser")
+            .joinpath("data", "schemas", "batch-v1.schema.json")
+            .read_text(encoding="utf-8")
+        )
+        jsonschema.validate(manifest, schema)
+    except ModuleNotFoundError:
+        pass
+    except (OSError, json.JSONDecodeError, jsonschema.ValidationError) as exc:  # type: ignore[union-attr]
+        raise InputError(f"batch manifest does not validate against batch-v1 schema: {exc}") from exc
+    if not isinstance(manifest, dict):
+        raise InputError("batch manifest must be a JSON object")
+    required = {
+        "schema_version",
+        "gbparse_version",
+        "python_version",
+        "biopython_version",
+        "platform",
+        "created_at",
+        "updated_at",
+        "command",
+        "command_args",
+        "runner",
+        "jobs",
+    }
+    if not required.issubset(manifest):
+        missing = sorted(required - set(manifest))
+        raise InputError(f"batch manifest is missing required fields: {', '.join(missing)}")
+    if manifest.get("schema_version") != "gbparse.batch.v1":
+        raise InputError("incompatible batch manifest schema")
+    if not isinstance(manifest.get("command_args"), list) or not all(
+        isinstance(value, str) for value in manifest["command_args"]
+    ):
+        raise InputError("batch manifest command_args must be a string array")
+    runner = manifest.get("runner")
+    if not isinstance(runner, dict) or not isinstance(runner.get("jobs"), int) or runner["jobs"] <= 0:
+        raise InputError("batch manifest runner is invalid")
+    if not isinstance(manifest.get("jobs"), list):
+        raise InputError("batch manifest jobs must be an array")
+    statuses = {"pending", "running", "succeeded", "threshold_failed", "failed", "skipped_unchanged", "not_requested"}
+    job_ids: set[str] = set()
+    sample_keys: set[str] = set()
+    source_identities: set[str] = set()
+    output_paths: set[str] = set()
+    for job in manifest["jobs"]:
+        if not isinstance(job, dict):
+            raise InputError("batch manifest contains a non-object job")
+        for key in ("job_id", "sample_key", "status", "input"):
+            if key not in job:
+                raise InputError(f"batch manifest job is missing {key!r}")
+        job_id = str(job["job_id"])
+        if job_id in job_ids:
+            raise InputError(f"batch manifest has duplicate job_id {job_id!r}")
+        job_ids.add(job_id)
+        status = str(job["status"])
+        if status not in statuses:
+            raise InputError(f"batch manifest has invalid job status {status!r}")
+        input_payload = job["input"]
+        if not isinstance(input_payload, dict):
+            raise InputError("batch manifest job input must be an object")
+        if status != "not_requested":
+            source_identity = input_payload.get("source_identity") or _legacy_identity(
+                input_payload.get("resolved_path")
+            )
+            if source_identity is not None:
+                source_identity = str(source_identity)
+                if source_identity in source_identities:
+                    raise InputError(
+                        f"batch manifest has duplicate active source identity {source_identity!r}"
+                    )
+                source_identities.add(source_identity)
+            sample_key = str(job["sample_key"])
+            sample_path = Path(sample_key)
+            if sample_path.is_absolute() or len(sample_path.parts) != 1 or sample_path.parts[0] in {".", ".."}:
+                raise InputError(f"batch manifest has unsafe sample_key {sample_key!r}")
+            sample_key_identity = os.path.normcase(sample_key)
+            if sample_key_identity in sample_keys:
+                raise InputError(f"batch manifest has duplicate active sample_key {sample_key!r}")
+            sample_keys.add(sample_key_identity)
+        outputs = job.get("outputs", [])
+        if not isinstance(outputs, list):
+            raise InputError("batch manifest job outputs must be an array")
+        for output in outputs:
+            if not isinstance(output, dict):
+                raise InputError("batch manifest output must be an object")
+            if not {"path", "relative_path", "size_bytes", "sha256"}.issubset(output):
+                raise InputError("batch manifest output is missing required fields")
+            if not _safe_relative(output.get("relative_path")) or not _safe_relative(output.get("path")):
+                raise InputError("batch manifest contains an unsafe output path")
+            path = str(output.get("path", ""))
+            if status != "not_requested":
+                path_identity = os.path.normcase(path.replace("\\", "/"))
+                if path_identity in output_paths:
+                    raise InputError(f"batch manifest has duplicate active output path {path!r}")
+                output_paths.add(path_identity)
+        if "stderr_log" in job and not _safe_relative(job.get("stderr_log")):
+            raise InputError("batch manifest contains an unsafe stderr log path")
+    return manifest
 
 
 def execute_batch(
@@ -486,6 +742,11 @@ def execute_batch(
         raise ValueError("--resume and --force are mutually exclusive")
     spec = get_command_spec(command, tail)
     _validate_tail(spec, tail)
+    sentinel = Path("__gbparse_batch_input__.gbff")
+    base_options = _validate_command_argv(command, [str(sentinel), *tail])
+    raw_validation = spec.build_job_argv(command, str(sentinel), tail, base_options)
+    validation_argv = [value.replace("{OUTPUT}", "__gbparse_batch_output__") for value in raw_validation[1:]]
+    options = _validate_command_argv(command, validation_argv)
     output_path = Path(output_dir)
     reject_input_output_collision(inputs, output_path)
     staging_siblings = tuple(output_path.parent.glob(f".{output_path.name}.*")) if output_path.parent.exists() else ()
@@ -493,15 +754,6 @@ def execute_batch(
     if not discovered:
         raise InputError("no GenBank inputs were discovered")
     keys = assign_sample_keys(discovered)
-    # Parse once before any child starts. The injected paths are parser-valid
-    # sentinels; biological execution remains isolated in child processes.
-    sentinel = Path("__gbparse_batch_input__.gbff")
-    sample_sentinel = Path("__gbparse_batch_output__")
-    validation_argv = [str(sentinel)]
-    raw_validation = spec.build_job_argv(command, str(sentinel), tail)
-    validation_argv = [value.replace("{OUTPUT}", str(sample_sentinel)) for value in raw_validation[1:]]
-    _validate_command_argv(command, validation_argv)
-
     if resume:
         manifest_file = _manifest_path(output_path)
         if not output_path.is_dir() or not manifest_file.is_file():
@@ -510,10 +762,19 @@ def execute_batch(
             manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise InputError(f"could not read batch manifest: {exc}") from exc
-        if manifest.get("schema_version") != "gbparse.batch.v1":
-            raise InputError("incompatible batch manifest schema")
-        if manifest.get("command") != command or manifest.get("command_args") != list(tail) or manifest.get("gbparse_version") != __version__:
-            raise InputError("batch resume manifest command or gbparse version does not match")
+        manifest = _validate_manifest(manifest)
+        if (
+            manifest.get("command") != command
+            or manifest.get("command_args") != list(tail)
+            or manifest.get("gbparse_version") != __version__
+            or manifest.get("python_version") != platform.python_version()
+            or manifest.get("biopython_version") != __import__("Bio").__version__
+            or manifest.get("platform") != platform.platform()
+        ):
+            raise InputError("batch resume manifest environment or command does not match")
+        runner = manifest["runner"]
+        if runner.get("jobs") != jobs or runner.get("on_error") != on_error:
+            raise InputError("batch resume runner settings do not match the original run")
     else:
         if output_path.exists() and not force:
             raise OutputError(f"batch output directory already exists; use --force: {output_path}")
@@ -531,24 +792,43 @@ def execute_batch(
         else:
             (work_dir / "outputs").mkdir()
             (work_dir / "logs").mkdir()
-        existing_by_display = {
-            str(job.get("input", {}).get("display_path")): job for job in manifest.get("jobs", [])
-        }
-        current_display = {source.display_path for source in discovered}
+        existing_by_identity: dict[str, dict[str, object]] = {}
         for job in manifest.get("jobs", []):
-            if job.get("input", {}).get("display_path") not in current_display:
+            payload = job.get("input", {})
+            identity = payload.get("source_identity") if isinstance(payload, dict) else None
+            identity = identity or _legacy_identity(payload.get("resolved_path") if isinstance(payload, dict) else None)
+            if identity is not None:
+                existing_by_identity[str(identity)] = job
+        current_identities = {source.source_identity for source in discovered}
+        for job in manifest.get("jobs", []):
+            payload = job.get("input", {})
+            identity = payload.get("source_identity") if isinstance(payload, dict) else None
+            identity = identity or _legacy_identity(payload.get("resolved_path") if isinstance(payload, dict) else None)
+            if identity not in current_identities:
                 job["status"] = "not_requested"
         pending: list[tuple[DiscoveredInput, str, dict[str, object]]] = []
         for source in discovered:
             key = keys[source]
-            existing = existing_by_display.get(source.display_path)
-            if resume and existing is not None and _resume_valid(existing, source, command, tail, output_path):
+            existing = existing_by_identity.get(source.source_identity)
+            if resume and existing is not None and _resume_valid(existing, source, spec, command, tail, options, output_path):
                 existing["status"] = "skipped_unchanged"
+                input_payload = existing.get("input")
+                if isinstance(input_payload, dict):
+                    input_payload.update(
+                        {
+                            "requested_path": source.requested_path,
+                            "source_identity": source.source_identity,
+                            "display_path": source.display_path,
+                            "resolved_path": str(source.resolved_path),
+                        }
+                    )
                 continue
             if existing is None:
                 existing = {"job_id": _job_id(source), "sample_key": key}
                 manifest.setdefault("jobs", []).append(existing)
+                existing_by_identity[source.source_identity] = existing
             else:
+                existing["job_id"] = _job_id(source)
                 old_sample = str(existing.get("sample_key", key))
                 if old_sample != key:
                     existing["sample_key"] = key
@@ -562,7 +842,14 @@ def execute_batch(
             existing: dict[str, object],
             result: dict[str, object],
         ) -> bool:
-            existing.update({"input": _input_payload(source), **result})
+            result_input = result.get("input")
+            if not isinstance(result_input, dict):
+                prior_input = existing.get("input")
+                result_input = _input_payload(
+                    source,
+                    fallback=prior_input if isinstance(prior_input, dict) else None,
+                )
+            existing.update({**result, "input": result_input})
             manifest["updated_at"] = _now()
             _write_manifest(_manifest_path(work_dir), manifest)
             return result["status"] == "failed"
@@ -570,7 +857,17 @@ def execute_batch(
         if jobs > 1 and on_error == "continue" and len(pending) > 1:
             with ThreadPoolExecutor(max_workers=min(jobs, len(pending))) as executor:
                 futures = {
-                    executor.submit(_run_one, spec, command, source, key, work_dir, tail): (source, existing)
+                    executor.submit(
+                        _run_one,
+                        spec,
+                        command,
+                        source,
+                        key,
+                        work_dir,
+                        tail,
+                        options,
+                        existing.get("input") if isinstance(existing.get("input"), dict) else None,
+                    ): (source, existing)
                     for source, key, existing in pending
                 }
                 for future in as_completed(futures):
@@ -578,10 +875,20 @@ def execute_batch(
                     record_result(source, existing, future.result())
         else:
             for source, key, existing in pending:
-                result = _run_one(spec, command, source, key, work_dir, tail)
+                result = _run_one(
+                    spec,
+                    command,
+                    source,
+                    key,
+                    work_dir,
+                    tail,
+                    options,
+                    existing.get("input") if isinstance(existing.get("input"), dict) else None,
+                )
                 if record_result(source, existing, result) and on_error == "stop":
                     break
         manifest["updated_at"] = _now()
+        _validate_manifest(manifest)
         _write_manifest(_manifest_path(work_dir), manifest)
         # A final manifest exists before the directory move, so an interrupted
         # publication never presents a successful artifact without provenance.
