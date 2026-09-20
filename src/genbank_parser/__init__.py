@@ -17,7 +17,7 @@ from .operons import OperonCluster, OperonPair, OperonResult, build_operon_resul
 
 # Keep the source-checkout CLI and an installed wheel on the same release
 # value.  The project metadata in pyproject.toml is intentionally static too.
-__version__ = "0.8.5"
+__version__ = "0.9.0"
 
 __all__ = [
     "GenBankDocument",

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 
+from genbank_parser import __version__
 from genbank_parser.meor import analyze_meor
 from genbank_parser.meor.report import TSV_COLUMNS, render_json, render_text, render_tsv
 
@@ -28,7 +29,7 @@ def test_report_contracts() -> None:
         "karyograms",
     ]
     assert payload["schema_version"] == "gbparse.meor.v1"
-    assert payload["tool_version"] == "0.8.5"
+    assert payload["tool_version"] == __version__
     assert payload["catalog_version"] == "1.1"
     assert payload["parameters"] == {
         "min_weight": 1,
@@ -46,7 +47,7 @@ def test_report_contracts() -> None:
         assert section in text
     assert "Low (W=1)" in text
     assert "1 kb windows" in text
-    assert "gbparse Version: 0.8.5" in text
+    assert f"gbparse Version: {__version__}" in text
     assert "MEOR Catalog Version: 1.1" in text
 
 

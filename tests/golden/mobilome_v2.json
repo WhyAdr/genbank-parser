@@ -2,7 +2,7 @@
   "schema_version": "gbparse.mobilome.v2",
   "tool": "gbparse",
   "analysis": "mobilome",
-  "tool_version": "0.8.5",
+  "tool_version": "0.9.0",
   "catalog_version": "1.5.0",
   "inference_version": "1.6.0",
   "input": {
