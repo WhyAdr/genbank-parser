@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import gzip
 import io
+import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 
 from . import __version__
-from .bakta import batch_summary
+from .bakta import run_batch_summary
 from .cli_io import (
     InputError,
     OutputError,
@@ -18,6 +20,7 @@ from .cli_io import (
     paths_same,
     publish_directory,
     reject_input_output_collision,
+    write_bytes,
     write_text,
 )
 from .codon import analyze_codon_usage, render_codon_tsv
@@ -32,6 +35,7 @@ from .export import (
 )
 from .functional import build_functional_report, render_functional
 from .gff import convert_to_gff3
+from .index import build_index, inspect_index, query_index, update_index
 from .io import GenBankInputError, read_genbank
 from .locus import build_locus_report, render_locus_report
 from .meor import analyze_meor
@@ -51,6 +55,16 @@ from .query import (
     parse_select_fields,
     query_features,
     search_features,
+)
+from .records import (
+    MAX_RECORD_REGEX_LENGTH,
+    RecordSelector,
+    record_rows,
+    render_record_rows,
+    render_selected_records,
+    select_exact_records,
+    select_records,
+    split_record_artifacts,
 )
 from .region import extract_region, render_region_record
 from .sequence import extract_sequences
@@ -80,6 +94,46 @@ def _positive_int(value: str) -> int:
     if parsed <= 0:
         raise argparse.ArgumentTypeError("must be positive")
     return parsed
+
+
+def _record_selector_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--record", action="append", default=[])
+    parser.add_argument("--record-regex")
+    parser.add_argument("--min-length", type=_nonnegative_int)
+    parser.add_argument("--max-length", type=_nonnegative_int)
+    parser.add_argument("--topology", choices=("linear", "circular", "unknown"))
+    parser.add_argument("--molecule-type")
+    parser.add_argument("--has-feature", action="append", default=[])
+    parser.add_argument("--has-locus", action="append", default=[])
+    parser.add_argument("--invert", action="store_true")
+
+
+def _record_selector(args: argparse.Namespace) -> RecordSelector:
+    pattern = args.record_regex
+    if pattern is not None:
+        if len(pattern) > MAX_RECORD_REGEX_LENGTH:
+            raise QueryExpressionError(
+                f"record regex exceeds the {MAX_RECORD_REGEX_LENGTH}-character limit"
+            )
+        try:
+            import re
+
+            re.compile(pattern)
+        except re.error as exc:
+            raise QueryExpressionError(f"invalid record regex: {exc}") from exc
+    if args.min_length is not None and args.max_length is not None and args.min_length > args.max_length:
+        raise ValueError("--min-length cannot exceed --max-length")
+    return RecordSelector(
+        record_ids=tuple(args.record),
+        record_regex=pattern,
+        min_length=args.min_length,
+        max_length=args.max_length,
+        topology=args.topology,
+        molecule_type=args.molecule_type,
+        has_features=tuple(args.has_feature),
+        has_loci=tuple(args.has_locus),
+        invert=args.invert,
+    )
 
 
 def _add_output_arguments(
@@ -249,6 +303,9 @@ def create_parser() -> argparse.ArgumentParser:
     p_bat.add_argument("--csv", default="bakta_summary.csv")
     p_bat.add_argument("--tsv", default="bakta_summary.tsv")
     p_bat.add_argument("--md", default="bakta_summary.md")
+    p_bat.add_argument("--output-dir")
+    p_bat.add_argument("--force", action="store_true")
+    p_bat.add_argument("--on-error", choices=("fail", "skip"), default="fail")
 
     p_meor = subparsers.add_parser("meor", help="Scan MEOR and biosurfactant genomic potential")
     p_meor.add_argument("input")
@@ -298,7 +355,100 @@ def create_parser() -> argparse.ArgumentParser:
     p_operon.add_argument("--output")
     p_operon.add_argument("--force", action="store_true")
 
+    p_records = subparsers.add_parser("records", help="Inventory and select whole GenBank records")
+    record_actions = p_records.add_subparsers(dest="records_action", required=True)
+    p_records_list = record_actions.add_parser("list", help="List record metadata")
+    p_records_list.add_argument("input")
+    _record_selector_arguments(p_records_list)
+    p_records_list.add_argument("--format", choices=("text", "tsv", "csv", "json", "jsonl"), default="text")
+    p_records_list.add_argument("--output")
+    p_records_list.add_argument("--force", action="store_true")
+
+    p_records_extract = record_actions.add_parser("extract", help="Extract exact records")
+    p_records_extract.add_argument("input")
+    p_records_extract.add_argument("--record", action="append", required=True)
+    p_records_extract.add_argument("--format", choices=("genbank", "fasta"), default="genbank")
+    p_records_extract.add_argument("--output", required=True)
+    p_records_extract.add_argument("--force", action="store_true")
+
+    p_records_filter = record_actions.add_parser("filter", help="Filter records by metadata and feature predicates")
+    p_records_filter.add_argument("input")
+    _record_selector_arguments(p_records_filter)
+    p_records_filter.add_argument("--format", choices=("genbank", "fasta"), default="genbank")
+    p_records_filter.add_argument("--output", required=True)
+    p_records_filter.add_argument("--force", action="store_true")
+
+    p_records_split = record_actions.add_parser("split", help="Split records into an atomic directory")
+    p_records_split.add_argument("input")
+    _record_selector_arguments(p_records_split)
+    p_records_split.add_argument("--output-dir", required=True)
+    p_records_split.add_argument("--format", choices=("genbank", "fasta"), default="genbank")
+    p_records_split.add_argument("--force", action="store_true")
+
+    p_index = subparsers.add_parser("index", help="Build and query a normalized cohort index")
+    index_actions = p_index.add_subparsers(dest="index_action", required=True)
+    p_index_build = index_actions.add_parser("build", help="Build a new index")
+    p_index_build.add_argument("inputs", nargs="+")
+    p_index_build.add_argument("destination")
+    p_index_build.add_argument("--jobs", type=_positive_int, default=1)
+    p_index_build.add_argument("--on-error", choices=("fail", "skip"), default="fail")
+    p_index_build.add_argument("--report")
+    p_index_build.add_argument("--force", action="store_true")
+
+    p_index_update = index_actions.add_parser("update", help="Update an existing index")
+    p_index_update.add_argument("database")
+    p_index_update.add_argument("inputs", nargs="+")
+    p_index_update.add_argument("--prune", action="store_true")
+    p_index_update.add_argument("--jobs", type=_positive_int, default=1)
+    p_index_update.add_argument("--on-error", choices=("fail", "skip"), default="fail")
+    p_index_update.add_argument("--report")
+
+    p_index_query = index_actions.add_parser("query", help="Query indexed annotation projections")
+    p_index_query.add_argument("database")
+    p_index_query.add_argument("--where", required=True)
+    p_index_query.add_argument("--select")
+    p_index_query.add_argument("--format", choices=("text", "tsv", "csv", "json", "jsonl"), default="text")
+    p_index_query.add_argument("--limit", type=_positive_int)
+    p_index_query.add_argument("--output")
+    p_index_query.add_argument("--force", action="store_true")
+
+    p_index_status = index_actions.add_parser("status", help="Inspect index metadata and counts")
+    p_index_status.add_argument("database")
+    p_index_status.add_argument("--format", choices=("text", "json"), default="text")
+    p_index_status.add_argument("--check", action="store_true")
+    p_index_status.add_argument("--verify-sources", action="store_true")
+    p_index_status.add_argument("--output")
+    p_index_status.add_argument("--force", action="store_true")
+
+    p_batch = subparsers.add_parser("batch", help="Apply one registered command across a cohort")
+    p_batch.add_argument("inputs", nargs="+")
+    p_batch.add_argument("--command", required=True)
+    p_batch.add_argument("--output-dir", required=True)
+    p_batch.add_argument("--jobs", type=_positive_int, default=1)
+    p_batch.add_argument("--on-error", choices=("continue", "stop"), default="continue")
+    batch_replacement = p_batch.add_mutually_exclusive_group()
+    batch_replacement.add_argument("--resume", action="store_true")
+    batch_replacement.add_argument("--force", action="store_true")
+    p_batch.set_defaults(tail=[])
+
     return parser
+
+
+def create_command_parser(command: str) -> argparse.ArgumentParser:
+    """Return the parser used for one registered command.
+
+    Batch pre-validation retrieves the already-composed subparser, avoiding a
+    second copy of command definitions and their option semantics.
+    """
+
+    parser = create_parser()
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            try:
+                return action.choices[command]
+            except KeyError as exc:
+                raise ValueError(f"unknown gbparse command: {command}") from exc
+    raise ValueError("gbparse parser has no subcommands")
 
 
 def _write_or_stdout(
@@ -341,6 +491,123 @@ def _query_fasta(matches: Sequence[object], emit: str, *, strict: bool) -> tuple
 
 def _dispatch(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     cmd = args.subcommand
+
+    if cmd == "records":
+        selector = None if args.records_action == "extract" else _record_selector(args)
+        document = read_genbank(args.input)
+        if args.records_action == "extract":
+            selected = select_exact_records(document, tuple(args.record))
+            payload = render_selected_records(selected, args.format)
+        else:
+            assert selector is not None
+            selected = select_records(document, selector)
+            if args.records_action == "list":
+                rows = tuple(row for row in record_rows(document) if row.record_index <= len(document.records))
+                # Row selection mirrors the typed record selection and keeps
+                # source order; no filename or text reconstruction is used.
+                selected_ids = {id(record) for record in selected}
+                selected_rows = tuple(
+                    row for record, row in zip(document.records, rows, strict=True) if id(record) in selected_ids
+                )
+                _write_or_stdout(
+                    render_record_rows(selected_rows, args.format),
+                    args.output,
+                    force=args.force,
+                    inputs=(args.input,),
+                )
+                return EXIT_OK
+            if args.records_action == "filter" and not selector.has_predicates:
+                raise QueryExpressionError("records filter requires at least one selection predicate")
+            if not selected:
+                raise ValueError("record selection matched no records")
+            payload = render_selected_records(selected, args.format)
+        if args.records_action == "split":
+            files = split_record_artifacts(selected, args.format, source=str(args.input))
+            publish_directory(files, args.output_dir, force=args.force, inputs=(args.input,))
+            return EXIT_OK
+        target = args.output
+        if str(target).casefold().endswith(".gz"):
+            payload = gzip.compress(payload, mtime=0)
+        write_bytes(payload, target, force=args.force, inputs=(args.input,))
+        return EXIT_OK
+
+    if cmd == "index":
+        if args.index_action == "build":
+            result = build_index(
+                args.inputs,
+                args.destination,
+                jobs=args.jobs,
+                on_error=args.on_error,
+                force=args.force,
+                report_path=args.report,
+            )
+            for item in result.skipped_sources:
+                eprint(f"WARNING: skipped index source {item['source']}: {item['error']}")
+            return result.exit_code
+        if args.index_action == "update":
+            result = update_index(
+                args.database,
+                args.inputs,
+                prune=args.prune,
+                jobs=args.jobs,
+                on_error=args.on_error,
+                report_path=args.report,
+            )
+            for item in result.skipped_sources:
+                eprint(f"WARNING: skipped index source {item['source']}: {item['error']}")
+            return result.exit_code
+        if args.index_action == "query":
+            rows = query_index(args.database, args.where, limit=args.limit)
+            selected = parse_select_fields(args.select)
+            _write_or_stdout(
+                render_rows(rows, format_type=args.format, selected=selected),
+                args.output,
+                force=args.force,
+                inputs=(args.database,),
+            )
+            return EXIT_OK
+        report = inspect_index(
+            args.database,
+            check=args.check,
+            verify_sources=args.verify_sources,
+        )
+        if args.format == "json":
+            rendered = json.dumps(report, ensure_ascii=False, allow_nan=False, sort_keys=True, indent=2) + "\n"
+        else:
+            counts = report["counts"]
+            rendered = (
+                f"Index: {report['database']}\n"
+                f"Schema: {report['metadata']['schema_version']}\n"
+                f"Sources: {counts['sources']}\n"
+                f"Records: {counts['records']}\n"
+                f"Features: {counts['features']}\n"
+            )
+        _write_or_stdout(rendered, args.output, force=args.force, inputs=(args.database,))
+        return EXIT_OK
+
+    if cmd == "batch":
+        from .batch import BatchUsageError, execute_batch
+
+        tail = list(args.tail)
+        if tail and tail[0] == "--":
+            tail = tail[1:]
+        try:
+            result = execute_batch(
+                args.inputs,
+                command=args.command,
+                output_dir=args.output_dir,
+                tail=tail,
+                jobs=args.jobs,
+                on_error=args.on_error,
+                resume=args.resume,
+                force=args.force,
+            )
+        except BatchUsageError as exc:
+            eprint(f"ERROR: {exc}")
+            return EXIT_USAGE
+        if result.failed_count:
+            eprint(f"ERROR: {result.failed_count} batch job(s) failed")
+        return result.exit_code
 
     if cmd == "validate":
         report = build_validation_report(args.input)
@@ -570,8 +837,16 @@ def _dispatch(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
         return EXIT_OK
 
     if cmd == "batch-summary":
-        batch_summary(args.inputs, csv_out=args.csv, tsv_out=args.tsv, md_out=args.md)
-        return EXIT_OK
+        result = run_batch_summary(
+            args.inputs,
+            csv_out=args.csv,
+            tsv_out=args.tsv,
+            md_out=args.md,
+            output_dir=args.output_dir,
+            force=args.force,
+            on_error=args.on_error,
+        )
+        return result.exit_code
 
     if cmd == "meor":
         database = load_meor_database(args.markers, args.pathways)
@@ -662,10 +937,21 @@ def _dispatch(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = create_parser()
-    args = parser.parse_args(argv)
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    tail: list[str] = []
+    if "--" in raw_argv:
+        separator = raw_argv.index("--")
+        tail = raw_argv[separator + 1 :]
+        raw_argv = raw_argv[:separator]
+    args = parser.parse_args(raw_argv)
+    if args.subcommand == "batch":
+        args.tail = tail
     try:
         return _dispatch(args, parser)
-    except (GenBankInputError, InputError, OSError, FileNotFoundError, QueryExpressionError, ValueError) as exc:
+    except QueryExpressionError as exc:
+        eprint(f"ERROR: {exc}")
+        return EXIT_USAGE
+    except (GenBankInputError, InputError, OSError, FileNotFoundError, ValueError) as exc:
         eprint(f"ERROR: {exc}")
         return EXIT_INPUT
     except OutputError as exc:
