@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://whyadr.github.io/genbank-parser/schemas/query-v1.schema.json",
+  "title": "gbparse query rows v1",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "schema_version": {"const": "gbparse.feature.v1"},
+      "record": {"type": "string"},
+      "feature_index": {"type": "integer", "minimum": 1},
+      "type": {"type": "string"},
+      "start": {"type": "integer", "minimum": 1},
+      "end": {"type": "integer", "minimum": 1},
+      "strand": {"type": "string"}
+    },
+    "additionalProperties": true
+  }
+}
