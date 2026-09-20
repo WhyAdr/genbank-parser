@@ -2,19 +2,22 @@
 
 from __future__ import annotations
 
-from importlib.metadata import PackageNotFoundError, version
-
-from .io import extract_xrefs, get_notes, get_qual, parse_features, read_genbank
+from .io import (
+    extract_xref_sources,
+    extract_xrefs,
+    get_notes,
+    get_qual,
+    iter_genbank,
+    parse_features,
+    read_genbank,
+)
 from .model import GenBankDocument, GenBankFeature, GenBankRecord
 from .neighborhood import NeighborhoodResult, build_neighborhood
 from .operons import OperonCluster, OperonPair, OperonResult, build_operon_result
 
-try:
-    __version__ = version("genbank-parser")
-except PackageNotFoundError:
-    # Source checkouts can import the package before installation; the version
-    # remains defined solely by pyproject metadata in installed environments.
-    __version__ = "unknown"
+# Keep the source-checkout CLI and an installed wheel on the same release
+# value.  The project metadata in pyproject.toml is intentionally static too.
+__version__ = "0.8.5"
 
 __all__ = [
     "GenBankDocument",
@@ -25,11 +28,13 @@ __all__ = [
     "OperonPair",
     "OperonResult",
     "__version__",
-    "extract_xrefs",
     "build_neighborhood",
     "build_operon_result",
+    "extract_xref_sources",
+    "extract_xrefs",
     "get_notes",
     "get_qual",
+    "iter_genbank",
     "parse_features",
     "read_genbank",
 ]
