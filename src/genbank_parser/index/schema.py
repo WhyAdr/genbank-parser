@@ -1,0 +1,150 @@
+"""SQLite schema and compatibility checks for ``gbparse.index.v1``."""
+
+from __future__ import annotations
+
+import sqlite3
+from collections.abc import Mapping
+from datetime import datetime, timezone
+
+INDEX_SCHEMA_VERSION = "gbparse.index.v1"
+INDEX_SCHEMA_REVISION = 1
+SQLITE_USER_VERSION = 1
+
+SCHEMA_SQL = """
+CREATE TABLE metadata (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+CREATE TABLE sources (
+    source_pk INTEGER PRIMARY KEY,
+    display_path TEXT NOT NULL UNIQUE,
+    resolved_path_at_index TEXT NOT NULL,
+    sample_key TEXT NOT NULL,
+    sha256 TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    mtime_ns INTEGER NOT NULL,
+    compressed INTEGER NOT NULL CHECK (compressed IN (0, 1)),
+    record_count INTEGER NOT NULL,
+    feature_count INTEGER NOT NULL
+);
+CREATE TABLE records (
+    record_pk INTEGER PRIMARY KEY,
+    source_pk INTEGER NOT NULL REFERENCES sources(source_pk) ON DELETE CASCADE,
+    record_index INTEGER NOT NULL,
+    record_id TEXT NOT NULL,
+    record_name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    length INTEGER NOT NULL,
+    topology TEXT,
+    molecule_type TEXT,
+    organism TEXT,
+    strain TEXT,
+    gc_percent REAL,
+    UNIQUE(source_pk, record_index)
+);
+CREATE TABLE features (
+    feature_pk INTEGER PRIMARY KEY,
+    record_pk INTEGER NOT NULL REFERENCES records(record_pk) ON DELETE CASCADE,
+    feature_index INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    locus_tag TEXT,
+    gene TEXT,
+    product TEXT,
+    protein_id TEXT,
+    start INTEGER NOT NULL,
+    end INTEGER NOT NULL,
+    strand INTEGER,
+    biological_length INTEGER NOT NULL,
+    partial INTEGER NOT NULL CHECK (partial IN (0, 1)),
+    pseudo INTEGER NOT NULL CHECK (pseudo IN (0, 1)),
+    UNIQUE(record_pk, feature_index)
+);
+CREATE TABLE segments (
+    feature_pk INTEGER NOT NULL REFERENCES features(feature_pk) ON DELETE CASCADE,
+    ordinal INTEGER NOT NULL,
+    start INTEGER NOT NULL,
+    end INTEGER NOT NULL,
+    PRIMARY KEY(feature_pk, ordinal)
+);
+CREATE TABLE qualifiers (
+    feature_pk INTEGER NOT NULL REFERENCES features(feature_pk) ON DELETE CASCADE,
+    key TEXT NOT NULL,
+    ordinal INTEGER NOT NULL,
+    value TEXT NOT NULL,
+    PRIMARY KEY(feature_pk, key, ordinal)
+);
+CREATE TABLE xrefs (
+    feature_pk INTEGER NOT NULL REFERENCES features(feature_pk) ON DELETE CASCADE,
+    namespace TEXT NOT NULL,
+    value TEXT NOT NULL,
+    source_field TEXT NOT NULL,
+    PRIMARY KEY(feature_pk, namespace, value, source_field)
+);
+CREATE INDEX idx_sources_sha256 ON sources(sha256);
+CREATE INDEX idx_records_id ON records(record_id);
+CREATE INDEX idx_records_name ON records(record_name);
+CREATE INDEX idx_records_organism ON records(organism);
+CREATE INDEX idx_features_type ON features(type);
+CREATE INDEX idx_features_locus_tag ON features(locus_tag);
+CREATE INDEX idx_features_gene ON features(gene);
+CREATE INDEX idx_features_protein_id ON features(protein_id);
+CREATE INDEX idx_features_coordinates ON features(record_pk, start, end);
+CREATE INDEX idx_xrefs_namespace_value ON xrefs(namespace, value);
+CREATE INDEX idx_qualifiers_key_value ON qualifiers(key, value);
+"""
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def configure_connection(connection: sqlite3.Connection) -> None:
+    connection.execute("PRAGMA foreign_keys = ON")
+    connection.execute("PRAGMA journal_mode = DELETE")
+    connection.execute("PRAGMA synchronous = FULL")
+
+
+def initialize_schema(connection: sqlite3.Connection, metadata: Mapping[str, str]) -> None:
+    configure_connection(connection)
+    connection.executescript(SCHEMA_SQL)
+    connection.execute(f"PRAGMA user_version = {SQLITE_USER_VERSION}")
+    connection.executemany(
+        "INSERT INTO metadata(key, value) VALUES (?, ?)",
+        sorted(metadata.items()),
+    )
+    connection.commit()
+
+
+def read_metadata(connection: sqlite3.Connection) -> dict[str, str]:
+    try:
+        return {str(key): str(value) for key, value in connection.execute("SELECT key, value FROM metadata")}
+    except sqlite3.DatabaseError as exc:
+        raise ValueError("not a compatible gbparse index: metadata table is unavailable") from exc
+
+
+def validate_schema(connection: sqlite3.Connection) -> dict[str, str]:
+    try:
+        configure_connection(connection)
+        user_version = int(connection.execute("PRAGMA user_version").fetchone()[0])
+    except sqlite3.DatabaseError as exc:
+        raise ValueError("not a readable SQLite gbparse index") from exc
+    if user_version != SQLITE_USER_VERSION:
+        raise ValueError(f"unsupported gbparse index SQLite user_version {user_version}; expected {SQLITE_USER_VERSION}")
+    metadata = read_metadata(connection)
+    if metadata.get("schema_version") != INDEX_SCHEMA_VERSION:
+        raise ValueError(f"unsupported index schema {metadata.get('schema_version', '<missing>')!r}")
+    if metadata.get("schema_revision") != str(INDEX_SCHEMA_REVISION):
+        raise ValueError("unsupported gbparse index schema revision")
+    return metadata
+
+
+__all__ = [
+    "INDEX_SCHEMA_REVISION",
+    "INDEX_SCHEMA_VERSION",
+    "SQLITE_USER_VERSION",
+    "configure_connection",
+    "initialize_schema",
+    "read_metadata",
+    "utc_now",
+    "validate_schema",
+]

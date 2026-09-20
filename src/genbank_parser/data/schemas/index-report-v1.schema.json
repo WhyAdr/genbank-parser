@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/WhyAdr/genbank-parser/schemas/index-report-v1.schema.json",
+  "title": "gbparse index build report v1",
+  "type": "object",
+  "required": ["schema_version", "operation", "database", "metadata", "counts", "skipped_sources", "removed_sources"],
+  "properties": {
+    "schema_version": {"const": "gbparse.index-report.v1"},
+    "operation": {"enum": ["build", "update"]},
+    "database": {"type": "string"},
+    "metadata": {"type": "object", "additionalProperties": {"type": "string"}},
+    "counts": {
+      "type": "object",
+      "required": ["sources", "records", "features"],
+      "properties": {
+        "sources": {"type": "integer", "minimum": 0},
+        "records": {"type": "integer", "minimum": 0},
+        "features": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "skipped_sources": {"type": "array", "items": {"type": "object", "required": ["source", "error"], "properties": {"source": {"type": "string"}, "error": {"type": "string"}}, "additionalProperties": false}},
+    "removed_sources": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

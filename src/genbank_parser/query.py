@@ -66,6 +66,8 @@ _QUERY_FIELDS = frozenset(
         "go_terms",
         "db_xref",
         "source",
+        "sample",
+        "sample_key",
     }
 )
 _MAX_QUERY_LENGTH = 8_192
@@ -316,6 +318,19 @@ def parse_query(expression: str) -> object:
     return _QueryParser(expression).parse()
 
 
+# Public package-internal names shared by direct and indexed query paths.  The
+# representation remains immutable tuples so the v0.8.5 grammar and limits
+# stay exactly the same; index compilation never reparses a second language.
+QueryNode = object
+QueryParser = _QueryParser
+
+
+def parse_query_ast(expression: str) -> QueryNode:
+    """Parse the canonical bounded feature-query grammar into its AST."""
+
+    return parse_query(expression)
+
+
 def _evaluate_operand(node: object, row: FeatureRow) -> object:
     kind = node[0]  # type: ignore[index]
     if kind == "literal":
@@ -403,6 +418,12 @@ def evaluate_query(tree: object, row: FeatureRow) -> bool:
             _evaluate_operand(tree[3], row),  # type: ignore[index]
         )
     raise QueryExpressionError(f"invalid query expression node {kind!r}")
+
+
+def evaluate_query_ast(tree: QueryNode, row: FeatureRow) -> bool:
+    """Evaluate the canonical query AST against a feature projection."""
+
+    return evaluate_query(tree, row)
 
 
 def query_features(

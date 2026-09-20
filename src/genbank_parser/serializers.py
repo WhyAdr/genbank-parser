@@ -70,6 +70,7 @@ class FeatureRow:
     qualifiers: dict[str, tuple[str, ...]]
     xrefs: dict[str, tuple[str, ...]]
     xref_sources: dict[str, tuple[tuple[str, str], ...]]
+    sample_key: str | None = None
 
     @classmethod
     def from_feature(
@@ -155,6 +156,8 @@ class FeatureRow:
             "go_terms": self.xrefs.get("go_terms", ()),
             "db_xref": self.qualifiers.get("db_xref", ()),
             "source": self.source,
+            "sample": self.sample_key,
+            "sample_key": self.sample_key,
             "segments": self.segments,
             "qualifiers": self.qualifiers,
             "xrefs": self.xrefs,
