@@ -14,7 +14,7 @@ import os
 import shutil
 import sys
 import tempfile
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TextIO
@@ -277,6 +277,108 @@ def _write_staged_file(path: Path, payload: str | bytes) -> None:
         os.fsync(handle.fileno())
 
 
+def publish_staged_files(
+    replacements: Sequence[tuple[str | Path, str | Path]],
+    *,
+    force: bool = False,
+    inputs: Iterable[str | Path | None] = (),
+) -> None:
+    """Install several already-staged files as one rollback-protected set.
+
+    All destinations are preflighted before the first replacement. Existing
+    destinations are moved to sibling backups and restored if any later
+    replacement fails, so callers never observe only a prefix of a logical
+    multi-file publication.
+    """
+
+    items = tuple((Path(staged), Path(destination)) for staged, destination in replacements)
+    if not items:
+        return
+    destinations = tuple(destination for _staged, destination in items)
+    for index, destination in enumerate(destinations):
+        if any(paths_same(destination, other) for other in destinations[index + 1 :]):
+            raise OutputError(f"publication destinations must be distinct: {destination}")
+        reject_input_output_collision(inputs, destination)
+        if destination.exists() and destination.is_dir():
+            raise OutputError(f"output path is a directory: {destination}")
+    for staged, _destination in items:
+        if not staged.is_file():
+            raise OutputError(f"staged output is missing: {staged}")
+    if not force:
+        existing = next((destination for destination in destinations if destination.exists()), None)
+        if existing is not None:
+            raise OutputError(f"output already exists; use --force: {existing}")
+
+    backups: dict[Path, Path] = {}
+    installed: list[Path] = []
+    try:
+        for _staged, destination in items:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if destination.exists():
+                handle, backup_name = tempfile.mkstemp(
+                    prefix=f".{destination.name}.",
+                    suffix=".backup",
+                    dir=destination.parent,
+                )
+                os.close(handle)
+                backup = Path(backup_name)
+                backup.unlink(missing_ok=True)
+                os.replace(destination, backup)
+                backups[destination] = backup
+        for staged, destination in items:
+            os.replace(staged, destination)
+            installed.append(destination)
+    except OSError as exc:
+        for destination in installed:
+            try:
+                destination.unlink(missing_ok=True)
+            except OSError:
+                pass
+        for destination, backup in backups.items():
+            if backup.exists() and not destination.exists():
+                try:
+                    os.replace(backup, destination)
+                except OSError:
+                    pass
+        raise OutputError(f"could not publish output set: {exc}") from exc
+    finally:
+        for staged, _destination in items:
+            staged.unlink(missing_ok=True)
+        for backup in backups.values():
+            backup.unlink(missing_ok=True)
+
+
+def publish_file_set(
+    files: Mapping[str | Path, str | bytes],
+    *,
+    force: bool = False,
+    inputs: Iterable[str | Path | None] = (),
+) -> None:
+    """Render and publish a set of files through :func:`publish_staged_files`."""
+
+    if not files:
+        return
+    staged: list[tuple[Path, Path]] = []
+    try:
+        for raw_destination, payload in files.items():
+            destination = Path(raw_destination)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            handle, staged_name = tempfile.mkstemp(
+                prefix=f".{destination.name}.",
+                suffix=".tmp",
+                dir=destination.parent,
+            )
+            os.close(handle)
+            staged_path = Path(staged_name)
+            _write_staged_file(staged_path, payload)
+            staged.append((staged_path, destination))
+        publish_staged_files(staged, force=force, inputs=inputs)
+        staged = []
+    finally:
+        for staged_path, _destination in staged:
+            staged_path.unlink(missing_ok=True)
+
+
 def publish_directory(
     files: dict[str, str | bytes],
     output_dir: str | Path,
@@ -433,6 +535,8 @@ __all__ = [
     "paths_same",
     "publish_directory",
     "publish_directory_tree",
+    "publish_file_set",
+    "publish_staged_files",
     "reject_input_output_collision",
     "write_bytes",
     "write_text",

@@ -19,6 +19,7 @@ class DiscoveredInput:
     """One source with both user-facing and canonical filesystem identity."""
 
     requested_path: str
+    source_identity: str
     resolved_path: Path
     display_path: str
     discovery_root: Path | None
@@ -33,6 +34,12 @@ class FileFingerprint:
 
 def _canonical(path: Path) -> Path:
     return path.resolve(strict=True)
+
+
+def _identity(path: Path) -> str:
+    """Return the stable local identity used for persistent matching."""
+
+    return os.path.normcase(os.fspath(path))
 
 
 def _display(path: Path) -> str:
@@ -70,7 +77,7 @@ def discover_inputs(
     intentionally restricted to recognized GenBank suffixes.
     """
 
-    excluded = tuple(Path(item) for item in exclude)
+    excluded = tuple(Path(item) for item in exclude if item is not None)
     seen: dict[str, DiscoveredInput] = {}
     for raw_item in inputs:
         requested = os.fspath(raw_item)
@@ -84,6 +91,7 @@ def discover_inputs(
                 key,
                 DiscoveredInput(
                     requested_path=requested,
+                    source_identity=_identity(resolved),
                     resolved_path=resolved,
                     display_path=_display(path),
                     discovery_root=None,
@@ -105,6 +113,7 @@ def discover_inputs(
                 key,
                 DiscoveredInput(
                     requested_path=requested,
+                    source_identity=_identity(resolved),
                     resolved_path=resolved,
                     display_path=_display(candidate),
                     discovery_root=root,
@@ -128,6 +137,25 @@ def fingerprint_file(path: str | Path, *, chunk_size: int = 1 << 20) -> FileFing
             size += len(chunk)
     stat = target.stat()
     return FileFingerprint(digest.hexdigest(), size, stat.st_mtime_ns)
+
+
+def snapshot_file(path: str | Path) -> tuple[bytes, FileFingerprint]:
+    """Read a source once and return the exact bytes plus their fingerprint.
+
+    Callers that parse the returned bytes can therefore bind provenance to the
+    bytes that were actually analyzed instead of hashing a path and reopening
+    it later.  The mtime is retained as contextual filesystem metadata; the
+    digest and size describe the immutable snapshot.
+    """
+
+    target = Path(path)
+    raw = target.read_bytes()
+    stat = target.stat()
+    return raw, FileFingerprint(
+        sha256=hashlib.sha256(raw).hexdigest(),
+        size_bytes=len(raw),
+        mtime_ns=stat.st_mtime_ns,
+    )
 
 
 def _stem(path: Path) -> str:
@@ -183,4 +211,5 @@ __all__ = [
     "assign_sample_keys",
     "discover_inputs",
     "fingerprint_file",
+    "snapshot_file",
 ]
