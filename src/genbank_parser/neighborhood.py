@@ -6,12 +6,12 @@ import argparse
 import csv
 import io
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Sequence
 
 from .discover import RuleMatch, load_ruleset, match_feature_rules
-from .io import read_genbank
+from .io import _source_label, read_genbank
 from .model import GenBankFeature
 from .operons import build_operon_result
 from .spatial import feature_display_bounds, resolve_target, select_cds_window
@@ -105,6 +105,7 @@ class NeighborhoodResult:
     """Renderer-independent genomic-neighborhood data contract."""
 
     input_path: Path
+    input_label: str
     target_query: str
     record_id: str
     record_length: int
@@ -122,7 +123,7 @@ class NeighborhoodResult:
     def to_dict(self) -> dict[str, object]:
         return {
             "schema_version": SCHEMA_VERSION,
-            "input": str(self.input_path),
+            "input": self.input_label,
             "target_query": self.target_query,
             "record": {
                 "id": self.record_id,
@@ -205,6 +206,7 @@ def build_neighborhood(
     """Build a neighborhood without printing or terminating the process."""
     input_path = Path(filepath)
     document = read_genbank(input_path)
+    input_label = _source_label(document, filepath)
     record, target_feature = resolve_target(document, target)
     selected = select_cds_window(record, target_feature, window)
     coordinates = _local_coordinates(
@@ -284,6 +286,7 @@ def build_neighborhood(
     )
     return NeighborhoodResult(
         input_path=input_path,
+        input_label=input_label,
         target_query=target,
         record_id=record.id,
         record_length=record.length,

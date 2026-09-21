@@ -15,7 +15,7 @@ from typing import Any
 
 import yaml  # type: ignore[import-untyped]
 
-from .io import read_genbank
+from .io import _source_label, read_genbank
 from .model import GenBankFeature
 from .operons import find_operon_pairs
 
@@ -205,7 +205,7 @@ def discover_clusters(
         )
 
     result: dict[str, Any] = {
-        "file": str(filepath),
+        "file": _source_label(doc, filepath),
         "ruleset": ruleset if rules_file is None else str(rules_file),
         "total_hits": len(hits),
         "total_islands": len(islands),
@@ -266,7 +266,7 @@ def discover_clusters(
     print("=" * 70)
     print("  GENOMIC ANNOTATION DISCOVERY SCANNER")
     print("=" * 70)
-    print(f"  File             : {filepath}")
+    print(f"  File             : {result['file']}")
     print(f"  Ruleset          : {result['ruleset']}")
     print(f"  Individual hits  : {len(hits)}")
     print(f"  Clustered islands: {len(islands)} (gap <= {cluster_gap:,} bp)")

@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .io import extract_xrefs, read_genbank
+from .io import _source_label, extract_xrefs, read_genbank
 
 COG_CATEGORIES = {
     'J': 'Translation, ribosomal structure and biogenesis',
@@ -127,7 +127,7 @@ def build_functional_report(
         }
 
     report = {
-        'file': str(filepath),
+        'file': _source_label(doc, filepath),
         'total_cds': len(cdss),
         'unique_kos': len(all_kos),
         'unique_ecs': len(all_ecs),

@@ -11,7 +11,7 @@ from pathlib import Path
 from Bio.Seq import Seq
 
 from .cli_io import atomic_text_writer, paths_same
-from .io import read_genbank
+from .io import _source_label, read_genbank
 
 
 def reverse_complement(seq_str: str) -> str:
@@ -33,6 +33,7 @@ def extract_sequences(
     force: bool = True,
 ) -> None:
     doc = read_genbank(filepath)
+    source_label = _source_label(doc, filepath)
 
     has_seqs = any(len(rec.seq) > 0 for rec in doc.records)
     if not has_seqs:
@@ -108,7 +109,7 @@ def extract_sequences(
     print("=" * 70)
     print("  SEQUENCE EXTRACTION REPORT")
     print("=" * 70)
-    print(f"  File           : {filepath}")
+    print(f"  File           : {source_label}")
     print(f"  Contigs        : {len(doc.records)}")
     print(f"  Total length   : {total_bp:,} bp")
     print(f"  GC content     : {gc_pct:.1f}%")

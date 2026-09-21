@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .. import __version__
-from ..io import read_genbank
+from ..io import _source_label, read_genbank
 from .database import MeorDatabaseError, load_meor_database
 from .karyogram import generate_meor_karyograms
 from .models import (
@@ -49,7 +49,7 @@ def analyze_meor(
         document.records, hits, window_size=window_size
     )
     return MeorReport(
-        source_file=Path(filepath).name,
+        source_file=_source_label(document, Path(filepath).name),
         tool_version=__version__,
         catalog_version=database.catalog_version,
         total_features=document.total_features,

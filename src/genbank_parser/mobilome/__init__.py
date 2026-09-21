@@ -9,7 +9,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from .. import __version__
-from ..io import read_genbank
+from ..io import _source_label, read_genbank
 from ..model import GenBankDocument
 from .database import load_mobilome_database
 from .inference import (
@@ -226,7 +226,7 @@ def analyze_mobilome(
         if include == "all" or assessment.inventory.classification.label == include
     )
     return MobilomeReport(
-        source_file=path.name,
+        source_file=_source_label(document, path.name),
         source_sha256=source_after,
         tool_version=__version__,
         catalog_version=active_database.catalog_version,

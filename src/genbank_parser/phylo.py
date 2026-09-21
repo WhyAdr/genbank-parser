@@ -8,7 +8,7 @@ import json
 import re
 from pathlib import Path
 
-from .io import read_genbank
+from .io import _source_label, read_genbank
 from .model import GenBankFeature
 
 RIBOSOMAL = {
@@ -118,7 +118,7 @@ def build_phylogenomic_report(
         ]
     return {
         "schema_version": "gbparse.phylo.v1",
-        "source": str(filepath),
+        "source": _source_label(doc, filepath),
         "marker_set": marker_set,
         "min_length": min_length,
         "target_count": len(targets),
@@ -191,7 +191,7 @@ def extract_phylogenomic_markers(
     print("=" * 70)
     print("  ANNOTATION-BASED PHYLOGENETIC MARKER CANDIDATES")
     print("=" * 70)
-    print(f"  File             : {filepath}")
+    print(f"  File             : {_source_label(doc, filepath)}")
     print(f"  Marker panel     : {marker_set} ({len(targets)} candidate genes)")
     recovered = sum(1 for hits in found_markers.values() if hits)
     multi_copy = sum(1 for hits in found_markers.values() if len(hits) > 1)

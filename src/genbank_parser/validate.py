@@ -11,7 +11,7 @@ from pathlib import Path
 
 from Bio.Data import CodonTable
 
-from .io import read_genbank
+from .io import _source_label, read_genbank
 from .model import GenBankFeature
 
 
@@ -403,7 +403,7 @@ def build_validation_report(filepath: str | Path) -> ValidationReport:
         )
     )
     return ValidationReport(
-        source=str(filepath),
+        source=_source_label(doc, filepath),
         record_count=len(doc.records),
         feature_count=len(all_features),
         total_length=doc.total_length,

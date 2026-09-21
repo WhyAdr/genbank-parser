@@ -12,7 +12,7 @@ from typing import Any
 
 from Bio.Data import CodonTable
 
-from .io import read_genbank
+from .io import _source_label, read_genbank
 
 
 def _table_for_feature(feature: Any) -> tuple[int, Any] | None:
@@ -56,6 +56,7 @@ def analyze_codon_usage(
 ) -> dict[str, Any]:
     """Analyze sense codons separately for every translation table encountered."""
     doc = read_genbank(filepath)
+    source_label = _source_label(doc, filepath)
     if not any(len(record.seq) > 0 for record in doc.records):
         print(
             "ERROR: No ORIGIN sequences found. Codon usage requires nucleotide sequences.",
@@ -169,7 +170,7 @@ def analyze_codon_usage(
     print("=" * 70)
     print("  CODON USAGE & RSCU ANALYSIS")
     print("=" * 70)
-    print(f"  File            : {filepath}")
+    print(f"  File            : {source_label}")
     print(f"  CDSs evaluated  : {cds_evaluated} (min length: {min_len_aa} aa)")
     print(
         f"  Translation tbl : {', '.join(map(str, sorted(translation_tables))) or 'none'}"

@@ -91,11 +91,15 @@ def _read_source_text(source: str | Path | TextIO) -> tuple[str, Path | None, st
     return raw_bytes.decode("utf-8", errors="replace"), path, label, source_kind, raw_digest
 
 
-def iter_genbank(source: str | Path | TextIO) -> Iterator[GenBankRecord]:
-    """Yield typed records from a GenBank path, gzip path, stdin, or stream."""
+def _iter_genbank_text(text: str) -> Iterator[GenBankRecord]:
+    """Yield typed records from already-decoded GenBank text.
 
-    text, _path, _label, _source_kind, _raw_digest = _read_source_text(source)
-    global_feature_index = 0
+    Keeping parsing separate from source acquisition is important for batch
+    execution: the raw-byte digest binds the source once, while gzip
+    decompression and GenBank parsing operate on the resulting text without
+    attempting to bind a second, decoded representation to that digest.
+    """
+
     for rec_idx, rec in enumerate(SeqIO.parse(io.StringIO(text), "genbank"), 1):
         contig = rec.id if (rec.id and rec.id != ".") else rec.name
         topology = rec.annotations.get("topology")
@@ -111,8 +115,7 @@ def iter_genbank(source: str | Path | TextIO) -> Iterator[GenBankRecord]:
                 rec_len = 0
 
         features: list[GenBankFeature] = []
-        for feat in rec.features:
-            global_feature_index += 1
+        for record_feature_index, feat in enumerate(rec.features, 1):
             quals: dict[str, list[str]] = collections.defaultdict(list)
             for key, values in feat.qualifiers.items():
                 if isinstance(values, list):
@@ -123,7 +126,7 @@ def iter_genbank(source: str | Path | TextIO) -> Iterator[GenBankRecord]:
                 GenBankFeature(
                     record_id=contig,
                     record_index=rec_idx,
-                    feature_index=global_feature_index,
+                    feature_index=record_feature_index,
                     type=feat.type,
                     location=feat.location,
                     qualifiers=dict(quals),
@@ -149,6 +152,13 @@ def iter_genbank(source: str | Path | TextIO) -> Iterator[GenBankRecord]:
         )
 
 
+def iter_genbank(source: str | Path | TextIO) -> Iterator[GenBankRecord]:
+    """Yield typed records from a GenBank path, gzip path, stdin, or stream."""
+
+    text, _path, _label, _source_kind, _raw_digest = _read_source_text(source)
+    yield from _iter_genbank_text(text)
+
+
 def read_genbank(source: str | Path | TextIO) -> GenBankDocument:
     """Read a GenBank flatfile into a fully typed GenBankDocument.
 
@@ -158,13 +168,13 @@ def read_genbank(source: str | Path | TextIO) -> GenBankDocument:
     """
 
     text, path, label, source_kind, _raw_digest = _read_source_text(source)
-    records: list[GenBankRecord] = []
     try:
-        records.extend(iter_genbank(io.StringIO(text)))
+        records = list(_iter_genbank_text(text))
     except (AttributeError, IndexError, KeyError, OSError, TypeError, ValueError) as exc:
         raise GenBankInputError(f"could not parse GenBank input {label}: {exc}") from exc
-    # Feature indices historically were global across a document.  Keep that
-    # compatibility even though iter_genbank exposes record-local indices.
+    # Feature indices are document-global in the canonical read API.  The
+    # lower-level iterator intentionally remains record-local for streaming
+    # callers that do not materialize a whole document.
     global_index = 0
     for record in records:
         for feature in record.features:
@@ -176,6 +186,17 @@ def read_genbank(source: str | Path | TextIO) -> GenBankDocument:
         source_label=label,
         source_kind=source_kind,
     )
+
+
+def _source_label(document: GenBankDocument, fallback: object) -> str:
+    """Return the logical provenance label carried by a parsed document."""
+
+    # A normal direct call keeps the public basename/path conventions of each
+    # report.  Batch children explicitly bind a logical label through the
+    # environment; only that binding should replace the caller's fallback.
+    if os.environ.get("GBPARSE_SOURCE_LABEL"):
+        return document.source_label or os.environ["GBPARSE_SOURCE_LABEL"]
+    return str(fallback)
 
 
 def parse_features(filepath: str | Path | TextIO) -> list[GenBankFeature]:

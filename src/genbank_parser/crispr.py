@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .io import read_genbank
+from .io import _source_label, read_genbank
 from .model import GenBankFeature
 
 CAS_KEYWORDS = [
@@ -101,7 +101,7 @@ def build_crispr_report(filepath: str | Path, window: int = 15000) -> dict[str, 
             )
     return {
         "schema_version": "gbparse.crispr.v1",
-        "source": str(filepath),
+        "source": _source_label(doc, filepath),
         "window": window,
         "arrays": [_feature_summary(array) for array in arrays],
         "cas_genes": [_feature_summary(cas) for cas in cas_cdss],
@@ -151,7 +151,7 @@ def detect_crispr(filepath: str | Path, window: int = 15000) -> dict[str, Any]:
     print("=" * 70)
     print("  CRISPR/Cas ANNOTATION SCANNER")
     print("=" * 70)
-    print(f"  File          : {filepath}")
+    print(f"  File          : {_source_label(doc, filepath)}")
     print(f"  CRISPR arrays : {len(arrays)}")
     print(f"  Cas CDSs      : {len(cas_cdss)}")
     print()

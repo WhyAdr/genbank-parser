@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .io import extract_xrefs, read_genbank
+from .io import _source_label, extract_xrefs, read_genbank
 from .model import GenBankFeature
 
 
@@ -16,6 +16,7 @@ def build_locus_report(filepath: str | Path, locus_tag: str) -> dict[str, Any]:
     """Return a JSON-safe locus report without printing or exiting."""
 
     doc = read_genbank(filepath)
+    source_label = _source_label(doc, filepath)
     match = doc.find_locus(locus_tag)
     if match is None:
         for rec in doc.records:
@@ -26,7 +27,7 @@ def build_locus_report(filepath: str | Path, locus_tag: str) -> dict[str, Any]:
             if match:
                 break
     if match is None:
-        raise ValueError(f"Locus tag or gene '{locus_tag}' not found in {filepath}")
+        raise ValueError(f"Locus tag or gene '{locus_tag}' not found in {source_label}")
     record, feature = match
     xrefs = extract_xrefs(feature)
     return {
@@ -100,6 +101,7 @@ def render_locus_report(report: dict[str, Any], format_type: str = "text") -> st
 
 def inspect_locus(filepath: str | Path, locus_tag: str) -> GenBankFeature | None:
     doc = read_genbank(filepath)
+    source_label = _source_label(doc, filepath)
     match = doc.find_locus(locus_tag)
 
     if match is None:
@@ -113,7 +115,7 @@ def inspect_locus(filepath: str | Path, locus_tag: str) -> GenBankFeature | None
                 break
 
     if match is None:
-        print(f"ERROR: Locus tag or gene '{locus_tag}' not found in {filepath}", file=sys.stderr)
+        print(f"ERROR: Locus tag or gene '{locus_tag}' not found in {source_label}", file=sys.stderr)
         sys.exit(1)
 
     rec, f = match

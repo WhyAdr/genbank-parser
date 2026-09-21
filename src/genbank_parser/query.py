@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TextIO
 
-from .io import extract_xrefs, read_genbank
+from .io import _source_label, extract_xrefs, read_genbank
 from .model import GenBankFeature
 from .serializers import FeatureRow
 
@@ -576,7 +576,11 @@ def query_features(
     return matches
 
 
-def parse_select_fields(select: str | None) -> tuple[str, ...] | None:
+def parse_select_fields(
+    select: str | None,
+    *,
+    allow_cohort_fields: bool = True,
+) -> tuple[str, ...] | None:
     if select is None:
         return None
     fields = tuple(item.strip() for item in select.split(",") if item.strip())
@@ -589,6 +593,10 @@ def parse_select_fields(select: str | None) -> tuple[str, ...] | None:
             continue
         if field not in _QUERY_FIELDS and field not in {"segments", "qualifiers", "xrefs", "xref_sources"}:
             raise QueryExpressionError(f"unknown selected field {field!r}")
+        if field in {"sample", "sample_key"} and not allow_cohort_fields:
+            raise QueryExpressionError(
+                f"field {field!r} is only available for cohort index queries"
+            )
     return fields
 
 
@@ -607,6 +615,7 @@ def search_features(
     output_path: str | Path | None = None,
 ) -> list[dict[str, Any]]:
     doc = read_genbank(filepath)
+    source_label = _source_label(doc, filepath)
     results: list[dict[str, Any]] = []
 
     gene_pat = re.compile(gene_regex, re.IGNORECASE) if gene_regex else None
@@ -678,7 +687,7 @@ def search_features(
 
     # Text mode
     print("=" * 80)
-    print(f"  FEATURE SEARCH RESULTS: {filepath}")
+    print(f"  FEATURE SEARCH RESULTS: {source_label}")
     print("=" * 80)
     print(f"  Matches found: {len(results)}")
     print()

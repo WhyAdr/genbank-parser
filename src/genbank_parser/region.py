@@ -12,7 +12,7 @@ from Bio.Seq import Seq
 from Bio.SeqFeature import CompoundLocation, FeatureLocation, SeqFeature
 from Bio.SeqRecord import SeqRecord
 
-from .io import read_genbank
+from .io import _source_label, read_genbank
 from .model import GenBankFeature, GenBankRecord
 from .spatial import (
     NonCDSTargetError,
@@ -170,6 +170,7 @@ def extract_region(
         raise ValueError("flank_genes and flank_bp must be non-negative")
 
     doc = read_genbank(filepath)
+    source_label = _source_label(doc, filepath)
     target_rec = None
     raw_start: int
     raw_end: int
@@ -184,7 +185,7 @@ def extract_region(
     elif record_id:
         target_rec = doc.get_record(record_id)
         if target_rec is None:
-            raise ValueError(f"Record '{record_id}' not found in {filepath}")
+            raise ValueError(f"Record '{record_id}' not found in {source_label}")
         circular = target_rec.topology == "circular"
         raw_start = start if start is not None else 1
         raw_end = end if end is not None else target_rec.length
@@ -192,7 +193,7 @@ def extract_region(
             raw_end += target_rec.length
     else:
         if not doc.records:
-            raise ValueError(f"No records found in {filepath}")
+            raise ValueError(f"No records found in {source_label}")
         target_rec = doc.records[0]
         circular = target_rec.topology == "circular"
         raw_start = start if start is not None else 1
