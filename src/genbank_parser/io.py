@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import collections
 import gzip
+import hashlib
 import io
+import os
 import re
 import sys
 from collections.abc import Iterator
@@ -29,7 +31,7 @@ class GenBankInputError(ValueError):
     """Raised when a GenBank source cannot be decoded or parsed."""
 
 
-def _read_source_text(source: str | Path | TextIO) -> tuple[str, Path | None, str, str]:
+def _read_source_text(source: str | Path | TextIO) -> tuple[str, Path | None, str, str, str]:
     """Read a source once and return text plus source metadata."""
 
     if hasattr(source, "read"):
@@ -63,22 +65,36 @@ def _read_source_text(source: str | Path | TextIO) -> tuple[str, Path | None, st
                 raise GenBankInputError(f"could not read input {path}: {exc}") from exc
 
     if isinstance(raw, str):
-        return raw, path, label, source_kind
-    if not isinstance(raw, (bytes, bytearray)):
+        raw_bytes = raw.encode("utf-8")
+    elif isinstance(raw, (bytes, bytearray)):
+        raw_bytes = bytes(raw)
+    else:
         raise GenBankInputError(f"input {label} did not produce text or bytes")
-    raw_bytes = bytes(raw)
+    raw_digest = hashlib.sha256(raw_bytes).hexdigest()
+    expected_digest = os.environ.get("GBPARSE_SOURCE_SHA256")
+    logical_label = os.environ.get("GBPARSE_SOURCE_LABEL")
+    if expected_digest is not None or logical_label is not None:
+        if not expected_digest or not logical_label:
+            raise GenBankInputError(
+                "GBPARSE_SOURCE_SHA256 and GBPARSE_SOURCE_LABEL must be provided together"
+            )
+        if expected_digest.casefold() != raw_digest:
+            raise GenBankInputError(
+                f"source snapshot digest mismatch for {label}: expected {expected_digest}, got {raw_digest}"
+            )
+        label = logical_label
     if raw_bytes.startswith(b"\x1f\x8b"):
         try:
             raw_bytes = gzip.decompress(raw_bytes)
         except (OSError, EOFError) as exc:
             raise GenBankInputError(f"truncated or invalid gzip input: {label}") from exc
-    return raw_bytes.decode("utf-8", errors="replace"), path, label, source_kind
+    return raw_bytes.decode("utf-8", errors="replace"), path, label, source_kind, raw_digest
 
 
 def iter_genbank(source: str | Path | TextIO) -> Iterator[GenBankRecord]:
     """Yield typed records from a GenBank path, gzip path, stdin, or stream."""
 
-    text, _path, _label, _source_kind = _read_source_text(source)
+    text, _path, _label, _source_kind, _raw_digest = _read_source_text(source)
     global_feature_index = 0
     for rec_idx, rec in enumerate(SeqIO.parse(io.StringIO(text), "genbank"), 1):
         contig = rec.id if (rec.id and rec.id != ".") else rec.name
@@ -141,7 +157,7 @@ def read_genbank(source: str | Path | TextIO) -> GenBankDocument:
     remains the canonical in-memory parser model used by every analyzer.
     """
 
-    text, path, label, source_kind = _read_source_text(source)
+    text, path, label, source_kind, _raw_digest = _read_source_text(source)
     records: list[GenBankRecord] = []
     try:
         records.extend(iter_genbank(io.StringIO(text)))

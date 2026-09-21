@@ -23,7 +23,7 @@ def inspect_index(
     connection = sqlite3.connect(path)
     connection.row_factory = sqlite3.Row
     try:
-        metadata = validate_schema(connection)
+        metadata = validate_schema(connection, read_only=True)
         source_count = int(connection.execute("SELECT COUNT(*) FROM sources").fetchone()[0])
         record_count = int(connection.execute("SELECT COUNT(*) FROM records").fetchone()[0])
         feature_count = int(connection.execute("SELECT COUNT(*) FROM features").fetchone()[0])

@@ -469,7 +469,7 @@ def query_index(
     connection.row_factory = sqlite3.Row
     _register_functions(connection)
     try:
-        validate_schema(connection)
+        validate_schema(connection, read_only=True)
         sql = (
             "SELECT s.display_path, s.sample_key, r.record_id, r.record_index, r.length AS record_length, "
             "r.topology, f.feature_pk, f.feature_index, f.type, f.locus_tag, f.gene, f.product, "

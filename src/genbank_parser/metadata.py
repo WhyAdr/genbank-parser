@@ -39,7 +39,7 @@ def build_metadata_report(filepath: str | Path) -> dict[str, Any]:
             }
         )
     return {
-        "source": str(filepath),
+        "source": doc.source_label or str(filepath),
         "record_count": len(records_info),
         "total_length": sum(int(record["length"]) for record in records_info),
         "records": records_info,
@@ -92,7 +92,7 @@ def extract_metadata(filepath: str | Path) -> list[dict[str, Any]]:
     print("=" * 70)
     print("  GENBANK METADATA REPORT")
     print("=" * 70)
-    print(f"  File    : {filepath}")
+    print(f"  File    : {doc.source_label or filepath}")
     print(f"  Records : {len(doc.records)}")
     print()
 

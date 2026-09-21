@@ -106,6 +106,19 @@ def _prepared_sources(
     return result
 
 
+def _stored_source(row: tuple[object, ...]) -> DiscoveredInput:
+    """Reconstruct a source identity for key allocation without opening it."""
+
+    _source_pk, source_identity, display_path, resolved_path, _sha256 = row
+    return DiscoveredInput(
+        requested_path=str(display_path),
+        source_identity=str(source_identity),
+        resolved_path=Path(str(resolved_path)),
+        display_path=str(display_path),
+        discovery_root=None,
+    )
+
+
 def _insert_document(
     connection: sqlite3.Connection,
     source: DiscoveredInput,
@@ -298,7 +311,6 @@ def build_index(
     report_destination = Path(report_path) if report_path is not None else None
     _preflight_report(report_destination, destination_path, inputs, report_force=report_force)
     discovered = _discover_for_index(inputs, destination_path, report_path=report_destination)
-    keys = assign_sample_keys(discovered)
     temporary = _new_temp_path(destination_path)
     staged_report: Path | None = None
     skipped: list[dict[str, str]] = []
@@ -308,21 +320,28 @@ def build_index(
         connection = sqlite3.connect(temporary)
         initialize_schema(connection, _metadata())
         prepared = _prepared_sources(discovered, jobs)
+        accepted: list[tuple[DiscoveredInput, object, object, int]] = []
         for source in discovered:
             try:
                 prepared_item = prepared[source.source_identity]
                 if isinstance(prepared_item, Exception):
                     raise prepared_item
                 document, fp, compressed = prepared_item
-                with connection:
-                    _insert_document(connection, source, keys[source], fp, document, compressed)
-                successful_sources += 1
+                accepted.append((source, document, fp, compressed))
             except (GenBankInputError, OSError, ValueError, sqlite3.DatabaseError) as exc:
                 if on_error == "fail":
                     raise InputError(f"could not index {source.display_path}: {exc}") from exc
                 skipped.append({"source": source.display_path, "error": str(exc)})
-        if successful_sources == 0:
+        if not accepted:
             raise InputError("no usable GenBank sources were indexed; existing index preserved")
+        keys = assign_sample_keys(
+            (source for source, _document, _fp, _compressed in accepted),
+            sha256_by_identity={source.source_identity: fp.sha256 for source, _document, fp, _compressed in accepted},
+        )
+        for source, document, fp, compressed in accepted:
+            with connection:
+                _insert_document(connection, source, keys[source], fp, document, compressed)
+        successful_sources = len(accepted)
         _validate_database(connection)
         metadata = {"updated_at": utc_now()}
         connection.executemany(
@@ -372,7 +391,7 @@ def _status_report(
 ) -> dict[str, object]:
     connection = sqlite3.connect(path)
     try:
-        metadata = validate_schema(connection)
+        metadata = validate_schema(connection, read_only=True)
         counts = {
             "sources": connection.execute("SELECT COUNT(*) FROM sources").fetchone()[0],
             "records": connection.execute("SELECT COUNT(*) FROM records").fetchone()[0],
@@ -419,7 +438,6 @@ def update_index(
     report_destination = Path(report_path) if report_path is not None else None
     _preflight_report(report_destination, destination, inputs, report_force=report_force)
     discovered = _discover_for_index(inputs, destination, report_path=report_destination)
-    keys = assign_sample_keys(discovered)
     temporary = _new_temp_path(destination)
     staged_report: Path | None = None
     skipped: list[dict[str, str]] = []
@@ -437,53 +455,99 @@ def update_index(
         source_conn = None
         connection = sqlite3.connect(temporary)
         migrate_schema(connection)
-        validate_schema(connection)
-        existing = {
-            row[0]: row[1]
-            for row in connection.execute("SELECT source_identity, sha256 FROM sources")
-        }
-        discovered_paths = {source.source_identity for source in discovered}
-        if prune:
-            for source_identity in sorted(set(existing) - discovered_paths):
-                row = connection.execute(
-                    "SELECT display_path FROM sources WHERE source_identity = ?",
-                    (source_identity,),
-                ).fetchone()
-                connection.execute("DELETE FROM sources WHERE source_identity = ?", (source_identity,))
-                removed.append(str(row[0]) if row else source_identity)
+        validate_schema(connection, read_only=False)
         prepared = _prepared_sources(discovered, jobs)
+        accepted: dict[str, tuple[DiscoveredInput, object, object, int]] = {}
         for source in discovered:
             try:
                 prepared_item = prepared[source.source_identity]
                 if isinstance(prepared_item, Exception):
                     raise prepared_item
                 document, fp, compressed = prepared_item
-                if existing.get(source.source_identity) == fp.sha256:
+                accepted[source.source_identity] = (source, document, fp, compressed)
+            except (GenBankInputError, OSError, ValueError, sqlite3.DatabaseError) as exc:
+                if on_error == "fail":
+                    raise InputError(f"could not update {source.display_path}: {exc}") from exc
+                skipped.append({"source": source.display_path, "error": str(exc)})
+        if not accepted:
+            raise InputError("no usable GenBank sources were updated; existing index preserved")
+
+        stored_rows = connection.execute(
+            "SELECT source_pk, source_identity, display_path, resolved_path_at_index, sha256 "
+            "FROM sources ORDER BY source_identity, source_pk"
+        ).fetchall()
+        retained_items: list[DiscoveredInput] = []
+        retained_hashes: dict[str, str] = {}
+        for row in stored_rows:
+            source_identity = str(row[1])
+            if prune and source_identity not in {
+                source.source_identity for source in discovered
+            }:
+                removed.append(str(row[2]))
+                continue
+            if source_identity in accepted:
+                source, _document, fp, _compressed = accepted[source_identity]
+                retained_items.append(source)
+                retained_hashes[source_identity] = fp.sha256
+            else:
+                stored = _stored_source(row)
+                retained_items.append(stored)
+                retained_hashes[source_identity] = str(row[4])
+        for source_identity, (source, _document, fp, _compressed) in accepted.items():
+            if source_identity not in {item.source_identity for item in retained_items}:
+                retained_items.append(source)
+                retained_hashes[source_identity] = fp.sha256
+        keys = assign_sample_keys(
+            retained_items,
+            sha256_by_identity=retained_hashes,
+        )
+
+        # The revision-3 unique key index makes in-place rekeying unsafe.  Put
+        # every retained row behind a temporary internal key first, then apply
+        # final keys and replacements in deterministic identity order.
+        connection.execute(
+            "UPDATE sources SET sample_key = '__gbparse-rekey__' || source_pk"
+        )
+        existing_by_identity = {str(row[1]): row for row in stored_rows}
+        retained_identities = {item.source_identity for item in retained_items}
+        for source_identity in sorted(set(existing_by_identity) - retained_identities):
+            connection.execute(
+                "DELETE FROM sources WHERE source_identity = ?",
+                (source_identity,),
+            )
+        for item in sorted(retained_items, key=lambda value: value.source_identity):
+            source_identity = item.source_identity
+            if source_identity in accepted:
+                source, document, fp, compressed = accepted[source_identity]
+                if (
+                    source_identity in existing_by_identity
+                    and str(existing_by_identity[source_identity][4]) == fp.sha256
+                ):
                     connection.execute(
                         "UPDATE sources SET display_path = ?, resolved_path_at_index = ?, sample_key = ?, size_bytes = ?, mtime_ns = ?, compressed = ? WHERE source_identity = ?",
                         (
                             source.display_path,
                             str(source.resolved_path),
-                            keys[source],
+                            keys[item],
                             fp.size_bytes,
                             fp.mtime_ns,
                             compressed,
-                            source.source_identity,
+                            source_identity,
                         ),
                     )
-                    successful_sources += 1
-                    continue
-                with connection:
-                    if source.source_identity in existing:
-                        connection.execute("DELETE FROM sources WHERE source_identity = ?", (source.source_identity,))
-                    _insert_document(connection, source, keys[source], fp, document, compressed)
-                successful_sources += 1
-            except (GenBankInputError, OSError, ValueError, sqlite3.DatabaseError) as exc:
-                if on_error == "fail":
-                    raise InputError(f"could not update {source.display_path}: {exc}") from exc
-                skipped.append({"source": source.display_path, "error": str(exc)})
-        if successful_sources == 0:
-            raise InputError("no usable GenBank sources were updated; existing index preserved")
+                else:
+                    if source_identity in existing_by_identity:
+                        connection.execute(
+                            "DELETE FROM sources WHERE source_identity = ?",
+                            (source_identity,),
+                        )
+                    _insert_document(connection, source, keys[item], fp, document, compressed)
+            else:
+                connection.execute(
+                    "UPDATE sources SET sample_key = ? WHERE source_identity = ?",
+                    (keys[item], source_identity),
+                )
+        successful_sources = len(accepted)
         _validate_database(connection)
         connection.execute("INSERT OR REPLACE INTO metadata(key, value) VALUES ('updated_at', ?)", (utc_now(),))
         connection.commit()
@@ -528,7 +592,7 @@ def migrate_index(database: str | Path) -> dict[str, str]:
     connection = sqlite3.connect(path)
     try:
         metadata = migrate_schema(connection)
-        validate_schema(connection)
+        validate_schema(connection, read_only=True)
         return metadata
     finally:
         connection.close()

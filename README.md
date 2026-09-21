@@ -166,11 +166,13 @@ optional report publication is guarded as one outcome. Indexed results are
 only as current as the verified source fingerprint at build/update time, and
 indexed query is the same bounded declarative grammar, not arbitrary SQL.
 `gbparse batch` runs registered single-input `gbparse` commands only. Its
-manifest records canonical source identity, exact argv, input/output hashes,
-stderr hashes, and child diagnostics; partial job success never makes a
-partially failed run successful. Resume verifies the manifest, environment,
-output topology, and logs before reusing an artifact. Record selection selects
-source records and does not rewrite or reconcile their annotations.
+manifest records canonical source identity, logical replay argv, input/output
+hashes, stderr hashes, and child diagnostics; a durable sibling in-progress
+tree makes interrupted runs resumable without publishing transient snapshot
+paths. Required adapter outputs are checked before success, and resume keeps a
+terminal outcome separate from its `resume_action`. Partial job success never
+makes a partially failed run successful. Record selection selects source
+records and does not rewrite or reconcile their annotations.
 
 The CLI returns 0 for success, 1 when a requested validation threshold is
 reached after writing its report, 2 for argument errors, 3 for input/data

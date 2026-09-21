@@ -403,15 +403,43 @@ def _comparison_type(node: object) -> str:
     return node_type
 
 
-def validate_query_types(tree: QueryNode) -> QueryNode:
+def _contains_cohort_field(node: object) -> str | None:
+    kind = node[0]  # type: ignore[index]
+    if kind == "field" and str(node[1]) in {"sample", "sample_key"}:
+        return str(node[1])
+    if kind in {"or", "and", "compare"}:
+        for child in node[1:]:  # type: ignore[index]
+            found = _contains_cohort_field(child)
+            if found is not None:
+                return found
+    elif kind in {"not", "truth", "casefold"}:
+        return _contains_cohort_field(node[1])  # type: ignore[index]
+    elif kind == "list":
+        for child in node[1]:  # type: ignore[index]
+            found = _contains_cohort_field(child)
+            if found is not None:
+                return found
+    return None
+
+
+def validate_query_types(
+    tree: QueryNode,
+    *,
+    allow_cohort_fields: bool = True,
+) -> QueryNode:
     """Validate operator/type compatibility shared by both query engines."""
 
     kind = tree[0]  # type: ignore[index]
+    cohort_field = _contains_cohort_field(tree) if not allow_cohort_fields else None
+    if cohort_field is not None:
+        raise QueryExpressionError(
+            f"field {cohort_field!r} is only available for cohort index queries"
+        )
     if kind in {"or", "and"}:
-        validate_query_types(tree[1])  # type: ignore[index]
-        validate_query_types(tree[2])  # type: ignore[index]
+        validate_query_types(tree[1], allow_cohort_fields=allow_cohort_fields)  # type: ignore[index]
+        validate_query_types(tree[2], allow_cohort_fields=allow_cohort_fields)  # type: ignore[index]
     elif kind == "not":
-        validate_query_types(tree[1])  # type: ignore[index]
+        validate_query_types(tree[1], allow_cohort_fields=allow_cohort_fields)  # type: ignore[index]
     elif kind == "truth":
         _node_type(tree[1])  # type: ignore[index]
     elif kind == "compare":
@@ -536,7 +564,7 @@ def query_features(
 ) -> list[QueryMatch]:
     """Return all features satisfying a safe declarative expression."""
 
-    tree = validate_query_types(parse_query_ast(where))
+    tree = validate_query_types(parse_query_ast(where), allow_cohort_fields=False)
     document = read_genbank(source)
     source_label = document.source_label or str(document.path or "")
     matches: list[QueryMatch] = []

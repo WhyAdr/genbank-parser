@@ -61,6 +61,7 @@ class BatchCommandSpec:
     collect_outputs: Callable[[Path, str, Sequence[str], Namespace], tuple[ExpectedOutput, ...]] = field(
         default=lambda sample_dir, input_path, tail, _options: (ExpectedOutput("result.out"),)
     )
+    capture_extra_outputs: bool = False
 
 
 @dataclass(frozen=True)
@@ -212,6 +213,7 @@ def _phylo_spec() -> BatchCommandSpec:
         name="phylo",
         output_mode="multi_file",
         default_suffix=None,
+        capture_extra_outputs=True,
         forbidden_options=("--output", "--output-dir", "--force"),
         build_job_argv=build,
         collect_outputs=collect,
@@ -227,7 +229,15 @@ def _export_spec() -> BatchCommandSpec:
 
     def collect(sample_dir: Path, input_path: str, tail: Sequence[str], options: Namespace) -> tuple[ExpectedOutput, ...]:
         if getattr(options, "format", None) == "ncbi-table" or _option_value(tail, "--format") == "ncbi-table":
-            return tuple(ExpectedOutput(str(path.relative_to(sample_dir))) for path in sorted(sample_dir.rglob("*")) if path.is_file())
+            prefix = _source_stem(input_path)
+            return tuple(
+                ExpectedOutput(name)
+                for name in (
+                    f"{prefix}.fsa",
+                    f"{prefix}.tbl",
+                    f"{prefix}.export.json",
+                )
+            )
         suffix = {"annotations-tsv": ".tsv", "jsonl": ".jsonl", "faa": ".faa", "ffn": ".ffn", "fna": ".fna", "gff3": ".gff3", "bed12": ".bed"}.get(getattr(options, "format", None), ".out")
         return (ExpectedOutput("result" + suffix),)
 
@@ -341,6 +351,26 @@ def _build_argv(
     ]
 
 
+def _logical_argv(
+    spec: BatchCommandSpec,
+    command: str,
+    source: DiscoveredInput,
+    sample_key: str,
+    tail: Sequence[str],
+    options: Namespace,
+) -> list[str]:
+    """Build replayable argv without physical snapshot/work-tree paths."""
+
+    return _build_argv(
+        spec,
+        command,
+        Path(source.display_path),
+        Path("outputs") / sample_key,
+        tail,
+        options,
+    )
+
+
 def _manifest_path(run_dir: Path) -> Path:
     return run_dir / "batch-manifest.json"
 
@@ -426,6 +456,37 @@ def _all_outputs_payload(sample_root: Path) -> list[dict[str, object]]:
     )
 
 
+def _verified_outputs_payload(
+    sample_root: Path,
+    expected: Sequence[ExpectedOutput],
+    *,
+    capture_extra_outputs: bool,
+) -> list[dict[str, object]]:
+    """Verify a declared output contract and return its published payload."""
+
+    actual = {
+        str(path.relative_to(sample_root)).replace(os.sep, "/")
+        for path in sample_root.rglob("*")
+        if path.is_file()
+    } if sample_root.is_dir() else set()
+    required = {item.relative_path.replace("\\", "/") for item in expected}
+    missing = sorted(required - actual)
+    if missing:
+        raise OutputError(
+            "expected batch output(s) are missing: " + ", ".join(missing)
+        )
+    unexpected = sorted(actual - required)
+    if unexpected and not capture_extra_outputs:
+        raise OutputError(
+            "batch command produced undeclared output(s): " + ", ".join(unexpected)
+        )
+    selected = sorted(actual) if capture_extra_outputs else sorted(required)
+    return _outputs_payload(
+        sample_root,
+        tuple(ExpectedOutput(relative_path) for relative_path in selected),
+    )
+
+
 def _resume_valid(
     job: dict[str, object],
     source: DiscoveredInput,
@@ -467,6 +528,8 @@ def _resume_valid(
         if path.is_file()
     }
     if stored_relative != actual_relative:
+        return False
+    if not spec.capture_extra_outputs and actual_relative != expected_relative:
         return False
     for output in outputs:
         if not isinstance(output, dict):
@@ -513,11 +576,22 @@ def _run_one(
     started_clock = time.perf_counter()
     started = _now()
     fingerprint = None
+    logical_argv = _logical_argv(spec, command, source, sample_key, tail, options)
     try:
         raw, fingerprint = snapshot_file(source.resolved_path)
         snapshot_path.write_bytes(raw)
         argv = _build_argv(spec, command, snapshot_path, sample_root, tail, options)
-        completed = subprocess.run(argv, capture_output=True, text=True, shell=False, check=False)
+        child_environment = os.environ.copy()
+        child_environment["GBPARSE_SOURCE_LABEL"] = source.display_path
+        child_environment["GBPARSE_SOURCE_SHA256"] = fingerprint.sha256
+        completed = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            shell=False,
+            check=False,
+            env=child_environment,
+        )
         stderr = completed.stderr
         if completed.stdout:
             stderr += "\n[child stdout captured]\n" + completed.stdout
@@ -533,10 +607,10 @@ def _run_one(
     outputs: list[dict[str, object]] = []
     if exit_code in {0, 1}:
         try:
-            outputs = (
-                _all_outputs_payload(sample_root)
-                if spec.output_mode in {"directory", "multi_file"}
-                else _outputs_payload(sample_root, expected)
+            outputs = _verified_outputs_payload(
+                sample_root,
+                expected,
+                capture_extra_outputs=spec.capture_extra_outputs,
             )
         except OutputError as exc:
             status = "failed"
@@ -557,7 +631,9 @@ def _run_one(
         "status": status,
         "exit_code": exit_code,
         "exit_class": exit_class,
-        "argv": argv,
+        # Persist the logical replay command, not the physical snapshot or
+        # durable in-progress work-tree paths used by this execution.
+        "argv": logical_argv,
         "started_at": started,
         "ended_at": _now(),
         "duration_seconds": round(time.perf_counter() - started_clock, 6),
@@ -571,7 +647,11 @@ def _run_one(
 
 def _aggregate(manifest: dict[str, object]) -> tuple[int, int]:
     jobs = manifest.get("jobs", [])
-    failed = sum(1 for job in jobs if job.get("status") == "failed")
+    failed = sum(
+        1
+        for job in jobs
+        if job.get("status") in {"failed", "threshold_failed"}
+    )
     codes = [
         int(job.get("exit_code", 0) or 0)
         for job in jobs
@@ -585,6 +665,8 @@ def _aggregate(manifest: dict[str, object]) -> tuple[int, int]:
         return 2, failed
     if any(code == 1 for code in codes):
         return 1, failed
+    if any(code not in {0, 1, 2, 3, 4} or code < 0 for code in codes):
+        return 3, failed
     return 0, failed
 
 
@@ -602,6 +684,13 @@ def _safe_relative(value: object) -> bool:
         return False
     path = Path(value)
     return not path.is_absolute() and ".." not in path.parts
+
+
+def _safe_sample_key(value: object) -> bool:
+    if not isinstance(value, str) or not value:
+        return False
+    path = Path(value)
+    return not path.is_absolute() and len(path.parts) == 1 and path.parts[0] not in {".", ".."}
 
 
 def _within(path: Path, root: Path) -> bool:
@@ -675,6 +764,13 @@ def _validate_manifest(manifest: object) -> dict[str, object]:
         status = str(job["status"])
         if status not in statuses:
             raise InputError(f"batch manifest has invalid job status {status!r}")
+        if "resume_action" in job and job["resume_action"] not in {
+            "reused_unchanged",
+            "rerun_changed",
+            "replayed_running",
+            "not_requested",
+        }:
+            raise InputError("batch manifest has an invalid resume_action")
         input_payload = job["input"]
         if not isinstance(input_payload, dict):
             raise InputError("batch manifest job input must be an object")
@@ -690,8 +786,7 @@ def _validate_manifest(manifest: object) -> dict[str, object]:
                     )
                 source_identities.add(source_identity)
             sample_key = str(job["sample_key"])
-            sample_path = Path(sample_key)
-            if sample_path.is_absolute() or len(sample_path.parts) != 1 or sample_path.parts[0] in {".", ".."}:
+            if not _safe_sample_key(sample_key):
                 raise InputError(f"batch manifest has unsafe sample_key {sample_key!r}")
             sample_key_identity = os.path.normcase(sample_key)
             if sample_key_identity in sample_keys:
@@ -716,6 +811,73 @@ def _validate_manifest(manifest: object) -> dict[str, object]:
         if "stderr_log" in job and not _safe_relative(job.get("stderr_log")):
             raise InputError("batch manifest contains an unsafe stderr log path")
     return manifest
+
+
+def _normalize_legacy_outcomes(manifest: dict[str, object]) -> None:
+    """Load pre-hardening manifests without retaining a fake terminal status."""
+
+    for job in manifest.get("jobs", []):
+        if not isinstance(job, dict) or job.get("status") != "skipped_unchanged":
+            continue
+        code = job.get("exit_code")
+        if code == 1:
+            job["status"] = "threshold_failed"
+        elif code == 0:
+            job["status"] = "succeeded"
+        else:
+            job["status"] = "failed"
+        job["resume_action"] = "reused_unchanged"
+
+
+def _remove_job_artifacts(run_dir: Path, job: dict[str, object], sample_key: str) -> None:
+    """Remove only one validated job's output and log artifacts."""
+
+    if not _safe_sample_key(sample_key):
+        return
+    output_root = run_dir / "outputs" / sample_key
+    if output_root.is_dir():
+        shutil.rmtree(output_root)
+    stderr_log = job.get("stderr_log")
+    if _safe_relative(stderr_log):
+        log_path = run_dir / str(stderr_log)
+        if _within(log_path, run_dir) and log_path.is_file():
+            log_path.unlink()
+
+
+def _reset_job_for_replay(
+    job: dict[str, object],
+    source: DiscoveredInput,
+    sample_key: str,
+    *,
+    action: str,
+) -> None:
+    """Keep identity while clearing terminal execution state."""
+
+    job.update(
+        {
+            "job_id": _job_id(source),
+            "sample_key": sample_key,
+            "status": "pending",
+            "input": _input_payload(source),
+            "outputs": [],
+            "resume_action": action,
+        }
+    )
+    for key in (
+        "exit_code",
+        "exit_class",
+        "argv",
+        "stderr_log",
+        "stderr_sha256",
+        "started_at",
+        "ended_at",
+        "duration_seconds",
+    ):
+        job.pop(key, None)
+
+
+def _inprogress_path(output_path: Path) -> Path:
+    return output_path.parent / f".{output_path.name}.gbparse-inprogress"
 
 
 def execute_batch(
@@ -749,20 +911,37 @@ def execute_batch(
     options = _validate_command_argv(command, validation_argv)
     output_path = Path(output_dir)
     reject_input_output_collision(inputs, output_path)
-    staging_siblings = tuple(output_path.parent.glob(f".{output_path.name}.*")) if output_path.parent.exists() else ()
-    discovered = discover_inputs(inputs, exclude=(output_path, *staging_siblings))
+    inprogress_path = _inprogress_path(output_path)
+    staging_siblings = (
+        tuple(output_path.parent.glob(f".{output_path.name}.*"))
+        if output_path.parent.exists()
+        else ()
+    )
+    discovered = discover_inputs(
+        inputs,
+        exclude=(output_path, inprogress_path, *staging_siblings),
+    )
     if not discovered:
         raise InputError("no GenBank inputs were discovered")
     keys = assign_sample_keys(discovered)
+
     if resume:
-        manifest_file = _manifest_path(output_path)
-        if not output_path.is_dir() or not manifest_file.is_file():
-            raise InputError("--resume requires an existing batch run directory and manifest")
+        if inprogress_path.is_dir() and _manifest_path(inprogress_path).is_file():
+            resume_dir = inprogress_path
+        elif output_path.is_dir() and _manifest_path(output_path).is_file():
+            resume_dir = output_path
+        else:
+            raise InputError(
+                "--resume requires a published run or durable in-progress batch manifest"
+            )
         try:
-            manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+            manifest = json.loads(
+                _manifest_path(resume_dir).read_text(encoding="utf-8")
+            )
         except (OSError, json.JSONDecodeError) as exc:
             raise InputError(f"could not read batch manifest: {exc}") from exc
         manifest = _validate_manifest(manifest)
+        _normalize_legacy_outcomes(manifest)
         if (
             manifest.get("command") != command
             or manifest.get("command_args") != list(tail)
@@ -775,86 +954,178 @@ def execute_batch(
         runner = manifest["runner"]
         if runner.get("jobs") != jobs or runner.get("on_error") != on_error:
             raise InputError("batch resume runner settings do not match the original run")
+        if resume_dir == output_path:
+            if inprogress_path.exists():
+                raise InputError(
+                    f"a durable in-progress batch already exists; resume it directly: {inprogress_path}"
+                )
+            try:
+                shutil.copytree(output_path, inprogress_path)
+            except OSError as exc:
+                raise OutputError(
+                    f"could not create durable batch resume tree {inprogress_path}: {exc}"
+                ) from exc
+        work_dir = inprogress_path
     else:
         if output_path.exists() and not force:
             raise OutputError(f"batch output directory already exists; use --force: {output_path}")
+        if inprogress_path.exists():
+            raise InputError(
+                f"durable in-progress batch exists; use --resume or remove it after review: {inprogress_path}"
+            )
         manifest = _manifest_template(command, tail, discovered, keys, jobs, on_error)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            inprogress_path.mkdir()
+            (inprogress_path / "outputs").mkdir()
+            (inprogress_path / "logs").mkdir()
+        except OSError as exc:
+            raise OutputError(
+                f"could not create durable batch work tree {inprogress_path}: {exc}"
+            ) from exc
+        work_dir = inprogress_path
+        _write_manifest(_manifest_path(work_dir), manifest)
 
-    parent = output_path.parent
-    parent.mkdir(parents=True, exist_ok=True)
-    work_dir = Path(tempfile.mkdtemp(prefix=f".{output_path.name}.work.", dir=parent))
-    try:
-        if resume:
-            shutil.copytree(output_path, work_dir, dirs_exist_ok=True)
-            for job in manifest.get("jobs", []):
-                if job.get("status") == "running":
-                    job["status"] = "pending"
-        else:
-            (work_dir / "outputs").mkdir()
-            (work_dir / "logs").mkdir()
-        existing_by_identity: dict[str, dict[str, object]] = {}
-        for job in manifest.get("jobs", []):
-            payload = job.get("input", {})
-            identity = payload.get("source_identity") if isinstance(payload, dict) else None
-            identity = identity or _legacy_identity(payload.get("resolved_path") if isinstance(payload, dict) else None)
-            if identity is not None:
-                existing_by_identity[str(identity)] = job
-        current_identities = {source.source_identity for source in discovered}
-        for job in manifest.get("jobs", []):
-            payload = job.get("input", {})
-            identity = payload.get("source_identity") if isinstance(payload, dict) else None
-            identity = identity or _legacy_identity(payload.get("resolved_path") if isinstance(payload, dict) else None)
-            if identity not in current_identities:
-                job["status"] = "not_requested"
-        pending: list[tuple[DiscoveredInput, str, dict[str, object]]] = []
-        for source in discovered:
-            key = keys[source]
-            existing = existing_by_identity.get(source.source_identity)
-            if resume and existing is not None and _resume_valid(existing, source, spec, command, tail, options, output_path):
-                existing["status"] = "skipped_unchanged"
-                input_payload = existing.get("input")
-                if isinstance(input_payload, dict):
-                    input_payload.update(
-                        {
-                            "requested_path": source.requested_path,
-                            "source_identity": source.source_identity,
-                            "display_path": source.display_path,
-                            "resolved_path": str(source.resolved_path),
-                        }
-                    )
-                continue
-            if existing is None:
-                existing = {"job_id": _job_id(source), "sample_key": key}
-                manifest.setdefault("jobs", []).append(existing)
-                existing_by_identity[source.source_identity] = existing
-            else:
-                existing["job_id"] = _job_id(source)
-                old_sample = str(existing.get("sample_key", key))
-                if old_sample != key:
-                    existing["sample_key"] = key
-            sample_root = work_dir / "outputs" / key
-            if sample_root.exists():
-                shutil.rmtree(sample_root)
-            pending.append((source, key, existing))
+    for job in manifest.get("jobs", []):
+        if job.get("status") == "running":
+            _remove_job_artifacts(work_dir, job, str(job.get("sample_key", "")))
+            job["status"] = "pending"
+            job["resume_action"] = "replayed_running"
+            job["outputs"] = []
+            for key in (
+                "exit_code",
+                "exit_class",
+                "argv",
+                "stderr_log",
+                "stderr_sha256",
+                "started_at",
+                "ended_at",
+                "duration_seconds",
+            ):
+                job.pop(key, None)
 
-        def record_result(
-            source: DiscoveredInput,
-            existing: dict[str, object],
-            result: dict[str, object],
-        ) -> bool:
-            result_input = result.get("input")
-            if not isinstance(result_input, dict):
-                prior_input = existing.get("input")
-                result_input = _input_payload(
-                    source,
-                    fallback=prior_input if isinstance(prior_input, dict) else None,
+    existing_by_identity: dict[str, dict[str, object]] = {}
+    for job in manifest.get("jobs", []):
+        payload = job.get("input", {})
+        identity = payload.get("source_identity") if isinstance(payload, dict) else None
+        identity = identity or _legacy_identity(
+            payload.get("resolved_path") if isinstance(payload, dict) else None
+        )
+        if identity is not None:
+            existing_by_identity[str(identity)] = job
+
+    current_identities = {source.source_identity for source in discovered}
+    for job in manifest.get("jobs", []):
+        payload = job.get("input", {})
+        identity = payload.get("source_identity") if isinstance(payload, dict) else None
+        identity = identity or _legacy_identity(
+            payload.get("resolved_path") if isinstance(payload, dict) else None
+        )
+        if identity not in current_identities:
+            old_key = str(job.get("sample_key", ""))
+            if job.get("status") != "not_requested":
+                _remove_job_artifacts(work_dir, job, old_key)
+            job["status"] = "not_requested"
+            job["resume_action"] = "not_requested"
+            job["outputs"] = []
+            for key in (
+                "exit_code",
+                "exit_class",
+                "argv",
+                "stderr_log",
+                "stderr_sha256",
+                "started_at",
+                "ended_at",
+                "duration_seconds",
+            ):
+                job.pop(key, None)
+
+    pending: list[tuple[DiscoveredInput, str, dict[str, object]]] = []
+    for source in discovered:
+        key = keys[source]
+        existing = existing_by_identity.get(source.source_identity)
+        if (
+            resume
+            and existing is not None
+            and str(existing.get("sample_key", "")) == key
+            and _resume_valid(existing, source, spec, command, tail, options, work_dir)
+        ):
+            if existing.get("status") == "skipped_unchanged":
+                existing["status"] = (
+                    "threshold_failed"
+                    if existing.get("exit_code") == 1
+                    else "succeeded"
                 )
-            existing.update({**result, "input": result_input})
-            manifest["updated_at"] = _now()
-            _write_manifest(_manifest_path(work_dir), manifest)
-            return result["status"] == "failed"
+            existing["resume_action"] = "reused_unchanged"
+            input_payload = existing.get("input")
+            if isinstance(input_payload, dict):
+                input_payload.update(
+                    {
+                        "requested_path": source.requested_path,
+                        "source_identity": source.source_identity,
+                        "display_path": source.display_path,
+                        "resolved_path": str(source.resolved_path),
+                    }
+                )
+            continue
+        if existing is None:
+            existing = {
+                "job_id": _job_id(source),
+                "sample_key": key,
+                "status": "pending",
+                "input": _input_payload(source),
+                "outputs": [],
+            }
+            manifest.setdefault("jobs", []).append(existing)
+            existing_by_identity[source.source_identity] = existing
+        else:
+            old_sample = str(existing.get("sample_key", key))
+            old_status = str(existing.get("status", "pending"))
+            prior_resume_action = existing.get("resume_action")
+            _remove_job_artifacts(work_dir, existing, old_sample)
+            _reset_job_for_replay(
+                existing,
+                source,
+                key,
+                action=(
+                    "replayed_running"
+                    if old_status == "running" or prior_resume_action == "replayed_running"
+                    else "rerun_changed"
+                ),
+            )
+        sample_root = work_dir / "outputs" / key
+        if sample_root.exists():
+            shutil.rmtree(sample_root)
+        pending.append((source, key, existing))
 
+    _validate_manifest(manifest)
+    _write_manifest(_manifest_path(work_dir), manifest)
+
+    def record_result(
+        source: DiscoveredInput,
+        existing: dict[str, object],
+        result: dict[str, object],
+    ) -> bool:
+        resume_action = existing.get("resume_action")
+        result_input = result.get("input")
+        if not isinstance(result_input, dict):
+            prior_input = existing.get("input")
+            result_input = _input_payload(
+                source,
+                fallback=prior_input if isinstance(prior_input, dict) else None,
+            )
+        existing.update({**result, "input": result_input})
+        if resume_action is not None:
+            existing["resume_action"] = resume_action
+        manifest["updated_at"] = _now()
+        _write_manifest(_manifest_path(work_dir), manifest)
+        return result["status"] in {"failed", "threshold_failed"}
+
+    if pending:
         if jobs > 1 and on_error == "continue" and len(pending) > 1:
+            for _source, _key, existing in pending:
+                existing["status"] = "running"
+            _write_manifest(_manifest_path(work_dir), manifest)
             with ThreadPoolExecutor(max_workers=min(jobs, len(pending))) as executor:
                 futures = {
                     executor.submit(
@@ -875,6 +1146,8 @@ def execute_batch(
                     record_result(source, existing, future.result())
         else:
             for source, key, existing in pending:
+                existing["status"] = "running"
+                _write_manifest(_manifest_path(work_dir), manifest)
                 result = _run_one(
                     spec,
                     command,
@@ -887,16 +1160,13 @@ def execute_batch(
                 )
                 if record_result(source, existing, result) and on_error == "stop":
                     break
-        manifest["updated_at"] = _now()
-        _validate_manifest(manifest)
-        _write_manifest(_manifest_path(work_dir), manifest)
-        # A final manifest exists before the directory move, so an interrupted
-        # publication never presents a successful artifact without provenance.
-        publish_directory_tree(work_dir, output_path, force=force or resume, inputs=inputs)
-        work_dir = None  # type: ignore[assignment]
-    finally:
-        if work_dir is not None and work_dir.exists():
-            shutil.rmtree(work_dir, ignore_errors=True)
+
+    manifest["updated_at"] = _now()
+    _validate_manifest(manifest)
+    _write_manifest(_manifest_path(work_dir), manifest)
+    # A successful directory move is the publication commit point.  Any
+    # exception before it deliberately leaves the durable in-progress tree.
+    publish_directory_tree(work_dir, output_path, force=force or resume, inputs=inputs)
     exit_code, failed_count = _aggregate(manifest)
     return BatchExecutionResult(manifest=manifest, failed_count=failed_count, exit_code=exit_code)
 

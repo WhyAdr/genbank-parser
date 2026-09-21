@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import os
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -78,25 +78,22 @@ def discover_inputs(
     """
 
     excluded = tuple(Path(item) for item in exclude if item is not None)
-    seen: dict[str, DiscoveredInput] = {}
+    observations: dict[str, list[tuple[str, str, Path | None]]] = {}
+
+    def observe(requested: str, path: Path, discovery_root: Path | None) -> None:
+        resolved = _canonical(path)
+        key = os.path.normcase(os.fspath(resolved))
+        observations.setdefault(key, []).append(
+            (requested, _display(path), discovery_root)
+        )
+
     for raw_item in inputs:
         requested = os.fspath(raw_item)
         path = Path(requested)
         if path.is_file():
             if _is_excluded(path, excluded):
                 continue
-            resolved = _canonical(path)
-            key = os.path.normcase(os.fspath(resolved))
-            seen.setdefault(
-                key,
-                DiscoveredInput(
-                    requested_path=requested,
-                    source_identity=_identity(resolved),
-                    resolved_path=resolved,
-                    display_path=_display(path),
-                    discovery_root=None,
-                ),
-            )
+            observe(requested, path, None)
             continue
         if not path.is_dir():
             continue
@@ -107,20 +104,36 @@ def discover_inputs(
                 continue
             if _is_excluded(candidate, excluded):
                 continue
-            resolved = _canonical(candidate)
-            key = os.path.normcase(os.fspath(resolved))
-            seen.setdefault(
-                key,
-                DiscoveredInput(
-                    requested_path=requested,
-                    source_identity=_identity(resolved),
-                    resolved_path=resolved,
-                    display_path=_display(candidate),
-                    discovery_root=root,
-                ),
+            observe(requested, candidate, root)
+    seen: list[DiscoveredInput] = []
+    for observations_for_source in observations.values():
+        # Overlapping roots and explicit-file arguments can observe the same
+        # source through different spellings.  Select metadata by a stable
+        # total order rather than first-seen order so all argument
+        # permutations produce the same logical source description.
+        requested, display, discovery_root = min(
+            observations_for_source,
+            key=lambda item: (
+                os.path.normcase(item[1]),
+                item[1],
+                os.path.normcase(item[0]),
+                item[0],
+                "" if item[2] is None else os.path.normcase(os.fspath(item[2])),
+                "" if item[2] is None else os.fspath(item[2]),
+            ),
+        )
+        resolved = _canonical(Path(display))
+        seen.append(
+            DiscoveredInput(
+                requested_path=requested,
+                source_identity=_identity(resolved),
+                resolved_path=resolved,
+                display_path=display,
+                discovery_root=discovery_root,
             )
+        )
     return sorted(
-        seen.values(),
+        seen,
         key=lambda item: (os.path.normcase(item.display_path), item.display_path),
     )
 
@@ -174,10 +187,30 @@ def _safe_key(value: str) -> str:
 
 def assign_sample_keys(
     discovered: Iterable[DiscoveredInput],
+    *,
+    sha256_by_identity: Mapping[str, str] | None = None,
 ) -> dict[DiscoveredInput, str]:
     """Assign readable, deterministic, collision-safe cohort sample keys."""
 
-    items = tuple(discovered)
+    items = tuple(
+        sorted(
+            discovered,
+            key=lambda item: (
+                os.path.normcase(item.source_identity),
+                item.source_identity,
+                os.path.normcase(item.display_path),
+                item.display_path,
+            ),
+        )
+    )
+
+    def digest_for(item: DiscoveredInput) -> str:
+        if sha256_by_identity is not None:
+            digest = sha256_by_identity.get(item.source_identity)
+            if digest:
+                return digest
+        return fingerprint_file(item.resolved_path).sha256
+
     base_names = [_safe_key(_stem(item.resolved_path)) for item in items]
     counts: dict[str, int] = {}
     for base in base_names:
@@ -189,12 +222,12 @@ def assign_sample_keys(
         if counts[base.casefold()] == 1:
             candidate = base
         else:
-            digest = fingerprint_file(item.resolved_path).sha256[:8]
+            digest = digest_for(item)[:8]
             candidate = f"{base}-{digest}"
         suffix = 2
         while candidate.casefold() in used_keys:
             if not digest:
-                digest = fingerprint_file(item.resolved_path).sha256[:8]
+                digest = digest_for(item)[:8]
             candidate = f"{base}-{digest}-{suffix}"
             suffix += 1
         used_keys.add(candidate.casefold())

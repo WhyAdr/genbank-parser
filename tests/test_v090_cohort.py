@@ -148,7 +148,8 @@ def test_batch_manifest_resume_and_failed_job_has_no_artifact(
         resume=True,
     )
     assert resumed.exit_code == 0
-    assert resumed.manifest["jobs"][0]["status"] == "skipped_unchanged"
+    assert resumed.manifest["jobs"][0]["status"] == "succeeded"
+    assert resumed.manifest["jobs"][0]["resume_action"] == "reused_unchanged"
     (run_dir / "outputs" / "good" / "result.json").write_text("edited", encoding="utf-8")
     rerun = execute_batch(
         [source_dir],

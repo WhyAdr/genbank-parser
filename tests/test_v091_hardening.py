@@ -135,7 +135,8 @@ def test_batch_resume_preserves_threshold_outcome_and_checks_log(
         resume=True,
     )
     assert second.exit_code == 1
-    assert second.manifest["jobs"][0]["status"] == "skipped_unchanged"
+    assert second.manifest["jobs"][0]["status"] == "threshold_failed"
+    assert second.manifest["jobs"][0]["resume_action"] == "reused_unchanged"
     log = run_dir / str(second.manifest["jobs"][0]["stderr_log"])
     log.write_text("tampered\n", encoding="utf-8")
     third = execute_batch(

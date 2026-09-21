@@ -8,6 +8,15 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ### Cohort hardening and provenance boundaries
 
+- Made batch execution crash-resumable through a durable sibling in-progress
+  tree, logical source-labelled replay argv, explicit required-output contracts,
+  terminal outcome plus resume-action fields, and deterministic pruning/rekeying.
+- Raised the persistent index to revision 3 with accepted-cohort key allocation,
+  case-insensitive sample-key uniqueness, deterministic revision-2 migration,
+  fail-closed structural validation, and side-effect-free WAL-preserving reads.
+- Distinguished pre-commit rollback failure from post-commit backup-cleanup
+  warnings while retaining recovery artifacts, and added complete Windows
+  Python 3.12 release-suite and installed-schema instance gates.
 - Preserved validation-threshold outcomes across verified batch resumes and
   validated manifest, environment, output, and stderr provenance before reuse.
 - Keyed index sources and batch jobs by canonical resolved identity, with a

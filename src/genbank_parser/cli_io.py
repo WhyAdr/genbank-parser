@@ -14,6 +14,7 @@ import os
 import shutil
 import sys
 import tempfile
+import warnings
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,6 +31,28 @@ class InputError(GbparseError):
 
 class OutputError(GbparseError):
     """An output could not be safely published."""
+
+
+class OutputRecoveryError(OutputError):
+    """Publication failed and automatic rollback also needs recovery."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        destination: str | Path,
+        backups: Iterable[str | Path] = (),
+        staging: Iterable[str | Path] = (),
+    ) -> None:
+        self.destination = Path(destination)
+        self.backups = tuple(Path(path) for path in backups)
+        self.staging = tuple(Path(path) for path in staging)
+        details = [f"destination={self.destination}"]
+        if self.backups:
+            details.append("backups=" + ",".join(str(path) for path in self.backups))
+        if self.staging:
+            details.append("staging=" + ",".join(str(path) for path in self.staging))
+        super().__init__(f"{message} ({'; '.join(details)})")
 
 
 class SerializationError(OutputError):
@@ -277,6 +300,45 @@ def _write_staged_file(path: Path, payload: str | bytes) -> None:
         os.fsync(handle.fileno())
 
 
+def _fsync_parent(path: Path) -> None:
+    """Best-effort directory durability after a publication commit."""
+
+    try:
+        flags = os.O_RDONLY
+        if hasattr(os, "O_DIRECTORY"):
+            flags |= os.O_DIRECTORY
+        descriptor = os.open(path.parent, flags)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+    except OSError:
+        # Windows and some network filesystems do not expose fsyncable
+        # directory handles.  The replace operation remains authoritative.
+        pass
+
+
+def _cleanup_staged_files(staged: Iterable[Path]) -> None:
+    for path in staged:
+        path.unlink(missing_ok=True)
+
+
+def _raise_recovery_error(
+    message: str,
+    *,
+    destination: Path,
+    backups: Iterable[Path],
+    staging: Iterable[Path],
+    cause: BaseException,
+) -> None:
+    raise OutputRecoveryError(
+        message,
+        destination=destination,
+        backups=backups,
+        staging=staging,
+    ) from cause
+
+
 def publish_staged_files(
     replacements: Sequence[tuple[str | Path, str | Path]],
     *,
@@ -329,23 +391,49 @@ def publish_staged_files(
             os.replace(staged, destination)
             installed.append(destination)
     except OSError as exc:
-        for destination in installed:
+        rollback_errors: list[OSError] = []
+        for destination in reversed(installed):
             try:
                 destination.unlink(missing_ok=True)
-            except OSError:
-                pass
+            except OSError as rollback_exc:
+                rollback_errors.append(rollback_exc)
         for destination, backup in backups.items():
             if backup.exists() and not destination.exists():
                 try:
                     os.replace(backup, destination)
-                except OSError:
-                    pass
+                except OSError as rollback_exc:
+                    rollback_errors.append(rollback_exc)
+        if rollback_errors:
+            _raise_recovery_error(
+                "could not publish output set and automatic rollback failed",
+                destination=destinations[0],
+                backups=backups.values(),
+                staging=(staged for staged, _destination in items if staged.exists()),
+                cause=rollback_errors[0],
+            )
+        try:
+            _cleanup_staged_files(staged for staged, _destination in items)
+        except OSError as cleanup_exc:
+            _raise_recovery_error(
+                "publication rollback succeeded but staging cleanup failed",
+                destination=destinations[0],
+                backups=backups.values(),
+                staging=(staged for staged, _destination in items if staged.exists()),
+                cause=cleanup_exc,
+            )
         raise OutputError(f"could not publish output set: {exc}") from exc
-    finally:
-        for staged, _destination in items:
-            staged.unlink(missing_ok=True)
-        for backup in backups.values():
+
+    for destination in destinations:
+        _fsync_parent(destination)
+    for backup in backups.values():
+        try:
             backup.unlink(missing_ok=True)
+        except OSError as exc:
+            warnings.warn(
+                f"post-commit publication cleanup retained backup {backup}: {exc}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
 
 
 def publish_file_set(
@@ -415,6 +503,7 @@ def publish_directory(
         raise OutputError(f"output directory already exists; use --force: {destination}")
     staging: Path | None = None
     backup: Path | None = None
+    committed = False
     try:
         destination.parent.mkdir(parents=True, exist_ok=True)
         staging = Path(
@@ -434,29 +523,60 @@ def publish_directory(
             )
             backup.rmdir()
             os.replace(destination, backup)
-        try:
-            assert staging is not None
-            os.replace(staging, destination)
-        except OSError:
-            if backup is not None and not destination.exists():
-                os.replace(backup, destination)
-                backup = None
-            raise
+        assert staging is not None
+        os.replace(staging, destination)
         staging = None
-        if backup is not None:
-            shutil.rmtree(backup)
-            backup = None
-        return destination
-    except OSError as exc:
-        raise OutputError(f"could not publish output directory {destination}: {exc}") from exc
-    finally:
+        committed = True
+    except OutputError:
         if staging is not None and staging.exists():
             shutil.rmtree(staging, ignore_errors=True)
-        if backup is not None and backup.exists() and not destination.exists():
+        raise
+    except OSError as exc:
+        rollback_errors: list[OSError] = []
+        if committed and destination.exists():
+            try:
+                shutil.rmtree(destination)
+            except OSError as rollback_exc:
+                rollback_errors.append(rollback_exc)
+        if not committed and backup is not None and backup.exists() and not destination.exists():
             try:
                 os.replace(backup, destination)
-            except OSError:
-                pass
+                backup = None
+            except OSError as rollback_exc:
+                rollback_errors.append(rollback_exc)
+        if rollback_errors:
+            _raise_recovery_error(
+                "could not publish output directory and automatic rollback failed",
+                destination=destination,
+                backups=(() if backup is None else (backup,)),
+                staging=(() if staging is None else (staging,)),
+                cause=rollback_errors[0],
+            )
+        if staging is not None and staging.exists():
+            try:
+                shutil.rmtree(staging)
+                staging = None
+            except OSError as cleanup_exc:
+                _raise_recovery_error(
+                    "publication failed and staging cleanup also failed",
+                    destination=destination,
+                    backups=(() if backup is None else (backup,)),
+                    staging=(staging,),
+                    cause=cleanup_exc,
+                )
+        raise OutputError(f"could not publish output directory {destination}: {exc}") from exc
+
+    _fsync_parent(destination)
+    if backup is not None:
+        try:
+            shutil.rmtree(backup)
+        except OSError as exc:
+            warnings.warn(
+                f"post-commit publication cleanup retained backup {backup}: {exc}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+    return destination
 
 
 def publish_directory_tree(
@@ -478,6 +598,7 @@ def publish_directory_tree(
     if destination.exists() and not force:
         raise OutputError(f"output directory already exists; use --force: {destination}")
     backup: Path | None = None
+    committed = False
     try:
         destination.parent.mkdir(parents=True, exist_ok=True)
         if destination.exists():
@@ -487,20 +608,52 @@ def publish_directory_tree(
             backup.rmdir()
             os.replace(destination, backup)
         os.replace(staging, destination)
-        if backup is not None:
-            shutil.rmtree(backup)
-        return destination
+        committed = True
     except OSError as exc:
-        if backup is not None and backup.exists() and not destination.exists():
+        rollback_errors: list[OSError] = []
+        if committed and destination.exists():
+            try:
+                shutil.rmtree(destination)
+            except OSError as rollback_exc:
+                rollback_errors.append(rollback_exc)
+        if not committed and backup is not None and backup.exists() and not destination.exists():
             try:
                 os.replace(backup, destination)
                 backup = None
-            except OSError:
-                pass
+            except OSError as rollback_exc:
+                rollback_errors.append(rollback_exc)
+        if rollback_errors:
+            _raise_recovery_error(
+                "could not publish output directory tree and automatic rollback failed",
+                destination=destination,
+                backups=(() if backup is None else (backup,)),
+                staging=(staging,) if staging.exists() else (),
+                cause=rollback_errors[0],
+            )
+        if staging.exists():
+            try:
+                shutil.rmtree(staging)
+            except OSError as cleanup_exc:
+                _raise_recovery_error(
+                    "publication rollback succeeded but staging cleanup failed",
+                    destination=destination,
+                    backups=(() if backup is None else (backup,)),
+                    staging=(staging,),
+                    cause=cleanup_exc,
+                )
         raise OutputError(f"could not publish output directory {destination}: {exc}") from exc
-    finally:
-        if backup is not None and backup.exists() and not destination.exists():
-            shutil.rmtree(backup, ignore_errors=True)
+
+    _fsync_parent(destination)
+    if backup is not None:
+        try:
+            shutil.rmtree(backup)
+        except OSError as exc:
+            warnings.warn(
+                f"post-commit publication cleanup retained backup {backup}: {exc}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+    return destination
 
 
 def json_text(value: object) -> str:
@@ -526,6 +679,7 @@ __all__ = [
     "InputError",
     "InputSource",
     "OutputError",
+    "OutputRecoveryError",
     "SerializationError",
     "atomic_bytes_writer",
     "atomic_text_writer",

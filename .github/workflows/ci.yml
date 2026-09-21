@@ -68,6 +68,7 @@ jobs:
         .wheel-venv/bin/python -c "import json; from pathlib import Path; rows=json.loads(Path('wheel-records.json').read_text()); assert rows and rows[0]['schema_version'] == 'gbparse.record.v1'; report=json.loads(Path('wheel-index-report.json').read_text()); assert report['schema_version'] == 'gbparse.index-report.v1'; manifest=json.loads(Path('wheel-batch/batch-manifest.json').read_text()); assert manifest['jobs'][0]['status'] == 'succeeded'"
         .wheel-venv/bin/python -m pip install "jsonschema>=4.23,<5"
         .wheel-venv/bin/python -c "import json; from pathlib import Path; from importlib.resources import files; import jsonschema; root=files('genbank_parser').joinpath('data','schemas'); feature=json.loads(root.joinpath('feature-v1.schema.json').read_text()); record=json.loads(root.joinpath('record-v1.schema.json').read_text()); index_report=json.loads(root.joinpath('index-report-v1.schema.json').read_text()); batch=json.loads(root.joinpath('batch-v1.schema.json').read_text()); jsonschema.Draft202012Validator.check_schema(feature); jsonschema.Draft202012Validator.check_schema(record); jsonschema.Draft202012Validator.check_schema(index_report); jsonschema.Draft202012Validator.check_schema(batch)"
+        .wheel-venv/bin/python -c "import json; from pathlib import Path; from importlib.resources import files; import jsonschema; root=files('genbank_parser').joinpath('data','schemas'); schemas={name: json.loads(root.joinpath(name).read_text()) for name in ('record-v1.schema.json','index-report-v1.schema.json','index-status-v1.schema.json','batch-v1.schema.json')}; [jsonschema.validate(row, schemas['record-v1.schema.json']) for row in json.loads(Path('wheel-records.json').read_text())]; jsonschema.validate(json.loads(Path('wheel-index-report.json').read_text()), schemas['index-report-v1.schema.json']); jsonschema.validate(json.loads(Path('wheel-batch/batch-manifest.json').read_text()), schemas['batch-v1.schema.json'])"
         .wheel-venv/bin/gbparse export tests/fixtures/simple_cds.gb --format bed12 --output wheel-export.bed
         .wheel-venv/bin/python -c "rows=[line.rstrip('\\n').split('\\t') for line in open('wheel-export.bed') if line.strip()]; assert rows and all(len(row) == 12 and 0 <= int(row[1]) < int(row[2]) <= 100 for row in rows)"
         .wheel-venv/bin/gbparse operons tests/fixtures/simple_cds.gb --format json --output wheel-operons.json
@@ -121,3 +122,19 @@ jobs:
 
     - name: Run cohort regression gates
       run: python -m pytest -q tests/test_v090_cohort.py tests/test_v091_hardening.py
+
+  windows-full-suite:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install dependencies
+      run: python -m pip install -e ".[test]"
+
+    - name: Run complete Windows suite
+      run: python -m pytest -q
