@@ -371,6 +371,35 @@ def _logical_argv(
     )
 
 
+def _scrub_diagnostics(
+    value: object,
+    *,
+    stage_root: Path,
+    snapshot_root: Path,
+) -> str:
+    """Remove disposable batch paths from persisted child diagnostics."""
+
+    text = str(value)
+    replacements = {
+        str(stage_root): "<batch-output>",
+        str(stage_root.resolve(strict=False)): "<batch-output>",
+        str(snapshot_root): "<batch-snapshot>",
+        str(snapshot_root.resolve(strict=False)): "<batch-snapshot>",
+    }
+    for raw, replacement in replacements.items():
+        if not raw:
+            continue
+        for spelling in {raw, raw.replace("\\", "/"), raw.replace("/", "\\")}:
+            text = text.replace(spelling, replacement)
+    # Keep the persisted-log contract robust even when a platform or child
+    # formats a path with a different absolute/relative prefix.
+    return (
+        text.replace(".gbparse-input.", "<batch-snapshot>.")
+        .replace(".gbparse-inprogress", "<batch-output>")
+        .replace(".work.", "<batch-work>.")
+    )
+
+
 def _manifest_path(run_dir: Path) -> Path:
     return run_dir / "batch-manifest.json"
 
@@ -428,7 +457,14 @@ def _manifest_template(command: str, tail: Sequence[str], inputs: Sequence[Disco
         "updated_at": _now(),
         "command": command,
         "command_args": list(tail),
-        "runner": {"jobs": jobs, "on_error": on_error, "discovery_roots": sorted({str(item.discovery_root) for item in inputs if item.discovery_root is not None})},
+        "runner": {
+            "jobs": jobs,
+            "on_error": on_error,
+            "discovery_roots": sorted(
+                {str(item.discovery_root) for item in inputs if item.discovery_root is not None}
+            ),
+            "working_directory": str(Path.cwd().resolve()),
+        },
         "jobs": [
             {"job_id": _job_id(item), "sample_key": keys[item], "status": "pending", "input": _input_payload(item)}
             for item in inputs
@@ -496,7 +532,7 @@ def _resume_valid(
     options: Namespace,
     run_dir: Path,
 ) -> bool:
-    if job.get("status") not in {"succeeded", "threshold_failed"}:
+    if job.get("status") not in {"succeeded", "threshold_failed", "failed"}:
         return False
     input_payload = job.get("input", {})
     if not isinstance(input_payload, dict):
@@ -518,18 +554,31 @@ def _resume_valid(
         if isinstance(output, dict)
     }
     expected_relative = {item.relative_path for item in expected}
-    if not expected_relative.issubset(stored_relative):
-        return False
-    if not outputs and spec.output_mode != "directory":
-        return False
+    if job.get("status") == "failed":
+        # Failed jobs deliberately publish no partial output.  Their verified
+        # replay state is the source fingerprint plus the durable diagnostic
+        # log, not a successful output contract.
+        if outputs:
+            return False
+        if sample_root.exists() and any(sample_root.rglob("*")):
+            return False
+    else:
+        if not expected_relative.issubset(stored_relative):
+            return False
+        if not outputs and spec.output_mode != "directory":
+            return False
     actual_relative = {
         str(path.relative_to(sample_root)).replace(os.sep, "/")
         for path in sample_root.rglob("*")
         if path.is_file()
     }
-    if stored_relative != actual_relative:
+    if job.get("status") != "failed" and stored_relative != actual_relative:
         return False
-    if not spec.capture_extra_outputs and actual_relative != expected_relative:
+    if (
+        job.get("status") != "failed"
+        and not spec.capture_extra_outputs
+        and actual_relative != expected_relative
+    ):
         return False
     for output in outputs:
         if not isinstance(output, dict):
@@ -577,72 +626,89 @@ def _run_one(
     started = _now()
     fingerprint = None
     logical_argv = _logical_argv(spec, command, source, sample_key, tail, options)
+    physical_argv = _build_argv(spec, command, snapshot_path, sample_root, tail, options)
     try:
-        raw, fingerprint = snapshot_file(source.resolved_path)
-        snapshot_path.write_bytes(raw)
-        argv = _build_argv(spec, command, snapshot_path, sample_root, tail, options)
-        child_environment = os.environ.copy()
-        child_environment["GBPARSE_SOURCE_LABEL"] = source.display_path
-        child_environment["GBPARSE_SOURCE_SHA256"] = fingerprint.sha256
-        completed = subprocess.run(
-            argv,
-            capture_output=True,
-            text=True,
-            shell=False,
-            check=False,
-            env=child_environment,
-        )
-        stderr = completed.stderr
-        if completed.stdout:
-            stderr += "\n[child stdout captured]\n" + completed.stdout
-        exit_code = completed.returncode
-    except OSError as exc:
-        stderr = str(exc)
+        stderr = ""
         exit_code = 3
-        argv = _build_argv(spec, command, snapshot_path, sample_root, tail, options)
-    log_name = f"{sample_key}.stderr.log"
-    log_path = logs_root / log_name
-    status = "succeeded" if exit_code == 0 else "threshold_failed" if exit_code == 1 else "failed"
-    exit_class = {0: "success", 1: "validation_threshold", 2: "usage", 3: "input_or_job", 4: "output"}.get(exit_code, "unexpected")
-    outputs: list[dict[str, object]] = []
-    if exit_code in {0, 1}:
         try:
-            outputs = _verified_outputs_payload(
-                sample_root,
-                expected,
-                capture_extra_outputs=spec.capture_extra_outputs,
+            raw, fingerprint = snapshot_file(source.resolved_path)
+            snapshot_path.write_bytes(raw)
+            physical_argv = _build_argv(
+                spec, command, snapshot_path, sample_root, tail, options
             )
-        except OutputError as exc:
-            status = "failed"
-            exit_code = 4
-            exit_class = "output"
-            stderr += f"\nERROR: {exc}\n"
-    if status == "failed" and sample_root.exists():
-        # A child may have created a partial file before failing. It is never
-        # published as a plausible successful job artifact.
-        shutil.rmtree(sample_root, ignore_errors=True)
-    with log_path.open("w", encoding="utf-8", newline="") as log_handle:
-        log_handle.write(stderr)
-        log_handle.flush()
-        os.fsync(log_handle.fileno())
-    log_digest = hashlib.sha256(log_path.read_bytes()).hexdigest()
-    result = {
-        "input": _input_payload(source, fingerprint, fallback=input_payload),
-        "status": status,
-        "exit_code": exit_code,
-        "exit_class": exit_class,
-        # Persist the logical replay command, not the physical snapshot or
-        # durable in-progress work-tree paths used by this execution.
-        "argv": logical_argv,
-        "started_at": started,
-        "ended_at": _now(),
-        "duration_seconds": round(time.perf_counter() - started_clock, 6),
-        "outputs": outputs,
-        "stderr_log": str(log_path.relative_to(stage_root)).replace(os.sep, "/"),
-        "stderr_sha256": log_digest,
-    }
-    shutil.rmtree(snapshot_root, ignore_errors=True)
-    return result
+            child_environment = os.environ.copy()
+            child_environment["GBPARSE_SOURCE_LABEL"] = source.display_path
+            child_environment["GBPARSE_SOURCE_SHA256"] = fingerprint.sha256
+            completed = subprocess.run(
+                physical_argv,
+                capture_output=True,
+                text=True,
+                shell=False,
+                check=False,
+                env=child_environment,
+            )
+            stderr = completed.stderr or ""
+            if completed.stdout:
+                stderr += "\n[child stdout captured]\n" + completed.stdout
+            exit_code = completed.returncode
+        except OSError as exc:
+            stderr = str(exc)
+            exit_code = 3
+
+        log_name = f"{sample_key}.stderr.log"
+        log_path = logs_root / log_name
+        status = "succeeded" if exit_code == 0 else "threshold_failed" if exit_code == 1 else "failed"
+        exit_class = {0: "success", 1: "validation_threshold", 2: "usage", 3: "input_or_job", 4: "output"}.get(exit_code, "unexpected")
+        outputs: list[dict[str, object]] = []
+        if exit_code in {0, 1}:
+            try:
+                outputs = _verified_outputs_payload(
+                    sample_root,
+                    expected,
+                    capture_extra_outputs=spec.capture_extra_outputs,
+                )
+            except OutputError as exc:
+                status = "failed"
+                exit_code = 4
+                exit_class = "output"
+                stderr += f"\nERROR: {exc}\n"
+        if status == "failed" and sample_root.exists():
+            # A child may have created a partial file before failing. It is
+            # never published as a plausible successful job artifact.
+            shutil.rmtree(sample_root, ignore_errors=True)
+
+        stderr = _scrub_diagnostics(
+            stderr,
+            stage_root=stage_root,
+            snapshot_root=snapshot_root,
+        )
+        with log_path.open("w", encoding="utf-8", newline="") as log_handle:
+            log_handle.write(stderr)
+            log_handle.flush()
+            os.fsync(log_handle.fileno())
+        log_digest = hashlib.sha256(log_path.read_bytes()).hexdigest()
+        result = {
+            "input": _input_payload(source, fingerprint, fallback=input_payload),
+            "status": status,
+            "exit_code": exit_code,
+            "exit_class": exit_class,
+            # Persist the logical replay command, not the physical snapshot or
+            # durable in-progress work-tree paths used by this execution.
+            "argv": logical_argv,
+            "started_at": started,
+            "ended_at": _now(),
+            "duration_seconds": round(time.perf_counter() - started_clock, 6),
+            "outputs": outputs,
+            "stderr_log": str(log_path.relative_to(stage_root)).replace(os.sep, "/"),
+            "stderr_sha256": log_digest,
+        }
+        return result
+    finally:
+        # This must include subprocess interruption, output-contract failure,
+        # and log-write failure.  The durable manifest is written by the
+        # caller before entering this function and remains resumable when a
+        # BaseException escapes.
+        shutil.rmtree(snapshot_root, ignore_errors=True)
 
 
 def _aggregate(manifest: dict[str, object]) -> tuple[int, int]:
@@ -744,6 +810,14 @@ def _validate_manifest(manifest: object) -> dict[str, object]:
     runner = manifest.get("runner")
     if not isinstance(runner, dict) or not isinstance(runner.get("jobs"), int) or runner["jobs"] <= 0:
         raise InputError("batch manifest runner is invalid")
+    working_directory = runner.get("working_directory")
+    if working_directory is None:
+        if manifest.get("gbparse_version") == __version__:
+            raise InputError(
+                "new batch manifests must record runner.working_directory"
+            )
+    elif not isinstance(working_directory, str) or not os.path.isabs(working_directory):
+        raise InputError("batch manifest runner.working_directory must be absolute")
     if not isinstance(manifest.get("jobs"), list):
         raise InputError("batch manifest jobs must be an array")
     statuses = {"pending", "running", "succeeded", "threshold_failed", "failed", "skipped_unchanged", "not_requested"}
@@ -768,6 +842,7 @@ def _validate_manifest(manifest: object) -> dict[str, object]:
             "reused_unchanged",
             "rerun_changed",
             "replayed_running",
+            "deferred_after_stop",
             "not_requested",
         }:
             raise InputError("batch manifest has an invalid resume_action")
@@ -849,7 +924,7 @@ def _reset_job_for_replay(
     source: DiscoveredInput,
     sample_key: str,
     *,
-    action: str,
+    action: str | None,
 ) -> None:
     """Keep identity while clearing terminal execution state."""
 
@@ -860,9 +935,12 @@ def _reset_job_for_replay(
             "status": "pending",
             "input": _input_payload(source),
             "outputs": [],
-            "resume_action": action,
         }
     )
+    if action is None:
+        job.pop("resume_action", None)
+    else:
+        job["resume_action"] = action
     for key in (
         "exit_code",
         "exit_class",
@@ -1041,6 +1119,7 @@ def execute_batch(
                 job.pop(key, None)
 
     pending: list[tuple[DiscoveredInput, str, dict[str, object]]] = []
+    stop_latched = False
     for source in discovered:
         key = keys[source]
         existing = existing_by_identity.get(source.source_identity)
@@ -1057,6 +1136,11 @@ def execute_batch(
                     else "succeeded"
                 )
             existing["resume_action"] = "reused_unchanged"
+            if on_error == "stop" and existing.get("status") in {
+                "failed",
+                "threshold_failed",
+            }:
+                stop_latched = True
             input_payload = existing.get("input")
             if isinstance(input_payload, dict):
                 input_payload.update(
@@ -1083,15 +1167,18 @@ def execute_batch(
             old_status = str(existing.get("status", "pending"))
             prior_resume_action = existing.get("resume_action")
             _remove_job_artifacts(work_dir, existing, old_sample)
+            replay_action = (
+                "replayed_running"
+                if old_status == "running" or prior_resume_action == "replayed_running"
+                else "rerun_changed"
+                if old_status in {"succeeded", "threshold_failed", "failed"}
+                else None
+            )
             _reset_job_for_replay(
                 existing,
                 source,
                 key,
-                action=(
-                    "replayed_running"
-                    if old_status == "running" or prior_resume_action == "replayed_running"
-                    else "rerun_changed"
-                ),
+                action=replay_action,
             )
         sample_root = work_dir / "outputs" / key
         if sample_root.exists():
@@ -1099,6 +1186,10 @@ def execute_batch(
         pending.append((source, key, existing))
 
     _validate_manifest(manifest)
+    if stop_latched:
+        for _source, _key, existing in pending:
+            existing["resume_action"] = "deferred_after_stop"
+        pending = []
     _write_manifest(_manifest_path(work_dir), manifest)
 
     def record_result(
@@ -1159,6 +1250,7 @@ def execute_batch(
                     existing.get("input") if isinstance(existing.get("input"), dict) else None,
                 )
                 if record_result(source, existing, result) and on_error == "stop":
+                    stop_latched = True
                     break
 
     manifest["updated_at"] = _now()
