@@ -297,7 +297,7 @@ def test_publication_rollback_failure_preserves_recovery_artifacts(tmp_path: Pat
     assert staged_two.exists()
 
 
-def test_file_set_rollback_failure_preserves_recovery_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_directory_tree_rollback_failure_preserves_recovery_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     destination = tmp_path / "run"
     destination.mkdir()
     (destination / "old.txt").write_text("old", encoding="utf-8")

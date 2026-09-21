@@ -4,6 +4,24 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.9.2] - 2026-09-21
+
+### Release hardening and recovery contracts
+
+- Bound plain and gzip parsing to one raw-byte source snapshot, propagate
+  logical source labels through every registered batch adapter, and scrub
+  disposable snapshot/work-tree paths from artifacts and diagnostics.
+- Retained every live recovery artifact across direct publication,
+  `build_index`, and `update_index` callers; preserved durable batch state
+  through child interruption and added the cross-platform stop-on-resume latch.
+- Rejected cohort-only direct projections, validated the actual SQLite
+  sample-key index definition, exposed `gbparse index migrate`, and recorded
+  the canonical replay working directory with legacy manifest compatibility.
+- Added gzip, recovery, resume, query, schema-definition, provenance-scan,
+  installed-artifact, and schema-instance release gates.
+
+---
+
 ## [0.9.1] - 2026-09-20
 
 ### Cohort hardening and provenance boundaries

@@ -17,7 +17,7 @@ A Biopython-powered genome-annotation query engine, validation suite, and CLI to
 - **Unified CLI**: Provides `gbparse` subcommands for feature search, valid local sub-region extraction, annotation diffing, genetic-code-aware codon usage, annotation-based candidate phylogenetic markers, CRISPR/Cas annotation scanning, and declarative discovery.
 - **MEOR Evidence Engine**: Scans 48 curated markers across 9 hydrocarbon-degradation, biosurfactant, and bio-emulsifier categories; evaluates 7 genome-level pathway models; and reports same-contig, known-strand candidate clusters with at most N intervening bases.
 - **Mobilome Evidence Engine**: Inventories every parsed record and retains field-level mobilome evidence, replicon declarations, cautious component hypotheses, catalog provenance, and explicit external-analysis handoffs in text, JSON, or normalized TSV.
-- **Cohort CLI (v0.9.1)**: Supports gzip/stdin input, lossless record selection, canonical-identity SQLite cohort indexes, snapshot-bound resumable batch runs, type-parity feature queries, deterministic JSONL/BED12/NCBI candidate exports, complete annotation diffs, evidence-preserving marker comparisons, and circular-aware operon proximity candidates.
+- **Cohort CLI (v0.9.2)**: Supports gzip/stdin input, lossless record selection, canonical-identity SQLite cohort indexes, snapshot-bound resumable batch runs, type-parity feature queries, deterministic JSONL/BED12/NCBI candidate exports, complete annotation diffs, evidence-preserving marker comparisons, and circular-aware operon proximity candidates.
 
 ---
 
@@ -173,6 +173,33 @@ paths. Required adapter outputs are checked before success, and resume keeps a
 terminal outcome separate from its `resume_action`. Partial job success never
 makes a partially failed run successful. Record selection selects source
 records and does not rewrite or reconcile their annotations.
+
+### v0.9.2 lifecycle contracts
+
+Batch manifests use `pending`, `running`, `succeeded`, `threshold_failed`,
+`failed`, and `not_requested` statuses. Resume actions are
+`reused_unchanged`, `rerun_changed`, `replayed_running`,
+`deferred_after_stop`, or `not_requested`. `--resume` reuses only a verified
+source fingerprint, output contract, and stderr log; a durable
+`.<output>.gbparse-inprogress` tree is the recovery point after interruption.
+With `--on-error stop`, an unchanged failed or threshold-failed job keeps the
+stop latch and later pending jobs remain deferred; change the source and rerun
+successfully, or intentionally restart with `--force`, to clear that state.
+Logical source labels and replay argv are retained in the manifest while
+physical snapshots and disposable work-tree paths are removed from published
+artifacts and stderr logs.
+
+Indexes use schema revision 3. `gbparse index status` and `query` fail closed
+on incomplete or incompatible old revisions; migrate them explicitly with
+`gbparse index migrate cohort.gbidx`, or use `index update`, which performs
+the supported in-place migration. `--prune` treats directory discovery as the
+authoritative cohort and removes no-longer-discovered sources. Use
+`--report-force` when replacing an existing report. If a multi-file publication
+cannot roll back automatically, the reported backup and staging paths are
+retained for manual recovery.
+
+Direct feature queries reject cohort-only `sample` and `sample_key` fields;
+indexed queries expose those fields from the stored cohort identity.
 
 The CLI returns 0 for success, 1 when a requested validation threshold is
 reached after writing its report, 2 for argument errors, 3 for input/data
