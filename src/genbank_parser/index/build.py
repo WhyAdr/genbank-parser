@@ -16,6 +16,7 @@ from .. import __version__
 from ..cli_io import (
     InputError,
     OutputError,
+    OutputRecoveryError,
     paths_same,
     publish_staged_files,
     reject_input_output_collision,
@@ -363,9 +364,17 @@ def build_index(
         if report_destination is not None:
             staged_report = _stage_report(report, report_destination)
             replacements.append((staged_report, report_destination))
-        publish_staged_files(replacements, force=True, inputs=inputs)
-        temporary = None
-        staged_report = None
+        try:
+            publish_staged_files(replacements, force=True, inputs=inputs)
+        except OutputRecoveryError:
+            # Recovery artifacts named by the publication exception now
+            # belong to the operator, not this finally block.
+            temporary = None
+            staged_report = None
+            raise
+        else:
+            temporary = None
+            staged_report = None
     finally:
         if connection is not None:
             try:
@@ -566,9 +575,17 @@ def update_index(
         if report_destination is not None:
             staged_report = _stage_report(report, report_destination)
             replacements.append((staged_report, report_destination))
-        publish_staged_files(replacements, force=True, inputs=inputs)
-        temporary = None
-        staged_report = None
+        try:
+            publish_staged_files(replacements, force=True, inputs=inputs)
+        except OutputRecoveryError:
+            # Preserve every staged database/report path named by the
+            # recovery handoff for manual restoration.
+            temporary = None
+            staged_report = None
+            raise
+        else:
+            temporary = None
+            staged_report = None
     finally:
         for handle in (connection, temp_conn, source_conn):
             try:

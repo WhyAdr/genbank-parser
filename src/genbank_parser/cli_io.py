@@ -334,8 +334,10 @@ def _raise_recovery_error(
     raise OutputRecoveryError(
         message,
         destination=destination,
-        backups=backups,
-        staging=staging,
+        # The exception is an operator handoff: never name a path that a
+        # successful rollback already moved away or that cleanup removed.
+        backups=(path for path in backups if Path(path).exists()),
+        staging=(path for path in staging if Path(path).exists()),
     ) from cause
 
 
@@ -460,8 +462,15 @@ def publish_file_set(
             staged_path = Path(staged_name)
             _write_staged_file(staged_path, payload)
             staged.append((staged_path, destination))
-        publish_staged_files(staged, force=force, inputs=inputs)
-        staged = []
+        try:
+            publish_staged_files(staged, force=force, inputs=inputs)
+        except OutputRecoveryError:
+            # The publication helper's exception is the recovery handoff.
+            # Every path named by it must remain available to the operator.
+            staged = []
+            raise
+        else:
+            staged = []
     finally:
         for staged_path, _destination in staged:
             staged_path.unlink(missing_ok=True)
