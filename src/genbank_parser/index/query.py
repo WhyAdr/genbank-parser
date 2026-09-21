@@ -271,10 +271,17 @@ def _compile(node: object) -> tuple[str, list[object]]:
     raise QueryExpressionError(f"invalid indexed query expression node {kind!r}")
 
 
-def compile_query_sql(expression: str) -> tuple[str, tuple[object, ...]]:
+def compile_query_sql(
+    expression: str,
+    *,
+    allow_cohort_fields: bool = True,
+) -> tuple[str, tuple[object, ...]]:
     """Compile the canonical query AST to SQL with only bound values."""
 
-    tree = validate_query_types(parse_query_ast(expression))
+    tree = validate_query_types(
+        parse_query_ast(expression),
+        allow_cohort_fields=allow_cohort_fields,
+    )
     sql, params = _compile(tree)
     return sql, tuple(params)
 
@@ -464,7 +471,7 @@ def query_index(
     path = Path(database)
     if not path.is_file():
         raise FileNotFoundError(f"index does not exist: {path}")
-    predicate, params = compile_query_sql(where)
+    predicate, params = compile_query_sql(where, allow_cohort_fields=True)
     connection = sqlite3.connect(path)
     connection.row_factory = sqlite3.Row
     _register_functions(connection)

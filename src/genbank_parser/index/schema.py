@@ -375,13 +375,33 @@ def validate_schema(
                     f"incomplete gbparse index; table {table!r} is missing columns: "
                     + ", ".join(missing_columns)
                 )
-        indexes = {
-            str(row[1])
-            for row in connection.execute("PRAGMA index_list(sources)")
-        }
-        if "uq_sources_sample_key_nocase" not in indexes:
+        index_rows = list(connection.execute("PRAGMA index_list('sources')"))
+        sample_key_index = next(
+            (row for row in index_rows if str(row[1]) == "uq_sources_sample_key_nocase"),
+            None,
+        )
+        if sample_key_index is None:
             raise ValueError(
                 "incomplete gbparse index; required sample-key uniqueness index is missing"
+            )
+        unique = int(sample_key_index[2])
+        partial = int(sample_key_index[4]) if len(sample_key_index) > 4 else 0
+        if unique != 1 or partial != 0:
+            raise ValueError(
+                "invalid gbparse index; sample-key uniqueness index must be "
+                "unique and non-partial"
+            )
+        key_columns = [
+            (str(row[2]), str(row[4] or "BINARY").upper())
+            for row in connection.execute(
+                "PRAGMA index_xinfo('uq_sources_sample_key_nocase')"
+            )
+            if int(row[5]) == 1
+        ]
+        if key_columns != [("sample_key", "NOCASE")]:
+            raise ValueError(
+                "invalid gbparse index; sample-key index must be "
+                "sample_key COLLATE NOCASE"
             )
         metadata = read_metadata(connection)
     except sqlite3.DatabaseError as exc:

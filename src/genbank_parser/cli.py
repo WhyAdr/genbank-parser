@@ -35,7 +35,7 @@ from .export import (
 )
 from .functional import build_functional_report, render_functional
 from .gff import convert_to_gff3
-from .index import build_index, inspect_index, query_index, update_index
+from .index import build_index, inspect_index, migrate_index, query_index, update_index
 from .io import GenBankInputError, read_genbank
 from .locus import build_locus_report, render_locus_report
 from .meor import analyze_meor
@@ -422,6 +422,11 @@ def create_parser() -> argparse.ArgumentParser:
     p_index_status.add_argument("--output")
     p_index_status.add_argument("--force", action="store_true")
 
+    p_index_migrate = index_actions.add_parser(
+        "migrate", help="Migrate a revision-1 or revision-2 index to revision 3"
+    )
+    p_index_migrate.add_argument("database")
+
     p_batch = subparsers.add_parser("batch", help="Apply one registered command across a cohort")
     p_batch.add_argument("inputs", nargs="+")
     p_batch.add_argument("--command", required=True)
@@ -564,12 +569,19 @@ def _dispatch(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
             return result.exit_code
         if args.index_action == "query":
             rows = query_index(args.database, args.where, limit=args.limit)
-            selected = parse_select_fields(args.select)
+            selected = parse_select_fields(args.select, allow_cohort_fields=True)
             _write_or_stdout(
                 render_rows(rows, format_type=args.format, selected=selected),
                 args.output,
                 force=args.force,
                 inputs=(args.database,),
+            )
+            return EXIT_OK
+        if args.index_action == "migrate":
+            metadata = migrate_index(args.database)
+            print(
+                f"Migrated {args.database} to index schema revision "
+                f"{metadata['schema_revision']}"
             )
             return EXIT_OK
         report = inspect_index(
@@ -886,7 +898,7 @@ def _dispatch(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     if cmd == "query":
         matches = query_features(args.input, args.where)
         rows = tuple(match.row for match in matches)
-        selected = parse_select_fields(args.select)
+        selected = parse_select_fields(args.select, allow_cohort_fields=False)
         if args.emit == "rows":
             rendered = render_rows(rows, format_type=args.format, selected=selected)
         else:
