@@ -100,6 +100,7 @@ def _iter_genbank_text(text: str) -> Iterator[GenBankRecord]:
     attempting to bind a second, decoded representation to that digest.
     """
 
+    global_feature_index = 0
     for rec_idx, rec in enumerate(SeqIO.parse(io.StringIO(text), "genbank"), 1):
         contig = rec.id if (rec.id and rec.id != ".") else rec.name
         topology = rec.annotations.get("topology")
@@ -115,7 +116,8 @@ def _iter_genbank_text(text: str) -> Iterator[GenBankRecord]:
                 rec_len = 0
 
         features: list[GenBankFeature] = []
-        for record_feature_index, feat in enumerate(rec.features, 1):
+        for feat in rec.features:
+            global_feature_index += 1
             quals: dict[str, list[str]] = collections.defaultdict(list)
             for key, values in feat.qualifiers.items():
                 if isinstance(values, list):
@@ -126,7 +128,7 @@ def _iter_genbank_text(text: str) -> Iterator[GenBankRecord]:
                 GenBankFeature(
                     record_id=contig,
                     record_index=rec_idx,
-                    feature_index=record_feature_index,
+                    feature_index=global_feature_index,
                     type=feat.type,
                     location=feat.location,
                     qualifiers=dict(quals),
@@ -172,14 +174,6 @@ def read_genbank(source: str | Path | TextIO) -> GenBankDocument:
         records = list(_iter_genbank_text(text))
     except (AttributeError, IndexError, KeyError, OSError, TypeError, ValueError) as exc:
         raise GenBankInputError(f"could not parse GenBank input {label}: {exc}") from exc
-    # Feature indices are document-global in the canonical read API.  The
-    # lower-level iterator intentionally remains record-local for streaming
-    # callers that do not materialize a whole document.
-    global_index = 0
-    for record in records:
-        for feature in record.features:
-            global_index += 1
-            feature.feature_index = global_index
     return GenBankDocument(
         path=path,
         records=records,

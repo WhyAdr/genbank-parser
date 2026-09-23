@@ -10,6 +10,8 @@ import pytest
 
 from genbank_parser.batch import BatchUsageError, execute_batch
 from genbank_parser.cli_io import OutputError, OutputRecoveryError
+from genbank_parser import read_genbank
+from genbank_parser.io import iter_genbank
 
 
 def _copy_source(source: Path, directory: Path, name: str) -> Path:
@@ -202,3 +204,19 @@ def test_resume_copy_interruption_is_self_recoverable(
     resumed = execute_batch([simple_cds_gbff], command="validate", output_dir=run, resume=True)
     assert resumed.exit_code == 0
     assert not (tmp_path / ".run.gbparse-inprogress").exists()
+
+
+def test_iter_genbank_feature_indices_are_document_global(
+    multi_record_circular_gbff: Path,
+) -> None:
+    streamed = [
+        feature.feature_index
+        for record in iter_genbank(multi_record_circular_gbff)
+        for feature in record.features
+    ]
+    materialized = [
+        feature.feature_index
+        for record in read_genbank(multi_record_circular_gbff).records
+        for feature in record.features
+    ]
+    assert streamed == materialized == list(range(1, len(streamed) + 1))
