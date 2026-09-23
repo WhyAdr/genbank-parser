@@ -1146,8 +1146,8 @@ def execute_batch(
                 job.pop(key, None)
 
     pending: list[tuple[DiscoveredInput, str, dict[str, object]]] = []
-    stop_latched = False
-    for source in discovered:
+    stop_barrier_position: int | None = None
+    for position, source in enumerate(discovered):
         key = keys[source]
         existing = existing_by_identity.get(source.source_identity)
         if (
@@ -1167,7 +1167,8 @@ def execute_batch(
                 "failed",
                 "threshold_failed",
             }:
-                stop_latched = True
+                if stop_barrier_position is None:
+                    stop_barrier_position = position
             input_payload = existing.get("input")
             if isinstance(input_payload, dict):
                 input_payload.update(
@@ -1210,13 +1211,16 @@ def execute_batch(
         sample_root = work_dir / "outputs" / key
         if sample_root.exists():
             shutil.rmtree(sample_root)
+        if (
+            on_error == "stop"
+            and stop_barrier_position is not None
+            and position > stop_barrier_position
+        ):
+            existing["resume_action"] = "deferred_after_stop"
+            continue
         pending.append((source, key, existing))
 
     _validate_manifest(manifest)
-    if stop_latched:
-        for _source, _key, existing in pending:
-            existing["resume_action"] = "deferred_after_stop"
-        pending = []
     _write_manifest(_manifest_path(work_dir), manifest)
 
     def record_result(

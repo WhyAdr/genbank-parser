@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import pytest
 
 from genbank_parser.batch import BatchUsageError, execute_batch
+
+
+def _copy_source(source: Path, directory: Path, name: str) -> Path:
+    directory.mkdir(parents=True, exist_ok=True)
+    target = directory / name
+    shutil.copyfile(source, target)
+    return target
 
 
 @pytest.mark.parametrize(
@@ -63,3 +71,75 @@ def test_batch_force_cannot_replace_auxiliary_input_tree(
             force=True,
         )
     assert marker.read_text(encoding="utf-8") == "preserve"
+
+
+def test_stop_barrier_runs_changed_job_before_reused_failure(
+    simple_cds_gbff: Path, duplicate_locus_gbff: Path, tmp_path: Path
+) -> None:
+    sources = tmp_path / "sources"
+    first = _copy_source(simple_cds_gbff, sources, "a.gb")
+    (sources / "b.gb").write_text("not GenBank", encoding="utf-8")
+    _copy_source(simple_cds_gbff, sources, "c.gb")
+    run = tmp_path / "run"
+
+    first_result = execute_batch(
+        [sources], command="validate", output_dir=run, on_error="stop"
+    )
+    assert [job["status"] for job in first_result.manifest["jobs"]] == [
+        "succeeded",
+        "failed",
+        "pending",
+    ]
+
+    shutil.copyfile(duplicate_locus_gbff, first)
+    resumed = execute_batch(
+        [sources], command="validate", output_dir=run, on_error="stop", resume=True
+    )
+    jobs = {job["sample_key"]: job for job in resumed.manifest["jobs"]}
+    assert jobs["a"]["resume_action"] == "rerun_changed"
+    assert jobs["a"]["status"] == "succeeded"
+    assert jobs["b"]["resume_action"] == "reused_unchanged"
+    assert jobs["b"]["status"] == "failed"
+    assert jobs["c"]["resume_action"] == "deferred_after_stop"
+    assert jobs["c"]["status"] == "pending"
+
+
+def test_stop_barrier_handles_threshold_failure_before_changed_job(
+    simple_cds_gbff: Path, duplicate_locus_gbff: Path, tmp_path: Path
+) -> None:
+    sources = tmp_path / "sources"
+    first = _copy_source(simple_cds_gbff, sources, "a.gb")
+    _copy_source(duplicate_locus_gbff, sources, "b.gb")
+    _copy_source(simple_cds_gbff, sources, "c.gb")
+    run = tmp_path / "run"
+    tail = ("--format", "json", "--fail-on", "warning")
+
+    first_result = execute_batch(
+        [sources],
+        command="validate",
+        output_dir=run,
+        tail=tail,
+        on_error="stop",
+    )
+    assert [job["status"] for job in first_result.manifest["jobs"]] == [
+        "succeeded",
+        "threshold_failed",
+        "pending",
+    ]
+
+    shutil.copyfile(duplicate_locus_gbff, first)
+    resumed = execute_batch(
+        [sources],
+        command="validate",
+        output_dir=run,
+        tail=tail,
+        on_error="stop",
+        resume=True,
+    )
+    jobs = {job["sample_key"]: job for job in resumed.manifest["jobs"]}
+    assert jobs["a"]["resume_action"] == "rerun_changed"
+    assert jobs["a"]["status"] == "threshold_failed"
+    assert jobs["b"]["resume_action"] == "reused_unchanged"
+    assert jobs["b"]["status"] == "threshold_failed"
+    assert jobs["c"]["resume_action"] == "deferred_after_stop"
+    assert jobs["c"]["status"] == "pending"
