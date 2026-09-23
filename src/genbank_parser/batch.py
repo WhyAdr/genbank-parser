@@ -294,6 +294,16 @@ _NON_BATCHABLE_SPECS = {
     for name in _UNSUPPORTED
 }
 
+# Custom auxiliary resources are intentionally not batchable until their raw
+# bytes can be fingerprinted, snapshotted, published, and validated on resume.
+# Keep this contract local to batch so direct commands retain their existing
+# support for reviewed or user-supplied resources.
+_EXTERNAL_RESOURCE_FLAGS: dict[str, tuple[str, ...]] = {
+    "discover": ("--rules",),
+    "meor": ("--markers", "--pathways"),
+    "mobilome": ("--database-dir",),
+}
+
 
 def registered_commands() -> dict[str, BatchCommandSpec]:
     return {**_REGISTRY, **_NON_BATCHABLE_SPECS}
@@ -320,6 +330,22 @@ def _validate_tail(spec: BatchCommandSpec, tail: Sequence[str]) -> None:
                 raise BatchUsageError(
                     f"batch owns {forbidden}; remove it from the wrapped command tail"
                 )
+
+
+def _option_present(tail: Sequence[str], flag: str) -> bool:
+    return any(token == flag or token.startswith(flag + "=") for token in tail)
+
+
+def _validate_batch_dependencies(command: str, tail: Sequence[str]) -> None:
+    """Reject auxiliary resources whose provenance is not batch-bound yet."""
+
+    for flag in _EXTERNAL_RESOURCE_FLAGS.get(command, ()):
+        if _option_present(tail, flag):
+            raise BatchUsageError(
+                f"batch command {command!r} does not accept {flag}; "
+                "run the command directly until auxiliary-resource snapshot "
+                "provenance is implemented"
+            )
 
 
 def _validate_command_argv(command: str, argv: Sequence[str]) -> Namespace:
@@ -982,6 +1008,7 @@ def execute_batch(
         raise ValueError("--resume and --force are mutually exclusive")
     spec = get_command_spec(command, tail)
     _validate_tail(spec, tail)
+    _validate_batch_dependencies(command, tail)
     sentinel = Path("__gbparse_batch_input__.gbff")
     base_options = _validate_command_argv(command, [str(sentinel), *tail])
     raw_validation = spec.build_job_argv(command, str(sentinel), tail, base_options)
