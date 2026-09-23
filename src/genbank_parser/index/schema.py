@@ -691,6 +691,8 @@ __all__ = [
     "INDEX_SCHEMA_VERSION",
     "SQLITE_USER_VERSION",
     "configure_connection",
+    "configure_existing_writer_connection",
+    "configure_new_writer_connection",
     "configure_reader_connection",
     "initialize_schema",
     "migrate_schema",

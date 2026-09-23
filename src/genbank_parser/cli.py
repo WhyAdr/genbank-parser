@@ -7,6 +7,7 @@ import contextlib
 import gzip
 import io
 import json
+import sqlite3
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -969,6 +970,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     except QueryExpressionError as exc:
         eprint(f"ERROR: {exc}")
         return EXIT_USAGE
+    except sqlite3.DatabaseError as exc:
+        eprint(f"ERROR: could not read SQLite index: {exc}")
+        return EXIT_INPUT
     except (GenBankInputError, InputError, OSError, FileNotFoundError, ValueError) as exc:
         eprint(f"ERROR: {exc}")
         return EXIT_INPUT

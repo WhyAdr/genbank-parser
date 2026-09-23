@@ -452,11 +452,12 @@ def update_index(
     skipped: list[dict[str, str]] = []
     removed: list[str] = []
     successful_sources = 0
-    source_conn: sqlite3.Connection | None = sqlite3.connect(destination)
-    temp_conn: sqlite3.Connection | None = sqlite3.connect(temporary)
+    source_conn: sqlite3.Connection | None = None
+    temp_conn: sqlite3.Connection | None = None
     connection: sqlite3.Connection | None = None
     try:
-        assert source_conn is not None and temp_conn is not None
+        source_conn = sqlite3.connect(destination)
+        temp_conn = sqlite3.connect(temporary)
         source_conn.backup(temp_conn)
         temp_conn.close()
         temp_conn = None
@@ -586,6 +587,8 @@ def update_index(
         else:
             temporary = None
             staged_report = None
+    except (sqlite3.DatabaseError, ValueError) as exc:
+        raise InputError(f"could not update index {destination}: {exc}") from exc
     finally:
         for handle in (connection, temp_conn, source_conn):
             try:
@@ -606,13 +609,17 @@ def migrate_index(database: str | Path) -> dict[str, str]:
     path = Path(database)
     if not path.is_file():
         raise InputError(f"index does not exist: {path}")
-    connection = sqlite3.connect(path)
+    connection: sqlite3.Connection | None = None
     try:
+        connection = sqlite3.connect(path)
         metadata = migrate_schema(connection)
         validate_schema(connection, read_only=True)
         return metadata
+    except (sqlite3.DatabaseError, ValueError) as exc:
+        raise InputError(f"could not migrate index {path}: {exc}") from exc
     finally:
-        connection.close()
+        if connection is not None:
+            connection.close()
 
 
 __all__ = ["IndexBuildResult", "build_index", "migrate_index", "update_index"]

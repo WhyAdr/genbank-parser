@@ -11,11 +11,12 @@ from pathlib import Path
 import pytest
 
 from genbank_parser.batch import BatchUsageError, execute_batch
-from genbank_parser.cli_io import OutputError, OutputRecoveryError
+from genbank_parser.cli_io import InputError, OutputError, OutputRecoveryError
 from genbank_parser import read_genbank
 from genbank_parser.io import iter_genbank
 from genbank_parser.index import build_index, migrate_index
 from genbank_parser.index.schema import SCHEMA_SQL
+from genbank_parser.cli import main
 
 
 # Pinned historical DDL from 9db07e0c7c9adee4675f564f6bf281e5ad7d457c.
@@ -482,7 +483,7 @@ def test_failed_migration_does_not_advance_schema_revision(
     connection.commit()
     connection.close()
 
-    with pytest.raises(ValueError, match="invalid existing index"):
+    with pytest.raises(InputError, match="invalid existing index"):
         migrate_index(target)
     connection = sqlite3.connect(target)
     try:
@@ -496,3 +497,55 @@ def test_failed_migration_does_not_advance_schema_revision(
         assert "COLLATE NOCASE" not in index_sql.upper()
     finally:
         connection.close()
+
+
+def test_migrate_current_wal_preserves_journal_mode(
+    simple_cds_gbff: Path, tmp_path: Path
+) -> None:
+    index = tmp_path / "wal.gbidx"
+    assert build_index([simple_cds_gbff], index).exit_code == 0
+    connection = sqlite3.connect(index)
+    try:
+        assert connection.execute("PRAGMA journal_mode = WAL").fetchone()[0].casefold() == "wal"
+    finally:
+        connection.close()
+
+    assert main(["index", "migrate", str(index)]) == 0
+    connection = sqlite3.connect(index)
+    try:
+        assert connection.execute("PRAGMA journal_mode").fetchone()[0].casefold() == "wal"
+    finally:
+        connection.close()
+
+
+def test_migrate_with_active_wal_reader_is_noop(
+    simple_cds_gbff: Path, tmp_path: Path
+) -> None:
+    index = tmp_path / "active-wal.gbidx"
+    assert build_index([simple_cds_gbff], index).exit_code == 0
+    reader = sqlite3.connect(index)
+    try:
+        assert reader.execute("PRAGMA journal_mode = WAL").fetchone()[0].casefold() == "wal"
+        reader.execute("BEGIN")
+        assert main(["index", "migrate", str(index)]) == 0
+    finally:
+        reader.rollback()
+        reader.close()
+
+
+def test_migrate_corrupt_database_returns_exit_3(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    corrupt = tmp_path / "corrupt.gbidx"
+    corrupt.write_bytes(b"not a sqlite database")
+    assert main(["index", "migrate", str(corrupt)]) == 3
+    assert "Traceback" not in capsys.readouterr().err
+
+
+def test_update_corrupt_database_returns_exit_3(
+    simple_cds_gbff: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    corrupt = tmp_path / "corrupt.gbidx"
+    corrupt.write_bytes(b"not a sqlite database")
+    assert main(["index", "update", str(corrupt), str(simple_cds_gbff)]) == 3
+    assert "Traceback" not in capsys.readouterr().err
