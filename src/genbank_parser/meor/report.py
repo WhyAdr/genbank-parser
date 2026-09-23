@@ -8,7 +8,6 @@ import json
 
 from .models import MeorReport
 
-
 TSV_COLUMNS = (
     "contig",
     "locus_tag",

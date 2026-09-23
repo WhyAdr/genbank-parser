@@ -3,7 +3,6 @@ from pathlib import Path
 
 from genbank_parser.codon import analyze_codon_usage
 from genbank_parser.io import read_genbank
-from genbank_parser.sequence import parse_sequences
 
 
 def test_sequence_extraction_compound_vs_genomic_slice(compound_joined_gbff: Path) -> None:

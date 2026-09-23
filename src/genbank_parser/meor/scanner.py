@@ -16,7 +16,6 @@ def scan_meor_features(
 ) -> list[MeorHit]:
     if min_weight not in (1, 2, 3):
         raise ValueError("min_weight must be 1, 2, or 3")
-    categories = database.category_map
     markers_by_category = {
         category.id: [
             marker for marker in database.markers if marker.category_id == category.id

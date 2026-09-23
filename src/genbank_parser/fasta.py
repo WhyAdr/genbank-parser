@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from .io import read_genbank
-from .model import GenBankDocument
 
 
 def export_protein_fasta(filepath: str | Path, output_path: str | Path | None = None) -> int:

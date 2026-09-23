@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import argparse
 import csv
-from pathlib import Path
 import sys
+from pathlib import Path
 
-from .io import extract_xrefs, get_qual, read_genbank
-from .model import GenBankDocument
+from .io import extract_xrefs, read_genbank
 
 FIELDNAMES = [
     'contig', 'start', 'end', 'strand', 'type',

@@ -2,7 +2,6 @@
 from pathlib import Path
 
 from genbank_parser.io import read_genbank
-from genbank_parser.model import GenBankDocument, GenBankFeature, GenBankRecord
 
 
 def test_simple_feature_length_and_span(simple_cds_gbff: Path) -> None:

@@ -9,7 +9,6 @@ from pathlib import Path
 from genbank_parser.meor import analyze_meor
 from genbank_parser.meor.report import render_tsv
 
-
 LEGACY_HIT_KEYS = (
     "contig",
     "locus_tag",

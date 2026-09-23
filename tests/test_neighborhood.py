@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import pytest
 from Bio.Seq import Seq
 from Bio.SeqFeature import FeatureLocation
-import pytest
 
+from genbank_parser.discover import load_ruleset, match_feature_rules
+from genbank_parser.io import read_genbank
 from genbank_parser.model import GenBankFeature, GenBankRecord
 from genbank_parser.neighborhood import (
     SCHEMA_VERSION,
@@ -13,8 +15,6 @@ from genbank_parser.neighborhood import (
     serialize_neighborhood,
     write_neighborhood,
 )
-from genbank_parser.discover import load_ruleset, match_feature_rules
-from genbank_parser.io import read_genbank
 from genbank_parser.spatial import TargetNotFoundError, select_cds_window
 
 

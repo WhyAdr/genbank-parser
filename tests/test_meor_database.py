@@ -1,8 +1,8 @@
 """Integrity tests for the externalized MEOR knowledge base."""
 from __future__ import annotations
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 import pytest
 import yaml

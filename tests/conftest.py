@@ -1,5 +1,6 @@
 """Pytest configuration and shared fixtures for genbank_parser."""
 from pathlib import Path
+
 import pytest
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"

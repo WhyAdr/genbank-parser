@@ -1,9 +1,9 @@
 """Validated loader for the packaged MEOR marker knowledge base."""
 from __future__ import annotations
 
+import re
 from importlib import resources
 from pathlib import Path
-import re
 from typing import Any
 
 import yaml
