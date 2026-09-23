@@ -1213,12 +1213,12 @@ def execute_batch(
                     else "succeeded"
                 )
             existing["resume_action"] = "reused_unchanged"
-            if on_error == "stop" and existing.get("status") in {
-                "failed",
-                "threshold_failed",
-            }:
-                if stop_barrier_position is None:
-                    stop_barrier_position = position
+            if (
+                on_error == "stop"
+                and existing.get("status") in {"failed", "threshold_failed"}
+                and stop_barrier_position is None
+            ):
+                stop_barrier_position = position
             input_payload = existing.get("input")
             if isinstance(input_payload, dict):
                 input_payload.update(
@@ -1333,7 +1333,6 @@ def execute_batch(
                     existing.get("input") if isinstance(existing.get("input"), dict) else None,
                 )
                 if record_result(source, existing, result) and on_error == "stop":
-                    stop_latched = True
                     break
 
     manifest["updated_at"] = _now()

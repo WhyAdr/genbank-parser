@@ -4,6 +4,28 @@ All notable changes to the `WhyAdr/genbank-parser` codebase are documented in th
 
 ---
 
+## [0.9.3] - 2026-09-23
+
+### Release-blocking lifecycle hardening
+
+- Rejected unbound custom batch resources while retaining direct-command support
+  for custom discovery, MEOR, and mobilome resources.
+- Replaced the global stop-on-resume latch with an ordered barrier, so changed
+  jobs before an unchanged failure are rerun and only later jobs are deferred.
+- Retained complete durable batch work trees after final publication failure and
+  made resume bootstrap copies crash-safe through unique-sibling staging and
+  atomic installation.
+- Restored document-global `iter_genbank()` feature indices and made persisted
+  batch argv replayable from the recorded working directory with absolute source
+  and final-output paths plus the recorded SHA-256 precondition.
+- Rebuilt authentic revision-1 and revision-2 indexes transactionally to the
+  fresh revision-3 schema, preserved WAL mode for no-op migration, and mapped
+  corrupt SQLite migrate/update paths to concise exit-3 input errors.
+- Added focused v0.9.3 blocker gates, Python 3.14 CI coverage, and installed
+  wheel/sdist assertions for the 0.9.3 package and report metadata.
+
+---
+
 ## [0.9.2] - 2026-09-21
 
 ### Release hardening and recovery contracts

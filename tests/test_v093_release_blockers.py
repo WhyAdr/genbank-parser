@@ -7,18 +7,18 @@ import os
 import shutil
 import sqlite3
 import subprocess
+from importlib import resources
 from pathlib import Path
 
 import pytest
 
-from genbank_parser.batch import BatchUsageError, execute_batch
-from genbank_parser.cli_io import InputError, OutputError, OutputRecoveryError
 from genbank_parser import read_genbank
-from genbank_parser.io import iter_genbank
+from genbank_parser.batch import BatchUsageError, execute_batch
+from genbank_parser.cli import main
+from genbank_parser.cli_io import InputError, OutputError, OutputRecoveryError
 from genbank_parser.index import build_index, migrate_index
 from genbank_parser.index.schema import SCHEMA_SQL
-from genbank_parser.cli import main
-
+from genbank_parser.io import iter_genbank
 
 # Pinned historical DDL from 9db07e0c7c9adee4675f564f6bf281e5ad7d457c.
 _LEGACY_V1_SQL = """
@@ -294,6 +294,80 @@ def test_batch_force_cannot_replace_auxiliary_input_tree(
             force=True,
         )
     assert marker.read_text(encoding="utf-8") == "preserve"
+
+
+def test_direct_commands_retain_custom_resource_support(
+    simple_cds_gbff: Path, tmp_path: Path
+) -> None:
+    package = resources.files("genbank_parser")
+    rules = tmp_path / "rules.yaml"
+    rules.write_bytes(package.joinpath("rulesets", "mobilome.yaml").read_bytes())
+    assert (
+        main(
+            [
+                "discover",
+                str(simple_cds_gbff),
+                "--rules",
+                str(rules),
+                "--format",
+                "json",
+                "--output",
+                str(tmp_path / "discover.json"),
+            ]
+        )
+        == 0
+    )
+
+    meor_dir = tmp_path / "meor"
+    meor_dir.mkdir()
+    meor_markers = meor_dir / "markers.yaml"
+    meor_pathways = meor_dir / "pathways.yaml"
+    meor_markers.write_bytes(
+        package.joinpath("data", "meor", "markers.yaml").read_bytes()
+    )
+    meor_pathways.write_bytes(
+        package.joinpath("data", "meor", "pathways.yaml").read_bytes()
+    )
+    assert (
+        main(
+            [
+                "meor",
+                str(simple_cds_gbff),
+                "--markers",
+                str(meor_markers),
+                "--pathways",
+                str(meor_pathways),
+                "--format",
+                "json",
+                "--output",
+                str(tmp_path / "meor.json"),
+            ]
+        )
+        == 0
+    )
+
+    mobilome_dir = tmp_path / "mobilome"
+    mobilome_dir.mkdir()
+    for name in ("markers.yaml", "provenance.yaml", "inference.yaml"):
+        target = mobilome_dir / name
+        target.write_bytes(
+            package.joinpath("data", "mobilome", name).read_bytes()
+        )
+    assert (
+        main(
+            [
+                "mobilome",
+                str(simple_cds_gbff),
+                "--database-dir",
+                str(mobilome_dir),
+                "--format",
+                "json",
+                "--output",
+                str(tmp_path / "mobilome.json"),
+            ]
+        )
+        == 0
+    )
 
 
 def test_stop_barrier_runs_changed_job_before_reused_failure(
