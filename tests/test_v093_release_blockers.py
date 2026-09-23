@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import shutil
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -12,6 +14,93 @@ from genbank_parser.batch import BatchUsageError, execute_batch
 from genbank_parser.cli_io import OutputError, OutputRecoveryError
 from genbank_parser import read_genbank
 from genbank_parser.io import iter_genbank
+from genbank_parser.index import build_index, migrate_index
+from genbank_parser.index.schema import SCHEMA_SQL
+
+
+# Pinned historical DDL from 9db07e0c7c9adee4675f564f6bf281e5ad7d457c.
+_LEGACY_V1_SQL = """
+CREATE TABLE metadata (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+CREATE TABLE sources (
+    source_pk INTEGER PRIMARY KEY,
+    display_path TEXT NOT NULL UNIQUE,
+    resolved_path_at_index TEXT NOT NULL,
+    sample_key TEXT NOT NULL,
+    sha256 TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    mtime_ns INTEGER NOT NULL,
+    compressed INTEGER NOT NULL CHECK (compressed IN (0, 1)),
+    record_count INTEGER NOT NULL,
+    feature_count INTEGER NOT NULL
+);
+CREATE TABLE records (
+    record_pk INTEGER PRIMARY KEY,
+    source_pk INTEGER NOT NULL REFERENCES sources(source_pk) ON DELETE CASCADE,
+    record_index INTEGER NOT NULL,
+    record_id TEXT NOT NULL,
+    record_name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    length INTEGER NOT NULL,
+    topology TEXT,
+    molecule_type TEXT,
+    organism TEXT,
+    strain TEXT,
+    gc_percent REAL,
+    UNIQUE(source_pk, record_index)
+);
+CREATE TABLE features (
+    feature_pk INTEGER PRIMARY KEY,
+    record_pk INTEGER NOT NULL REFERENCES records(record_pk) ON DELETE CASCADE,
+    feature_index INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    locus_tag TEXT,
+    gene TEXT,
+    product TEXT,
+    protein_id TEXT,
+    start INTEGER NOT NULL,
+    end INTEGER NOT NULL,
+    strand INTEGER,
+    biological_length INTEGER NOT NULL,
+    partial INTEGER NOT NULL CHECK (partial IN (0, 1)),
+    pseudo INTEGER NOT NULL CHECK (pseudo IN (0, 1)),
+    UNIQUE(record_pk, feature_index)
+);
+CREATE TABLE segments (
+    feature_pk INTEGER NOT NULL REFERENCES features(feature_pk) ON DELETE CASCADE,
+    ordinal INTEGER NOT NULL,
+    start INTEGER NOT NULL,
+    end INTEGER NOT NULL,
+    PRIMARY KEY(feature_pk, ordinal)
+);
+CREATE TABLE qualifiers (
+    feature_pk INTEGER NOT NULL REFERENCES features(feature_pk) ON DELETE CASCADE,
+    key TEXT NOT NULL,
+    ordinal INTEGER NOT NULL,
+    value TEXT NOT NULL,
+    PRIMARY KEY(feature_pk, key, ordinal)
+);
+CREATE TABLE xrefs (
+    feature_pk INTEGER NOT NULL REFERENCES features(feature_pk) ON DELETE CASCADE,
+    namespace TEXT NOT NULL,
+    value TEXT NOT NULL,
+    source_field TEXT NOT NULL,
+    PRIMARY KEY(feature_pk, namespace, value, source_field)
+);
+CREATE INDEX idx_sources_sha256 ON sources(sha256);
+CREATE INDEX idx_records_id ON records(record_id);
+CREATE INDEX idx_records_name ON records(record_name);
+CREATE INDEX idx_records_organism ON records(organism);
+CREATE INDEX idx_features_type ON features(type);
+CREATE INDEX idx_features_locus_tag ON features(locus_tag);
+CREATE INDEX idx_features_gene ON features(gene);
+CREATE INDEX idx_features_protein_id ON features(protein_id);
+CREATE INDEX idx_features_coordinates ON features(record_pk, start, end);
+CREATE INDEX idx_xrefs_namespace_value ON xrefs(namespace, value);
+CREATE INDEX idx_qualifiers_key_value ON qualifiers(key, value);
+"""
 
 
 def _copy_source(source: Path, directory: Path, name: str) -> Path:
@@ -19,6 +108,134 @@ def _copy_source(source: Path, directory: Path, name: str) -> Path:
     target = directory / name
     shutil.copyfile(source, target)
     return target
+
+
+def _make_authentic_legacy_index(
+    source: Path, directory: Path, revision: int
+) -> tuple[Path, Path]:
+    """Build a pinned historical-D DL index with real parsed fixture rows."""
+
+    fresh = directory / "fresh.gbidx"
+    assert build_index([source], fresh).exit_code == 0
+    legacy = directory / f"legacy-v{revision}.gbidx"
+    connection = sqlite3.connect(legacy)
+    try:
+        if revision == 1:
+            connection.executescript(_LEGACY_V1_SQL)
+        elif revision == 2:
+            # The v0.9.1 table definitions are the v0.9.2 definitions before
+            # the explicit v3 source/sample-key indexes were added.
+            connection.executescript(SCHEMA_SQL)
+            connection.execute("DROP INDEX uq_sources_source_identity")
+            connection.execute("DROP INDEX uq_sources_sample_key_nocase")
+        else:
+            raise AssertionError(revision)
+        connection.execute("ATTACH DATABASE ? AS source_db", (str(fresh),))
+        connection.execute("INSERT INTO metadata SELECT * FROM source_db.metadata")
+        connection.execute(
+            "UPDATE metadata SET value = ? WHERE key = 'schema_revision'",
+            (str(revision),),
+        )
+        connection.execute(
+            "UPDATE metadata SET value = ? WHERE key = 'gbparse_version'",
+            ("0.9.0" if revision == 1 else "0.9.1",),
+        )
+        connection.execute(
+            "UPDATE metadata SET value = ? WHERE key = 'query_semantics_version'",
+            ("gbparse.query.v1" if revision == 1 else "gbparse.query.v2",),
+        )
+        if revision == 1:
+            connection.execute(
+                "INSERT INTO sources SELECT source_pk, display_path, resolved_path_at_index, sample_key, sha256, size_bytes, mtime_ns, compressed, record_count, feature_count FROM source_db.sources"
+            )
+        else:
+            connection.execute("INSERT INTO sources SELECT * FROM source_db.sources")
+        for table in ("records", "features", "segments", "qualifiers"):
+            connection.execute(f"INSERT INTO {table} SELECT * FROM source_db.{table}")
+        if revision == 1:
+            connection.execute(
+                "INSERT INTO xrefs SELECT feature_pk, namespace, value, source_field FROM source_db.xrefs"
+            )
+        else:
+            connection.execute("INSERT INTO xrefs SELECT * FROM source_db.xrefs")
+        connection.execute(f"PRAGMA user_version = {revision}")
+        connection.commit()
+        connection.execute("DETACH DATABASE source_db")
+    finally:
+        connection.close()
+    return fresh, legacy
+
+
+def _index_signature(path: Path) -> dict[str, object]:
+    connection = sqlite3.connect(path)
+    try:
+        tables = tuple(
+            str(row[0])
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name"
+            )
+        )
+        master = tuple(
+            tuple(row)
+            for row in connection.execute(
+                "SELECT type, name, tbl_name, sql FROM sqlite_master "
+                "WHERE type IN ('table', 'index') ORDER BY type, name"
+            )
+        )
+        table_info = {
+            table: tuple(tuple(row) for row in connection.execute(f"PRAGMA table_info({table})"))
+            for table in tables
+        }
+        index_list = {
+            table: tuple(tuple(row) for row in connection.execute(f"PRAGMA index_list({table})"))
+            for table in tables
+        }
+        index_xinfo = {
+            str(row[1]): tuple(tuple(item) for item in connection.execute(f"PRAGMA index_xinfo('{row[1]}')"))
+            for table in tables
+            for row in connection.execute(f"PRAGMA index_list({table})")
+        }
+        representative = tuple(
+            connection.execute(
+                "SELECT s.source_identity, s.sample_key, r.record_id, f.feature_index, "
+                "f.locus_tag, x.namespace, x.ordinal, x.value "
+                "FROM sources AS s JOIN records AS r USING (source_pk) "
+                "JOIN features AS f USING (record_pk) "
+                "LEFT JOIN xrefs AS x USING (feature_pk) "
+                "ORDER BY s.source_identity, r.record_index, f.feature_index, x.namespace, x.ordinal"
+            ).fetchall()
+        )
+        counts = tuple(
+            (table, int(connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]))
+            for table in ("sources", "records", "features", "segments", "qualifiers", "xrefs")
+        )
+        return {
+            "master": master,
+            "table_info": table_info,
+            "index_list": index_list,
+            "index_xinfo": index_xinfo,
+            "foreign_key_check": tuple(connection.execute("PRAGMA foreign_key_check").fetchall()),
+            "integrity_check": connection.execute("PRAGMA integrity_check").fetchone()[0],
+            "representative": representative,
+            "counts": counts,
+        }
+    finally:
+        connection.close()
+
+
+def _index_revision_metadata(path: Path) -> tuple[int, str]:
+    connection = sqlite3.connect(path)
+    try:
+        return (
+            int(connection.execute("PRAGMA user_version").fetchone()[0]),
+            str(
+                connection.execute(
+                    "SELECT value FROM metadata WHERE key = 'schema_revision'"
+                ).fetchone()[0]
+            ),
+        )
+    finally:
+        connection.close()
 
 
 @pytest.mark.parametrize(
@@ -220,3 +437,62 @@ def test_iter_genbank_feature_indices_are_document_global(
         for feature in record.features
     ]
     assert streamed == materialized == list(range(1, len(streamed) + 1))
+
+
+def _assert_authentic_legacy_index_migration(
+    simple_cds_gbff: Path, tmp_path: Path, revision: int
+) -> None:
+    fresh, legacy = _make_authentic_legacy_index(simple_cds_gbff, tmp_path, revision)
+    immutable = tmp_path / f"legacy-v{revision}-immutable.gbidx"
+    target = tmp_path / f"legacy-v{revision}-target.gbidx"
+    shutil.copyfile(legacy, immutable)
+    shutil.copyfile(immutable, target)
+    before_digest = hashlib.sha256(immutable.read_bytes()).hexdigest()
+    before_metadata = _index_revision_metadata(immutable)
+
+    migrated = migrate_index(target)
+    assert migrated["schema_revision"] == "3"
+    assert _index_signature(target) == _index_signature(fresh)
+    assert hashlib.sha256(immutable.read_bytes()).hexdigest() == before_digest
+    assert _index_revision_metadata(immutable) == before_metadata
+
+
+def test_authentic_revision1_to_revision3_schema_equivalence(
+    simple_cds_gbff: Path, tmp_path: Path
+) -> None:
+    _assert_authentic_legacy_index_migration(simple_cds_gbff, tmp_path, 1)
+
+
+def test_authentic_revision2_to_revision3_schema_equivalence(
+    simple_cds_gbff: Path, tmp_path: Path
+) -> None:
+    _assert_authentic_legacy_index_migration(simple_cds_gbff, tmp_path, 2)
+
+
+def test_failed_migration_does_not_advance_schema_revision(
+    simple_cds_gbff: Path, tmp_path: Path
+) -> None:
+    _fresh, legacy = _make_authentic_legacy_index(simple_cds_gbff, tmp_path, 2)
+    target = tmp_path / "tampered.gbidx"
+    shutil.copyfile(legacy, target)
+    connection = sqlite3.connect(target)
+    connection.execute(
+        "CREATE UNIQUE INDEX uq_sources_sample_key_nocase ON sources(sample_key)"
+    )
+    connection.commit()
+    connection.close()
+
+    with pytest.raises(ValueError, match="invalid existing index"):
+        migrate_index(target)
+    connection = sqlite3.connect(target)
+    try:
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert connection.execute(
+            "SELECT value FROM metadata WHERE key = 'schema_revision'"
+        ).fetchone()[0] == "2"
+        index_sql = connection.execute(
+            "SELECT sql FROM sqlite_master WHERE name = 'uq_sources_sample_key_nocase'"
+        ).fetchone()[0]
+        assert "COLLATE NOCASE" not in index_sql.upper()
+    finally:
+        connection.close()
