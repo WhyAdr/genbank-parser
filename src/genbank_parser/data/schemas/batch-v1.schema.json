@@ -7,7 +7,7 @@
   "allOf": [
     {
       "if": {
-        "properties": {"gbparse_version": {"const": "0.9.2"}},
+        "properties": {"gbparse_version": {"enum": ["0.9.2", "0.9.3"]}},
         "required": ["gbparse_version"]
       },
       "then": {
@@ -27,12 +27,12 @@
     "updated_at": {"type": "string"},
     "command": {"type": "string"},
     "command_args": {"type": "array", "items": {"type": "string"}},
-    "runner": {"type": "object", "required": ["jobs", "on_error", "discovery_roots"], "properties": {"jobs": {"type": "integer", "minimum": 1}, "on_error": {"type": "string"}, "discovery_roots": {"type": "array", "items": {"type": "string"}}, "working_directory": {"type": "string", "minLength": 1}}, "additionalProperties": false},
+    "runner": {"type": "object", "required": ["jobs", "on_error", "discovery_roots"], "properties": {"jobs": {"type": "integer", "minimum": 1}, "on_error": {"type": "string"}, "discovery_roots": {"type": "array", "items": {"type": "string"}}, "working_directory": {"type": "string", "minLength": 1, "description": "Absolute directory from which argv can be replayed."}}, "additionalProperties": false},
     "jobs": {"type": "array", "items": {"$ref": "#/$defs/job"}}
   },
   "$defs": {
     "input": {"type": "object", "required": ["requested_path", "display_path", "resolved_path", "sha256", "size_bytes", "mtime_ns"], "properties": {"requested_path": {"type": "string"}, "source_identity": {"type": "string"}, "display_path": {"type": "string"}, "resolved_path": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "size_bytes": {"type": "integer", "minimum": 0}, "mtime_ns": {"type": "integer", "minimum": 0}}, "additionalProperties": false},
     "output": {"type": "object", "required": ["path", "relative_path", "size_bytes", "sha256"], "properties": {"path": {"type": "string"}, "relative_path": {"type": "string"}, "size_bytes": {"type": "integer", "minimum": 0}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}, "additionalProperties": false},
-    "job": {"type": "object", "required": ["job_id", "sample_key", "status", "input"], "properties": {"job_id": {"type": "string"}, "sample_key": {"type": "string"}, "status": {"enum": ["pending", "running", "succeeded", "threshold_failed", "failed", "skipped_unchanged", "not_requested"]}, "resume_action": {"enum": ["reused_unchanged", "rerun_changed", "replayed_running", "deferred_after_stop", "not_requested"]}, "input": {"$ref": "#/$defs/input"}, "exit_code": {"type": ["integer", "null"]}, "exit_class": {"type": ["string", "null"]}, "argv": {"type": "array", "items": {"type": "string"}}, "outputs": {"type": "array", "items": {"$ref": "#/$defs/output"}}, "stderr_log": {"type": "string"}, "stderr_sha256": {"type": "string"}, "started_at": {"type": "string"}, "ended_at": {"type": "string"}, "duration_seconds": {"type": "number"}}, "additionalProperties": false}
+    "job": {"type": "object", "required": ["job_id", "sample_key", "status", "input"], "properties": {"job_id": {"type": "string"}, "sample_key": {"type": "string"}, "status": {"enum": ["pending", "running", "succeeded", "threshold_failed", "failed", "skipped_unchanged", "not_requested"]}, "resume_action": {"enum": ["reused_unchanged", "rerun_changed", "replayed_running", "deferred_after_stop", "not_requested"]}, "input": {"$ref": "#/$defs/input"}, "exit_code": {"type": ["integer", "null"]}, "exit_class": {"type": ["string", "null"]}, "argv": {"type": "array", "minItems": 1, "items": {"type": "string", "description": "Replayable command with absolute source and final-output paths."}}, "outputs": {"type": "array", "items": {"$ref": "#/$defs/output"}}, "stderr_log": {"type": "string"}, "stderr_sha256": {"type": "string"}, "started_at": {"type": "string"}, "ended_at": {"type": "string"}, "duration_seconds": {"type": "number"}}, "additionalProperties": false}
   }
 }

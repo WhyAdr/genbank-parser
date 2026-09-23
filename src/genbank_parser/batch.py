@@ -386,17 +386,22 @@ def _logical_argv(
     sample_key: str,
     tail: Sequence[str],
     options: Namespace,
+    final_output_dir: Path,
 ) -> list[str]:
     """Build replayable argv without physical snapshot/work-tree paths."""
 
-    return _build_argv(
+    argv = _build_argv(
         spec,
         command,
-        Path(source.display_path),
-        Path("outputs") / sample_key,
+        source.resolved_path.resolve(strict=False),
+        final_output_dir.resolve(strict=False) / "outputs" / sample_key,
         tail,
         options,
     )
+    # A published run already contains the recorded outputs.  Replay is a
+    # regeneration command, so it must be safe to execute without first
+    # deleting those outputs manually.
+    return [*argv, "--force"]
 
 
 def _scrub_diagnostics(
@@ -638,6 +643,7 @@ def _run_one(
     source: DiscoveredInput,
     sample_key: str,
     stage_root: Path,
+    final_output_dir: Path,
     tail: Sequence[str],
     options: Namespace,
     input_payload: dict[str, object] | None = None,
@@ -653,7 +659,15 @@ def _run_one(
     started_clock = time.perf_counter()
     started = _now()
     fingerprint = None
-    logical_argv = _logical_argv(spec, command, source, sample_key, tail, options)
+    logical_argv = _logical_argv(
+        spec,
+        command,
+        source,
+        sample_key,
+        tail,
+        options,
+        final_output_dir,
+    )
     physical_argv = _build_argv(spec, command, snapshot_path, sample_root, tail, options)
     try:
         stderr = ""
@@ -1293,6 +1307,7 @@ def execute_batch(
                         source,
                         key,
                         work_dir,
+                        output_path,
                         tail,
                         options,
                         existing.get("input") if isinstance(existing.get("input"), dict) else None,
@@ -1312,6 +1327,7 @@ def execute_batch(
                     source,
                     key,
                     work_dir,
+                    output_path,
                     tail,
                     options,
                     existing.get("input") if isinstance(existing.get("input"), dict) else None,

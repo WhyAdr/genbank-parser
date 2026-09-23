@@ -6,6 +6,7 @@ import hashlib
 import os
 import shutil
 import sqlite3
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -549,3 +550,42 @@ def test_update_corrupt_database_returns_exit_3(
     corrupt.write_bytes(b"not a sqlite database")
     assert main(["index", "update", str(corrupt), str(simple_cds_gbff)]) == 3
     assert "Traceback" not in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("relative_source", (True, False))
+def test_manifest_argv_is_replayable_from_recorded_working_directory(
+    simple_cds_gbff: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    relative_source: bool,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    source = Path("inputs") / "sample.gb"
+    _copy_source(simple_cds_gbff, source.parent, source.name)
+    source_argument = source if relative_source else source.resolve()
+    run = Path("run")
+
+    result = execute_batch(
+        [source_argument],
+        command="validate",
+        output_dir=run,
+        tail=("--format", "json"),
+    )
+    job = result.manifest["jobs"][0]
+    argv = job["argv"]
+    assert str(source.resolve()) in argv
+    assert str((tmp_path / "run" / "outputs" / "sample" / "result.json").resolve()) in argv
+    assert ".gbparse-input." not in " ".join(argv)
+    assert ".gbparse-inprogress" not in " ".join(argv)
+    assert ".work." not in " ".join(argv)
+
+    completed = subprocess.run(
+        argv,
+        cwd=result.manifest["runner"]["working_directory"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert (tmp_path / "run" / "outputs" / "sample" / "result.json").is_file()
+    assert not (tmp_path / "outputs").exists()
