@@ -594,8 +594,14 @@ def publish_directory_tree(
     *,
     force: bool = False,
     inputs: Iterable[str | Path | None] = (),
+    retain_staging_on_failure: bool = False,
 ) -> Path:
-    """Atomically install an already assembled directory tree."""
+    """Atomically install an already assembled directory tree.
+
+    Batch execution can mark its staging tree as a durable recovery artifact.
+    General-purpose callers retain the historical cleanup behavior unless
+    ``retain_staging_on_failure`` is explicitly requested.
+    """
 
     staging = Path(staging_dir)
     destination = Path(output_dir)
@@ -638,6 +644,14 @@ def publish_directory_tree(
                 backups=(() if backup is None else (backup,)),
                 staging=(staging,) if staging.exists() else (),
                 cause=rollback_errors[0],
+            )
+        if retain_staging_on_failure and staging.exists():
+            _raise_recovery_error(
+                "could not publish output directory tree; durable staging retained",
+                destination=destination,
+                backups=(() if backup is None else (backup,)),
+                staging=(staging,),
+                cause=exc,
             )
         if staging.exists():
             try:

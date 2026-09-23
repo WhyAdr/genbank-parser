@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import platform
+import secrets
 import shutil
 import subprocess
 import sys
@@ -24,6 +25,7 @@ from . import __version__
 from .cli_io import (
     InputError,
     OutputError,
+    OutputRecoveryError,
     publish_directory_tree,
     reject_input_output_collision,
     write_text,
@@ -984,6 +986,15 @@ def _inprogress_path(output_path: Path) -> Path:
     return output_path.parent / f".{output_path.name}.gbparse-inprogress"
 
 
+def _remove_path(path: Path) -> None:
+    """Remove either a directory tree or a file/symlink safely."""
+
+    if path.is_dir() and not path.is_symlink():
+        shutil.rmtree(path)
+    else:
+        path.unlink(missing_ok=True)
+
+
 def execute_batch(
     inputs: Iterable[str | Path],
     *,
@@ -1064,12 +1075,37 @@ def execute_batch(
                 raise InputError(
                     f"a durable in-progress batch already exists; resume it directly: {inprogress_path}"
                 )
+            resume_copy = output_path.parent / (
+                f".{output_path.name}.gbparse-resume-copy.{secrets.token_hex(8)}"
+            )
             try:
-                shutil.copytree(output_path, inprogress_path)
-            except OSError as exc:
-                raise OutputError(
-                    f"could not create durable batch resume tree {inprogress_path}: {exc}"
-                ) from exc
+                shutil.copytree(output_path, resume_copy)
+                os.replace(resume_copy, inprogress_path)
+            except BaseException as exc:
+                cleanup_errors: list[OSError] = []
+                for candidate in (resume_copy, inprogress_path):
+                    if not (candidate.exists() or candidate.is_symlink()):
+                        continue
+                    try:
+                        _remove_path(candidate)
+                    except OSError as cleanup_exc:
+                        cleanup_errors.append(cleanup_exc)
+                if cleanup_errors:
+                    retained = tuple(
+                        candidate
+                        for candidate in (resume_copy, inprogress_path)
+                        if candidate.exists() or candidate.is_symlink()
+                    )
+                    raise OutputRecoveryError(
+                        "could not clean partial batch resume copy; published run remains authoritative",
+                        destination=output_path,
+                        staging=retained,
+                    ) from cleanup_errors[0]
+                if isinstance(exc, OSError):
+                    raise OutputError(
+                        f"could not create durable batch resume tree {inprogress_path}: {exc}"
+                    ) from exc
+                raise
         work_dir = inprogress_path
     else:
         if output_path.exists() and not force:
@@ -1289,7 +1325,17 @@ def execute_batch(
     _write_manifest(_manifest_path(work_dir), manifest)
     # A successful directory move is the publication commit point.  Any
     # exception before it deliberately leaves the durable in-progress tree.
-    publish_directory_tree(work_dir, output_path, force=force or resume, inputs=inputs)
+    # Auxiliary resources are rejected during preflight in v0.9.3.  Keep the
+    # tuple boundary explicit so a future dependency snapshot can share the
+    # same collision and publication guard without weakening this caller.
+    auxiliary_inputs: tuple[str | Path, ...] = ()
+    publish_directory_tree(
+        work_dir,
+        output_path,
+        force=force or resume,
+        inputs=(*inputs, *auxiliary_inputs),
+        retain_staging_on_failure=True,
+    )
     exit_code, failed_count = _aggregate(manifest)
     return BatchExecutionResult(manifest=manifest, failed_count=failed_count, exit_code=exit_code)
 
